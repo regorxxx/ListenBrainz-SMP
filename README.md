@@ -10,7 +10,7 @@ An implementation of [ListenBrainz](https://listenbrainz.org/) for [foobar2000](
 ## Features
 -PLACEHOLDER-
 
-## To send listens
+## To send listens on playback
 Listens sync is not managed by this script. It's recommended to use [foo_listenbrainz2](https://github.com/phw/foo_listenbrainz2).
 
 ### Compatible with (toolbar)
