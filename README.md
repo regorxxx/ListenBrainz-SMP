@@ -5,7 +5,7 @@
 ![GitHub](https://img.shields.io/github/license/regorxxx/ListenBrainz-SMP)  
 An implementation of [ListenBrainz](https://listenbrainz.org/) for [foobar2000](https://www.foobar2000.org) using [Spider Monkey Panel](https://theqwertiest.github.io/foo_spider_monkey_panel), which allows to retrieve/set feedback for tracks within foobar2000 library and create playlists based on user or site-wide recommendations statistics.
 
--PLACEHOLDER IMAGE-
+![LB_2](https://user-images.githubusercontent.com/83307074/193407659-ca6891dc-f359-4bf4-b792-3462ffae1b11.gif)
 
 ## Features
 -PLACEHOLDER-
@@ -15,7 +15,7 @@ An implementation of [ListenBrainz](https://listenbrainz.org/) for [foobar2000](
  2. [Playlist-Tools-SMP](https://github.com/regorxxx/Playlist-Tools-SMP): Offers different pre-defefined examples for intelligent playlist creation.
  3. [Device-Priority-SMP](https://github.com/regorxxx/Device-Priority-SMP): Automatic output device selection.
 
--PLACEHOLDER IMAGE-
+![LB_1](https://user-images.githubusercontent.com/83307074/193407662-92a43011-c3cb-4473-b9cf-7da5780fbec1.gif)
 
 ## Installation
 See [_TIPS and INSTALLATION (txt)](https://github.com/regorxxx/ListenBrainz-SMP/blob/main/_TIPS%20and%20INSTALLATION.txt) and the [Wiki](https://github.com/regorxxx/ListenBrainz-SMP/wiki/Installation).
