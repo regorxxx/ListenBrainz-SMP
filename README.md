@@ -10,6 +10,9 @@ An implementation of [ListenBrainz](https://listenbrainz.org/) for [foobar2000](
 ## Features
 -PLACEHOLDER-
 
+## To send listens
+Listens sync is not managed by this script. It's recommended to use [foo_listenbrainz2](https://github.com/phw/foo_listenbrainz2).
+
 ### Compatible with (toolbar)
  1. [Search-by-Distance-SMP](https://github.com/regorxxx/Search-by-Distance-SMP): creates intelligent "spotify-like" playlist using high-level data from tracks and computing their similarity using genres/styles.
  2. [Playlist-Tools-SMP](https://github.com/regorxxx/Playlist-Tools-SMP): Offers different pre-defefined examples for intelligent playlist creation.
