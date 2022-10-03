@@ -9,7 +9,13 @@ An implementation of [ListenBrainz](https://listenbrainz.org/) for [foobar2000](
 ![LB_2](https://user-images.githubusercontent.com/83307074/193407659-ca6891dc-f359-4bf4-b792-3462ffae1b11.gif)
 
 ## Features
--PLACEHOLDER-
+- Love/Hate tracks. Or clear any feedback set.
+- Find loved/hated tracks from server on library. [*]
+- Create playlist fron Top Listens, either by user or site-wide. [*]
+- Create playlist based on user's recommedations: 'Top artist', 'Similar artist', 'Raw recommendations'. [*]
+- Requires an [user token](https://listenbrainz.org/profile/).
+
+[*] Involves content resolution by Artist, Title or Recording MBID. Displays found matches.
 
 ## To send listens on playback
 Listens sync is not managed by this script. It's recommended to use [foo_listenbrainz2](https://github.com/phw/foo_listenbrainz2).
