@@ -62,11 +62,12 @@ addButton({
 				const bListenBrainz = properties.lBrainzToken[1].length;
 				const bEncrypted = properties.lBrainzEncrypt[1];
 				function selectedFlags(idx = plman.ActivePlaylist) {return (idx !== -1 && plman.GetPlaylistSelectedItems(idx).Count ? MF_STRING : MF_GRAYED);}
-				const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : '';
 				// Menu
 				{
 					menu.newEntry({entryText: 'Retrieve MBIDs from selection' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 						if (!await checkLBToken()) {return false;}
+						const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
+						if (!token) {return;}
 						const tfo = fb.TitleFormat('%TITLE%');
 						const handleList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
 						const response = await lb.lookupRecordingInfo(handleList, ['recording_name', 'recording_mbid'], token);
@@ -92,6 +93,8 @@ addButton({
 					].forEach((entry) =>  {
 						menu.newEntry({menuName, entryText: entry.title + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 							if (!await checkLBToken()) {return false;}
+							const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
+							if (!token) {return;}
 							const handleList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
 							const response = await lb.sendFeedback(handleList, entry.key, token);
 							if (!response) {fb.ShowPopupMessage('Error connecting to server', 'ListenBrainz');}
@@ -100,6 +103,8 @@ addButton({
 					menu.newEntry({menuName, entryText: 'sep'});
 					menu.newEntry({menuName, entryText: 'Report for selected tracks' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 						if (!await checkLBToken()) {return false;}
+						const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
+						if (!token) {return;}
 						const handleList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
 						const response = await lb.getFeedback(handleList, await lb.retrieveUser(token), token);
 						const tfo = fb.TitleFormat('%TITLE%');
@@ -121,6 +126,8 @@ addButton({
 					].forEach((entry) =>  {
 						menu.newEntry({menuName, entryText: 'Find ' + entry.title + ' in library' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 							if (!await checkLBToken()) {return false;}
+							const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
+							if (!token) {return;}
 							const response = await lb.getUserFeedback(await lb.retrieveUser(token), {score: entry.score, metadata: 'true'}, token);
 							const mbids = [], titles = [], artists = [];
 							const report = entry.title + ': ' + response.length + '\n\n' + response.map((feedback, i) => {
@@ -164,6 +171,8 @@ addButton({
 						].forEach((entry) =>  {
 							menu.newEntry({menuName: subMenuName, entryText: entry.title + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 								if (!await checkLBToken()) {return false;}
+								const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
+								if (!token) {return;}
 								const user = await (i ? lb.retrieveUser(token) : 'sitewide');
 								const response = await lb.getTopRecordings(user, entry.params, token);
 								const mbids = [];
@@ -219,6 +228,8 @@ addButton({
 					].forEach((entry) =>  {
 						menu.newEntry({menuName, entryText: entry.title + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 							if (!await checkLBToken()) {return false;}
+							const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
+							if (!token) {return;}
 							const user = await lb.retrieveUser(token);
 							const response = await lb.getRecommendedRecordings(user, entry.params, token);
 							const mbids = [];
@@ -269,6 +280,8 @@ addButton({
 						menu.newCheckMenu(menuName, 'Set token...', void(0), () => {return properties.lBrainzToken[1].length ? true : false;});
 						menu.newEntry({menuName, entryText: 'Open user profile'  + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 							if (!await checkLBToken()) {return;}
+							const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
+							if (!token) {return;}
 							const user = await lb.retrieveUser(token);
 							if (user.length) {_runCmd('CMD /C START https://listenbrainz.org/user/' + user + '/playlists/', false);}
 						}, flags: bListenBrainz ? MF_STRING: MF_GRAYED});
