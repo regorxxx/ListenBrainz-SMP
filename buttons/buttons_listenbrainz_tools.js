@@ -1,5 +1,5 @@
 ﻿'use strict';
-//01/10/22
+//24/10/22
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -19,7 +19,8 @@ prefix = getUniquePrefix(prefix, ''); // Puts new ID before '_'
 var newButtonsProperties = { //You can simply add new properties here
 	lBrainzToken:	['ListenBrainz user token', ''				, {func: isStringWeak}, ''],
 	lBrainzEncrypt:	['Encript ListenBrainz user token?', false	, {func: isBoolean}, false],
-	bLookupMBIDs: 	['Lookup for missing track MBIDs?', true	, {func: isBoolean}, true ]
+	bLookupMBIDs: 	['Lookup for missing track MBIDs?', true	, {func: isBoolean}, true ],
+	bAdvTitle:		['Advanced RegExp title matching?', true	, {func: isBoolean}, true]
 };
 setProperties(newButtonsProperties, prefix, 0); //This sets all the panel properties at once
 newButtonsProperties = getPropertiesPairs(newButtonsProperties, prefix, 0);
@@ -28,7 +29,7 @@ buttonsBar.list.push(newButtonsProperties);
 addButton({
 	'Listen Brainz Tools': new themedButton({x: 0, y: 0, w: 100, h: 22}, 'Listen Brainz', function (mask) {
 		if (mask === MK_SHIFT) {
-			settingsMenu(this, true, ['buttons_listenbrainz_tools.js']).btn_up(this.currX, this.currY + this.currH);
+			settingsMenu(this, true, ['buttons_listenbrainz_tools.js'], {bAdvTitle: {popup: globRegExp.title.desc}}).btn_up(this.currX, this.currY + this.currH);
 		} else {
 			const properties = this.buttonsProperties;
 			const lb = listenBrainz;
@@ -209,7 +210,7 @@ addButton({
 								catch (e) {fb.ShowPopupMessage('Query not valid. Check query:\n' + query); return;}
 								// Filter in 3 steps
 								handleList = removeDuplicatesV2({handleList, checkKeys: ['MUSICBRAINZ_TRACKID']});
-								handleList = removeDuplicatesV2({handleList, checkKeys: ['$ascii($lower($trim(%TITLE%)))','ARTIST']});
+								handleList = removeDuplicatesV2({handleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : properties.bAdvTitle[1]});
 								handleList.OrderByFormat(fb.TitleFormat('$rand()'), 1);
 								sendToPlaylist(handleList, 'ListenBrainz ' + entry.title + ' ' + _p(user));
 							}, flags: bListenBrainz ? MF_STRING : MF_GRAYED});
