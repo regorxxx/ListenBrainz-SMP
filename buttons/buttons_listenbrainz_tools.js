@@ -1,16 +1,17 @@
 ﻿'use strict';
-//24/10/22
+//19/12/22
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
 */
 
+include('..\\helpers\\helpers_xxx.js');
 include('..\\helpers\\buttons_xxx.js');
 include('..\\helpers\\helpers_xxx_properties.js');
 include('..\\helpers\\buttons_xxx_menu.js');
-include('..\\helpers\\playlist_manager_listenbrainz.js');
 include('..\\helpers\\helpers_xxx_playlists.js');
-include('..\\main\\remove_duplicates.js');
+include('..\\main\\playlist_manager\\playlist_manager_listenbrainz.js');
+include('..\\main\\filter_and_query\\remove_duplicates.js');
 var prefix = 'lbt';
 
 try {window.DefinePanel('ListenBrainz Tools Button', {author:'xxx'});} catch (e) {/* console.log('Filter Playlist Button loaded.'); */} //May be loaded along other buttons
@@ -267,7 +268,7 @@ addButton({
 							catch (e) {fb.ShowPopupMessage('Query not valid. Check query:\n' + query); return;}
 							// Filter in 3 steps
 							handleList = removeDuplicatesV2({handleList, checkKeys: ['MUSICBRAINZ_TRACKID']});
-							handleList = removeDuplicatesV2({handleList, checkKeys: ['$ascii($lower($trim(%TITLE%)))','ARTIST']});
+							handleList = removeDuplicatesV2({handleList, checkKeys: [globTags.title, 'ARTIST']});
 							handleList.OrderByFormat(fb.TitleFormat('$rand()'), 1);
 							sendToPlaylist(handleList, 'ListenBrainz ' + entry.title + ' ' + _p(user));
 						}, flags: bListenBrainz ? MF_STRING : MF_GRAYED});
