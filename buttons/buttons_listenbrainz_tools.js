@@ -1,5 +1,5 @@
 ﻿'use strict';
-//19/12/22
+//22/12/22
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -14,7 +14,7 @@ include('..\\main\\playlist_manager\\playlist_manager_listenbrainz.js');
 include('..\\main\\filter_and_query\\remove_duplicates.js');
 var prefix = 'lbt';
 
-try {window.DefinePanel('ListenBrainz Tools Button', {author:'xxx'});} catch (e) {/* console.log('Filter Playlist Button loaded.'); */} //May be loaded along other buttons
+try {window.DefineScript('ListenBrainz Tools Button', {author:'xxx', features: {drag_n_drop: false}});} catch (e) {/* console.log('Filter Playlist Button loaded.'); */} //May be loaded along other buttons
 prefix = getUniquePrefix(prefix, ''); // Puts new ID before '_'
 
 var newButtonsProperties = { //You can simply add new properties here
