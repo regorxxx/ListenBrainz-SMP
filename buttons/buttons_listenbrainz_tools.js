@@ -1,5 +1,5 @@
 ﻿'use strict';
-//22/12/22
+//15/03/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -12,6 +12,7 @@ include('..\\helpers\\buttons_xxx_menu.js');
 include('..\\helpers\\helpers_xxx_playlists.js');
 include('..\\main\\playlist_manager\\playlist_manager_listenbrainz.js');
 include('..\\main\\filter_and_query\\remove_duplicates.js');
+include('..\\main\\main_menu\\main_menu_custom.js');
 var prefix = 'lbt';
 
 try {window.DefineScript('ListenBrainz Tools Button', {author:'xxx', features: {drag_n_drop: false}});} catch (e) {/* console.log('Filter Playlist Button loaded.'); */} //May be loaded along other buttons
@@ -72,32 +73,6 @@ addButton({
 				}
 			).btn_up(this.currX, this.currY + this.currH);
 		} else {
-			const properties = this.buttonsProperties;
-			const lb = listenBrainz;
-			async function checkLBToken(lBrainzToken = properties.lBrainzToken[1]) {
-				if (!lBrainzToken.length) {
-					const encryptToken = '********-****-****-****-************';
-					const currToken = properties.lBrainzEncrypt[1] ? encryptToken : properties.lBrainzToken[1];
-					try {lBrainzToken = utils.InputBox(window.ID, 'Enter ListenBrainz user token:', window.Name, currToken, true);} 
-					catch(e) {return false;}
-					if (lBrainzToken === currToken || lBrainzToken === encryptToken) {return false;}
-					if (lBrainzToken.length) {
-						if (!(await lb.validateToken(lBrainzToken))) {fb.ShowPopupMessage('ListenBrainz Token not valid.', window.Name); return false;}
-						const answer = WshShell.Popup('Do you want to encrypt the token?', 0, window.Name, popup.question + popup.yes_no);
-						if (answer === popup.yes) {
-							let pass = '';
-							try {pass = utils.InputBox(window.ID, 'Enter a passowrd:\n(will be required on every use)', window.Name, pass, true);} 
-							catch(e) {return false;}
-							if (!pass.length) {return false;}
-							lBrainzToken = new SimpleCrypto(pass).encrypt(lBrainzToken);
-						}
-						properties.lBrainzEncrypt[1] = answer === popup.yes;
-					}
-					properties.lBrainzToken[1] = lBrainzToken;
-					overwriteProperties(properties);
-				}
-				return true;
-			}
 			listenBrainzmenu.bind(this)().btn_up(this.currX, this.currY + this.currH);
 		}
 	}, null, void(0), (parent) => {
@@ -117,12 +92,40 @@ addButton({
 
 function listenBrainzmenu(bSimulate = false) {
 	if (bSimulate) {return listenBrainzmenu.bind({selItems: {Count: 1}, buttonsProperties: this.buttonsProperties, prefix: this.prefix})(false);}
+	// Helpers
 	const lb = listenBrainz;
 	const properties = this.buttonsProperties;
+	async function checkLBToken(lBrainzToken = properties.lBrainzToken[1]) {
+		if (!lBrainzToken.length) {
+			const encryptToken = '********-****-****-****-************';
+			const currToken = properties.lBrainzEncrypt[1] ? encryptToken : properties.lBrainzToken[1];
+			try {lBrainzToken = utils.InputBox(window.ID, 'Enter ListenBrainz user token:', window.Name, currToken, true);} 
+			catch(e) {return false;}
+			if (lBrainzToken === currToken || lBrainzToken === encryptToken) {return false;}
+			if (lBrainzToken.length) {
+				if (!(await lb.validateToken(lBrainzToken))) {fb.ShowPopupMessage('ListenBrainz Token not valid.', window.Name); return false;}
+				const answer = WshShell.Popup('Do you want to encrypt the token?', 0, window.Name, popup.question + popup.yes_no);
+				if (answer === popup.yes) {
+					let pass = '';
+					try {pass = utils.InputBox(window.ID, 'Enter a passowrd:\n(will be required on every use)', window.Name, pass, true);} 
+					catch(e) {return false;}
+					if (!pass.length) {return false;}
+					lBrainzToken = new SimpleCrypto(pass).encrypt(lBrainzToken);
+				}
+				properties.lBrainzEncrypt[1] = answer === popup.yes;
+			}
+			properties.lBrainzToken[1] = lBrainzToken;
+			overwriteProperties(properties);
+		}
+		return true;
+	}
+	// Menu
 	const menu = new _menu();
 	const bListenBrainz = properties.lBrainzToken[1].length;
 	const bEncrypted = properties.lBrainzEncrypt[1];
-	function selectedFlags(idx = plman.ActivePlaylist) {return (this.selItems && this.selItems.Count ||idx !== -1 && plman.GetPlaylistSelectedItems(idx).Count ? MF_STRING : MF_GRAYED);}
+	const selectedFlags = (idx = plman.ActivePlaylist) => this.selItems && this.selItems.Count || idx !== -1 && plman.GetPlaylistSelectedItems(idx).Count 
+		? MF_STRING 
+		: MF_GRAYED;
 	// Menu
 	{
 		menu.newEntry({entryText: 'Retrieve MBIDs from selection' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
