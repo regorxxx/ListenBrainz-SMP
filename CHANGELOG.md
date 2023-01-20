@@ -12,6 +12,7 @@
 - Buttons: the buttons bar now shows a message when no buttons have been added, left clicking shows a popup with available buttons presets. Right clicking opens the menu to configure the toolbar or add buttons manually.
 ### Removed
 ### Fixed
+- UI: don't show tooltip during buttons drag n drop.
 
 ## [1.0.0] - 2022-10-01
 ### Added
