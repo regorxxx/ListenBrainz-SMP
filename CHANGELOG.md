@@ -11,6 +11,7 @@
 ### Changed
 - Buttons: default method of installation requires now to load the toolbar (no more single buttons support), from there, any button can be loaded as desired.
 - Buttons: the buttons bar now shows a message when no buttons have been added, left clicking shows a popup with available buttons presets. Right clicking opens the menu to configure the toolbar or add buttons manually.
+- UI: unified tooltip structure and available info on all buttons (short description + relevant settings + keyboard modifiers).
 ### Removed
 ### Fixed
 - UI: don't show tooltip during buttons drag n drop.
