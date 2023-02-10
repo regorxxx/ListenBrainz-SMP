@@ -12,10 +12,14 @@
 - Buttons: default method of installation requires now to load the toolbar (no more single buttons support), from there, any button can be loaded as desired.
 - Buttons: the buttons bar now shows a message when no buttons have been added, left clicking shows a popup with available buttons presets. Right clicking opens the menu to configure the toolbar or add buttons manually.
 - UI: unified tooltip structure and available info on all buttons (short description + relevant settings + keyboard modifiers).
+- UI: unified buttons size normalization settings and behavior for all axis modes. 
+- UI: unified button icon alignment on reflow modes.
 ### Removed
 ### Fixed
 - UI: don't show tooltip during buttons drag n drop.
 - UI: background color mismatch when resizing windows and using custom background colors.
+- UI: fixed reflow mode in some cases when resizing back to the required width/height to show all buttons on a single row/column.
+- UI: fixed reflow mode in some cases when normalization mode was not active and buttons had different size; non needed empty space was added in some rows/columns.
 
 ## [1.0.0] - 2022-10-01
 ### Added
