@@ -80,8 +80,8 @@ addButton({
 		const bShift = utils.IsKeyPressed(VK_SHIFT);
 		const bInfo = typeof menu_panelProperties === 'undefined' || menu_panelProperties.bTooltipInfo[1];
 		const selMul = plman.ActivePlaylist !== -1 ? plman.GetPlaylistSelectedItems(plman.ActivePlaylist) : null;
-		let info = 'ListenBrainz tools:';
-		info += '\nToken:' + (parent.buttonsProperties.lBrainzToken[1].length ? '\tOk' : ' \t-missing token-');
+		let info = '';
+		info += 'Token:' + (parent.buttonsProperties.lBrainzToken[1].length ? '\tOk' : ' \t-missing token-');
 		info += '\nPlaylist:\t' +  (plman.ActivePlaylist !== -1 ? plman.GetPlaylistName(plman.ActivePlaylist) : '-none-');
 		info += selMul && selMul.Count ? ' (' + selMul.Count + ' tracks selected)' : ' (No track selected)';
 		if (bShift || bInfo) {
