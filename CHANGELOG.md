@@ -20,7 +20,7 @@
 ### Changed
 ### Removed
 ### Fixed
-- UI: png icons now use a dark-mode version (if available) or gets inverted according to the button text color configuration.
+- UI: png icons now use a dark-mode version (if available) or get inverted according to the button text color configuration.
 
 ## [1.0.0-beta.5] - 2023-03-04
 ### Added
