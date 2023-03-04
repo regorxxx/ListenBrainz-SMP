@@ -2,12 +2,19 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [1.0.0-beta.5](#100-beta5---2023-03-04)
 - [1.0.0-beta.4](#100-beta4---2023-02-22)
 - [1.0.0-beta.3](#100-beta3---2023-02-21)
 - [1.0.0-beta.2](#100-beta2---2023-02-19)
 - [1.0.0-beta.1](#100-beta1---2023-02-15)
 
 ## [Unreleased][]
+### Added
+### Changed
+### Removed
+### Fixed
+
+## [1.0.0-beta.5] - 2023-03-04
 ### Added
 ### Changed
 - UI: tweaked and unified buttons weight and margins, adjusted to scale set and DPI.
@@ -58,7 +65,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.4...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.5...HEAD
+[1.0.0-beta.5]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.4...v1.0.0-beta.5
 [1.0.0-beta.4]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.3...v1.0.0-beta.4
 [1.0.0-beta.3]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.2...v1.0.0-beta.3
 [1.0.0-beta.2]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.1...v1.0.0-beta.2
