@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [1.0.0-beta.6](#100-beta6---2023-03-04)
 - [1.0.0-beta.5](#100-beta5---2023-03-04)
 - [1.0.0-beta.4](#100-beta4---2023-02-22)
 - [1.0.0-beta.3](#100-beta3---2023-02-21)
@@ -13,6 +14,13 @@
 ### Changed
 ### Removed
 ### Fixed
+
+## [1.0.0-beta.6] - 2023-03-04
+### Added
+### Changed
+### Removed
+### Fixed
+- UI: png icons now use a dark-mode version (if available) or gets inverted according to the button text color configuration.
 
 ## [1.0.0-beta.5] - 2023-03-04
 ### Added
@@ -65,7 +73,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.5...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.6...HEAD
+[1.0.0-beta.5]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.5...v1.0.0-beta.6
 [1.0.0-beta.5]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.4...v1.0.0-beta.5
 [1.0.0-beta.4]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.3...v1.0.0-beta.4
 [1.0.0-beta.3]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.2...v1.0.0-beta.3
