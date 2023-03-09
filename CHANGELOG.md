@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [1.0.0-beta.8](#100-beta8---2023-03-09)
 - [1.0.0-beta.7](#100-beta7---2023-03-08)
 - [1.0.0-beta.6](#100-beta6---2023-03-04)
 - [1.0.0-beta.5](#100-beta5---2023-03-04)
@@ -15,6 +16,13 @@
 ### Changed
 ### Removed
 ### Fixed
+
+## [1.0.0-beta.8] - 2023-03-09
+### Added
+### Changed
+### Removed
+### Fixed
+- Crash when using drag n' drop if a button file was loaded (instead of using the toolbar), although this installation method is no longer supported.
 
 ## [1.0.0-beta.7] - 2023-03-08
 ### Added
@@ -81,7 +89,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.7...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.8...HEAD
+[1.0.0-beta.8]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.7...v1.0.0-beta.8
 [1.0.0-beta.7]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.6...v1.0.0-beta.7
 [1.0.0-beta.6]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.5...v1.0.0-beta.6
 [1.0.0-beta.5]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.4...v1.0.0-beta.5
