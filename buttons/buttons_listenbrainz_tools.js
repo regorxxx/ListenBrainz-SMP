@@ -1,5 +1,5 @@
 ﻿'use strict';
-//08/02/23
+//13/03/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -92,7 +92,7 @@ addButton({
 	}, prefix, newButtonsProperties, folders.xxx + 'images\\icons\\listenbrainz_64.png', null),
 });
 
-function listenBrainzmenu(bSimulate = false) {
+function listenBrainzmenu({bSimulate = false} = {}) {
 	if (bSimulate) {return listenBrainzmenu.bind({selItems: {Count: 1}, buttonsProperties: this.buttonsProperties, prefix: this.prefix})(false);}
 	// Helpers
 	const lb = listenBrainz;
