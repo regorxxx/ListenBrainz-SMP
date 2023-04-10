@@ -15,6 +15,7 @@
 ### Added
 ### Changed
 - Helpers: updated helpers.
+- Console: menu entries are no longer logged to console after clicking.
 - Console: multiple improvements when logging to file for FbMetadbHandle, FbMetadbHandleList, Error and unknown instances (totally irrelevant except for debug purposes).
 ### Removed
 ### Fixed
