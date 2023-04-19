@@ -19,6 +19,7 @@
 - Console: multiple improvements when logging to file for FbMetadbHandle, FbMetadbHandleList, Error and unknown instances (totally irrelevant except for debug purposes).
 ### Removed
 ### Fixed
+- ListenBrainz: workaround for windows caching of server requests (so sometimes data was not updated with changes on real time).
 
 ## [1.0.0-beta.8] - 2023-03-09
 ### Added
