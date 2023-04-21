@@ -13,13 +13,16 @@
 
 ## [Unreleased][]
 ### Added
+- YouTube: new option to look for not found tracks on library at YouTube when retrieving playlists. Requires 'foo_youtube' component installed. When links are loaded, the entire process is asynchronous and playlist filling may take some seconds. Track order is ensured in the process (contrary to other scripts relying on foobar path loading).
 ### Changed
+- Playlists: pressing shift while clicking on any menu entry which creates a playlist will force tracks shuffling (instead of following the order given by ListenBrainz).
 - Helpers: updated helpers.
 - Console: menu entries are no longer logged to console after clicking.
 - Console: multiple improvements when logging to file for FbMetadbHandle, FbMetadbHandleList, Error and unknown instances (totally irrelevant except for debug purposes).
 ### Removed
 ### Fixed
 - ListenBrainz: workaround for windows caching of server requests (so sometimes data was not updated with changes on real time).
+- Query fixes for track's title or artist having quotes.
 
 ## [1.0.0-beta.8] - 2023-03-09
 ### Added

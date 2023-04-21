@@ -1,5 +1,5 @@
 ﻿'use strict';
-//13/03/23
+//21/04/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -11,6 +11,7 @@ include('..\\helpers\\helpers_xxx_properties.js');
 include('..\\helpers\\buttons_xxx_menu.js');
 include('..\\helpers\\helpers_xxx_playlists.js');
 include('..\\main\\playlist_manager\\playlist_manager_listenbrainz.js');
+include('..\\main\\playlist_manager\\playlist_manager_youtube.js');
 include('..\\main\\filter_and_query\\remove_duplicates.js');
 include('..\\main\\main_menu\\main_menu_custom.js');
 var prefix = 'lbt';
@@ -24,7 +25,8 @@ var newButtonsProperties = { //You can simply add new properties here
 	bLookupMBIDs: 	['Lookup for missing track MBIDs?', true	, {func: isBoolean}, true ],
 	bAdvTitle:		['Advanced RegExp title matching?', true	, {func: isBoolean}, true],
 	bDynamicMenus:	['Expose menus at  \'File\\Spider Monkey Panel\\Script commands\'', false, {func: isBoolean}, false],
-	bIconMode:		['Icon-only mode?', false, {func: isBoolean}, false]
+	bIconMode:		['Icon-only mode?', false, {func: isBoolean}, false],
+	bYouTube:		['Lookup for missing tracks on YouTube?', isYouTube, {func: isBoolean}, isYouTube],
 };
 setProperties(newButtonsProperties, prefix, 0); //This sets all the panel properties at once
 newButtonsProperties = getPropertiesPairs(newButtonsProperties, prefix, 0);
@@ -155,7 +157,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 		[
 			{key: 'love', title: 'Love selected tracks'},
 			{key: 'hate', title: 'Hate selected tracks'},
-			{key: 'remove', title: 'Clear feedback on selected tracks'}		
+			{key: 'remove', title: 'Clear feedback on selected tracks'}
 		].forEach((entry) =>  {
 			menu.newEntry({menuName, entryText: entry.title + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 				if (!await checkLBToken()) {return false;}
@@ -236,6 +238,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				{params: {range: 'all_time', count: 200}, title: 'Top tracks all time'}
 			].forEach((entry) =>  {
 				menu.newEntry({menuName: subMenuName, entryText: entry.title + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
+					const bShift = utils.IsKeyPressed(VK_SHIFT);
 					if (!await checkLBToken()) {return false;}
 					const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
 					if (!token) {return;}
@@ -257,7 +260,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 					fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title + ' ' + _p(user));
 					const queryArr = mbids.map((mbid, i) => {
 						const tagArr = ['TITLE', 'ARTIST', 'ALBUM']
-							.map((key) => {return {key, val: _asciify(tags[key][i]).toLowerCase()};});
+							.map((key) => {return {key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g,'')).toLowerCase()};});
 						const bMBID = mbid.length > 0;
 						const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
 						if (!bMeta && !bMBID) {return;}
@@ -269,15 +272,49 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 						, 'OR');
 						return query;
 					}).filter(Boolean);
-					const query = query_join(queryArr, 'OR');
-					let handleList;
-					try {handleList = fb.GetQueryItems(fb.GetLibraryItems(), query);} // Sanity check
-					catch (e) {fb.ShowPopupMessage('Query not valid. Check query:\n' + query); return;}
-					// Filter in 3 steps
-					handleList = removeDuplicatesV2({handleList, checkKeys: ['MUSICBRAINZ_TRACKID']});
-					handleList = removeDuplicatesV2({handleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : properties.bAdvTitle[1]});
-					handleList.OrderByFormat(fb.TitleFormat('$rand()'), 1);
-					sendToPlaylist(handleList, 'ListenBrainz ' + entry.title + ' ' + _p(user));
+					const libItems = fb.GetLibraryItems();
+					const notFound = [];
+					const items = queryArr.map((query, i) => {
+						let itemHandleList;
+						try {itemHandleList = fb.GetQueryItems(libItems, query);} // Sanity check
+						catch (e) {fb.ShowPopupMessage('Query not valid. Check query:\n' + query); return;}
+						// Filter
+						if (itemHandleList.Count) {
+							itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID']});
+							itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : properties.bAdvTitle[1]});
+							return itemHandleList[0];
+						}
+						notFound.push({creator: tags.ARTIST[i], creator: tags.TITLE[i], tags: {ALBUM: tags.ALBUM[i], MUSICBRAINZ_TRACKID: mbids[i]}});
+						return null;
+					});
+					const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entry.title + ' ' + _p(user), true);
+					if (notFound.length && properties.bYouTube[1]) {
+						// Send request in parallel every x ms and process when all are done
+						this.switchAnimation('YouTube Scrapping' , true);
+						Promise.parallel(notFound, youtube.searchForYoutubeTrack, 15).then((results) => {
+							let j = 0;
+							const itemsLen = items.length;
+							results.forEach((result, i) => {
+								for (void(0); j <= itemsLen; j++) {
+									if (result.status !== 'fulfilled') {break;}
+									const link = result.value;
+									if (!link || !link.length) {break;}
+									if (!items[j]) {
+										items[j] = link.url;
+										break;
+									}
+								}
+							});
+							if (bShift) {items.shuffle();}
+							plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
+							plman.ActivePlaylist = idx;
+							this.switchAnimation('YouTube Scrapping' , false);
+						});
+					} else {
+						if (bShift) {items.shuffle();}
+						plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
+						plman.ActivePlaylist = idx;
+					}
 				}, flags: bListenBrainz ? MF_STRING : MF_GRAYED, data: {bDynamicMenu: true}});
 			});
 		});
@@ -362,6 +399,16 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				overwriteProperties(properties);
 			}, flags: bListenBrainz ? MF_STRING: MF_GRAYED});
 			menu.newCheckMenu(menuName, 'Lookup for missing track MBIDs?', void(0), () => {return properties.bLookupMBIDs[1];});
+		}
+		{
+			menu.newEntry({menuName, entryText: 'Lookup for missing tracks on YouTube?', func: () => {
+				properties.bYouTube[1] = !properties.bYouTube[1];
+				if (properties.bYouTube[1]) {
+					fb.ShowPopupMessage('By default, tracks retrieved from ListenBrainz (to create playlists) are matched against the library.\n\When this option is enabled, not found items will be replaced by YouTube links.\n\nUsing this option takes some seconds while scrapping youtube, the button will be animated during the process.', window.Name);
+				}
+				overwriteProperties(properties);
+			}, flags: bListenBrainz && isYouTube ? MF_STRING: MF_GRAYED});
+			menu.newCheckMenu(menuName, 'Lookup for missing tracks on YouTube?', void(0), () => {return properties.bYouTube[1];});
 		}
 	}
 	return menu;
