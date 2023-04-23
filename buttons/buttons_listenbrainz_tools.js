@@ -1,5 +1,5 @@
 ﻿'use strict';
-//21/04/23
+//23/04/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -284,10 +284,9 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 							itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : properties.bAdvTitle[1]});
 							return itemHandleList[0];
 						}
-						notFound.push({creator: tags.ARTIST[i], creator: tags.TITLE[i], tags: {ALBUM: tags.ALBUM[i], MUSICBRAINZ_TRACKID: mbids[i]}});
+						notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {ALBUM: tags.ALBUM[i], MUSICBRAINZ_TRACKID: mbids[i]}});
 						return null;
 					});
-					const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entry.title + ' ' + _p(user), true);
 					if (notFound.length && properties.bYouTube[1]) {
 						// Send request in parallel every x ms and process when all are done
 						this.switchAnimation('YouTube Scrapping' , true);
@@ -306,12 +305,16 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								}
 							});
 							if (bShift) {items.shuffle();}
+							const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entry.title + ' ' + _p(user), true);
+							plman.ClearPlaylist(idx);
 							plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
 							plman.ActivePlaylist = idx;
 							this.switchAnimation('YouTube Scrapping' , false);
 						});
 					} else {
 						if (bShift) {items.shuffle();}
+						const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entry.title + ' ' + _p(user), true);
+						plman.ClearPlaylist(idx);
 						plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
 						plman.ActivePlaylist = idx;
 					}
@@ -335,13 +338,91 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
 				if (!token) {return;}
 				const user = await lb.retrieveUser(token);
-				const response = await lb.getRecommendedRecordings(user, entry.params, token);
+				let response = await lb.getRecommendedRecordings(user, entry.params, token);
 				const mbids = [];
-				const tags = {TITLE: [], ARTIST: [], ALBUM: []};
+				const tags = {TITLE: [], ARTIST: []};
 				response.forEach((recording, i) => {
 					mbids.push(recording.recording_mbid || '');
+					tags.TITLE.push('');
+					tags.ARTIST.push('');
 				});
+				const infoNames = ['recording_mbid', 'recording_name', 'artist_credit_name'];
+				response = await lb.lookupRecordingInfoByMBIDs(mbids, infoNames, token);
+				const count = mbids.length;
+				for (let i = 0; i < count; i++) {
+					if (mbids[i] === response.recording_mbid[i]) {
+						if (response.recording_name[i]) {tags.TITLE[i] = response.recording_name[i];}
+						if (response.artist_credit_name[i]) {tags.ARTIST[i] = response.artist_credit_name[i];}
+					}
+				}
+				const report = entry.title + ': ' + count + '\n\n' + mbids.map((mbid, i) => {
+					return tags.TITLE[i] + ' - ' + tags.ARTIST[i] + ': ' + mbid;
+				}).join('\n');
+				fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title + ' ' + _p(user));
+				
 				const queryArr = mbids.map((mbid, i) => {
+					const tagArr = ['TITLE', 'ARTIST']
+						.map((key) => {return {key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g,'')).toLowerCase()};});
+					const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
+					if (!bMeta) {return;}
+					const query = query_join([
+						bMeta ?  tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') : '',
+						bMeta ?  tagArr.slice(0, 2).map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
+						'MUSICBRAINZ_TRACKID IS ' + mbid
+						].filter(Boolean)
+					, 'OR');
+					return query;
+				}).filter(Boolean);
+				const libItems = fb.GetLibraryItems();
+				const notFound = [];
+				const items = queryArr.map((query, i) => {
+					let itemHandleList;
+					try {itemHandleList = fb.GetQueryItems(libItems, query);} // Sanity check
+					catch (e) {fb.ShowPopupMessage('Query not valid. Check query:\n' + query); return;}
+					// Filter
+					if (itemHandleList.Count) {
+						itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID']});
+						itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : properties.bAdvTitle[1]});
+						return itemHandleList[0];
+					}
+					notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {MUSICBRAINZ_TRACKID: mbids[i]}});
+					return null;
+				});
+				if (notFound.length && properties.bYouTube[1]) {
+					// Send request in parallel every x ms and process when all are done
+					this.switchAnimation('YouTube Scrapping' , true);
+					Promise.parallel(notFound, youtube.searchForYoutubeTrack, 15).then((results) => {
+						let j = 0;
+						const itemsLen = items.length;
+						results.forEach((result, i) => {
+							for (void(0); j <= itemsLen; j++) {
+								if (result.status !== 'fulfilled') {break;}
+								const link = result.value;
+								if (!link || !link.length) {break;}
+								if (!items[j]) {
+									items[j] = link.url;
+									break;
+								}
+							}
+						});
+						if (bShift) {items.shuffle();}
+						const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entry.title + ' ' + _p(user), true);
+						plman.ClearPlaylist(idx);
+						plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
+						plman.ActivePlaylist = idx;
+						this.switchAnimation('YouTube Scrapping' , false);
+					});
+				} else {
+					if (bShift) {items.shuffle();}
+					const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entry.title + ' ' + _p(user), true);
+					plman.ClearPlaylist(idx);
+					plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
+					plman.ActivePlaylist = idx;
+				}
+				
+				
+				
+/* 				const queryArr = mbids.map((mbid, i) => {
 					return mbid.length > 0 ? 'MUSICBRAINZ_TRACKID IS ' + mbid : null;
 				}).filter(Boolean);
 				const query = query_join(queryArr, 'OR');
@@ -351,7 +432,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				// Filter in 3 steps
 				handleList = removeDuplicatesV2({handleList, checkKeys: ['MUSICBRAINZ_TRACKID']});
 				if (bShift) {handleList.OrderByFormat(fb.TitleFormat('$rand()'), 1);}
-				sendToPlaylist(handleList, 'ListenBrainz ' + entry.title + ' ' + _p(user));
+				sendToPlaylist(handleList, 'ListenBrainz ' + entry.title + ' ' + _p(user)); */
 			}, flags: bListenBrainz ? MF_STRING : MF_GRAYED, data: {bDynamicMenu: true}});
 		});
 	}
