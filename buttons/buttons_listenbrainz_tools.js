@@ -330,6 +330,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 			{params: {artist_type: 'raw', count: 200}, title: 'Raw recommendations'},
 		].forEach((entry) =>  {
 			menu.newEntry({menuName, entryText: entry.title + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
+				const bShift = utils.IsKeyPressed(VK_SHIFT);
 				if (!await checkLBToken()) {return false;}
 				const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
 				if (!token) {return;}
@@ -337,31 +338,11 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				const response = await lb.getRecommendedRecordings(user, entry.params, token);
 				const mbids = [];
 				const tags = {TITLE: [], ARTIST: [], ALBUM: []};
-				const report = entry.title + ': ' + response.length + '\n\n' + response.map((recording, i) => {
-					const mbid = recording.recording_mbid || '';
-					const title = recording.track_name || '';
-					const artist = recording.artist_name || '';
-					const release = recording.release_name || '';
-					mbids.push(mbid);
-					tags.TITLE.push(title);
-					tags.ARTIST.push(artist);
-					tags.ALBUM.push(release);
-					return title + ' - ' + artist + ': ' + mbid;
-				}).join('\n');
-				fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title + ' ' + _p(user));
+				response.forEach((recording, i) => {
+					mbids.push(recording.recording_mbid || '');
+				});
 				const queryArr = mbids.map((mbid, i) => {
-					const tagArr = ['TITLE', 'ARTIST', 'ALBUM']
-						.map((key) => {return {key, val: _asciify(tags[key][i]).toLowerCase()};});
-					const bMBID = mbid.length > 0;
-					const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
-					if (!bMeta && !bMBID) {return;}
-					const query = query_join([
-						bMeta ?  tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') : '',
-						bMeta ?  tagArr.slice(0, 2).map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
-						bMBID ? 'MUSICBRAINZ_TRACKID IS ' + mbid : ''
-						].filter(Boolean)
-					, 'OR');
-					return query;
+					return mbid.length > 0 ? 'MUSICBRAINZ_TRACKID IS ' + mbid : null;
 				}).filter(Boolean);
 				const query = query_join(queryArr, 'OR');
 				let handleList;
@@ -369,8 +350,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				catch (e) {fb.ShowPopupMessage('Query not valid. Check query:\n' + query); return;}
 				// Filter in 3 steps
 				handleList = removeDuplicatesV2({handleList, checkKeys: ['MUSICBRAINZ_TRACKID']});
-				handleList = removeDuplicatesV2({handleList, checkKeys: [globTags.title, 'ARTIST']});
-				handleList.OrderByFormat(fb.TitleFormat('$rand()'), 1);
+				if (bShift) {handleList.OrderByFormat(fb.TitleFormat('$rand()'), 1);}
 				sendToPlaylist(handleList, 'ListenBrainz ' + entry.title + ' ' + _p(user));
 			}, flags: bListenBrainz ? MF_STRING : MF_GRAYED, data: {bDynamicMenu: true}});
 		});
