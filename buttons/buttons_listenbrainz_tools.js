@@ -1,5 +1,5 @@
 ﻿'use strict';
-//23/04/23
+//24/04/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -27,6 +27,7 @@ var newButtonsProperties = { //You can simply add new properties here
 	bDynamicMenus:	['Expose menus at  \'File\\Spider Monkey Panel\\Script commands\'', false, {func: isBoolean}, false],
 	bIconMode:		['Icon-only mode?', false, {func: isBoolean}, false],
 	bYouTube:		['Lookup for missing tracks on YouTube?', isYouTube, {func: isBoolean}, isYouTube],
+	firstPopup:		['ListenBrainz Tools: Fired once', false, {func: isBoolean}, false]
 };
 setProperties(newButtonsProperties, prefix, 0); //This sets all the panel properties at once
 newButtonsProperties = getPropertiesPairs(newButtonsProperties, prefix, 0);
@@ -91,7 +92,37 @@ addButton({
 			info += '\n(Shift + L. Click to open config menu)';
 		}
 		return info;
-	}, prefix, newButtonsProperties, folders.xxx + 'images\\icons\\listenbrainz_64.png', null),
+	}, prefix, newButtonsProperties, folders.xxx + 'images\\icons\\listenbrainz_64.png', null, {lBrainzTokenListener: false}, 
+	{
+		on_notify_data: (parent, name, info) => {
+			if (name === 'bio_imgChange' || name === 'biographyTags' || name === 'bio_chkTrackRev' || name === 'xxx-scripts: panel name reply' || name === 'precacheLibraryPaths') {return;}
+			switch (name) {
+				case 'xxx-scripts: lb token': {
+					if (parent.buttonsProperties.lBrainzToken[1].length) {window.NotifyOthers('xxx-scripts: lb token reply', {lBrainzToken: parent.buttonsProperties.lBrainzToken[1], lBrainzEncrypt: parent.buttonsProperties.lBrainzEncrypt[1], name: window.Name + ' - ' + parent.name});}
+					break;
+				}
+				case 'xxx-scripts: lb token reply': {
+					if (parent.lBrainzTokenListener) {
+						console.log('lb token reply: using token from another instance.', window.Name + ' - ' + parent.name, _p('from ' + info.name));
+						parent.buttonsProperties.lBrainzToken[1] = info.lBrainzToken;
+						parent.buttonsProperties.lBrainzEncrypt[1] = info.lBrainzEncrypt;
+						overwriteProperties(parent.buttonsProperties);
+						parent.lBrainzTokenListener = false;
+					}
+					break;
+				}
+			}
+		}
+	},
+	(parent) => {
+		if (!parent.buttonsProperties.firstPopup[1] && !parent.buttonsProperties.lBrainzToken[1].length) {
+			parent.lBrainzTokenListener = true;
+			setTimeout(() => window.NotifyOthers('xxx-scripts: lb token', null), 3000);
+			setTimeout(() => {parent.lBrainzTokenListener = false;}, 6000);
+			parent.buttonsProperties.firstPopup[1] = true;
+			overwriteProperties(parent.buttonsProperties);
+		}
+	}),
 });
 
 function listenBrainzmenu({bSimulate = false} = {}) {
@@ -227,7 +258,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 	menu.newEntry({entryText: 'sep'});
 	{
 		const menuName = menu.newMenu('Statistics...');
-		menu.newEntry({menuName, entryText: 'Create playlists from Top Listens:', flags: MF_GRAYED});
+		menu.newEntry({menuName, entryText: 'By Top Listens: (Shift + Click to randomize)', flags: MF_GRAYED});
 		menu.newEntry({menuName, entryText: 'sep'});
 		['Sitewide', 'By user'].forEach((name, i) => {
 			const subMenuName = menu.newMenu(name, menuName);
@@ -242,82 +273,97 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 					if (!await checkLBToken()) {return false;}
 					const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
 					if (!token) {return;}
-					const user = await (i ? lb.retrieveUser(token) : 'sitewide');
-					const response = await lb.getTopRecordings(user, entry.params, token);
 					const mbids = [];
 					const tags = {TITLE: [], ARTIST: [], ALBUM: []};
-					const report = entry.title + ': ' + response.length + '\n\n' + response.map((recording, i) => {
-						const mbid = recording.recording_mbid || '';
-						const title = recording.track_name || '';
-						const artist = recording.artist_name || '';
-						const release = recording.release_name || '';
-						mbids.push(mbid);
-						tags.TITLE.push(title);
-						tags.ARTIST.push(artist);
-						tags.ALBUM.push(release);
-						return title + ' - ' + artist + ': ' + mbid;
-					}).join('\n');
-					fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title + ' ' + _p(user));
-					const queryArr = mbids.map((mbid, i) => {
-						const tagArr = ['TITLE', 'ARTIST', 'ALBUM']
-							.map((key) => {return {key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g,'')).toLowerCase()};});
-						const bMBID = mbid.length > 0;
-						const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
-						if (!bMeta && !bMBID) {return;}
-						const query = query_join([
-							bMeta ?  tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') : '',
-							bMeta ?  tagArr.slice(0, 2).map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
-							bMBID ? 'MUSICBRAINZ_TRACKID IS ' + mbid : ''
-							].filter(Boolean)
-						, 'OR');
-						return query;
-					}).filter(Boolean);
-					const libItems = fb.GetLibraryItems();
-					const notFound = [];
-					const items = queryArr.map((query, i) => {
-						let itemHandleList;
-						try {itemHandleList = fb.GetQueryItems(libItems, query);} // Sanity check
-						catch (e) {fb.ShowPopupMessage('Query not valid. Check query:\n' + query); return;}
-						// Filter
-						if (itemHandleList.Count) {
-							itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID']});
-							itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : properties.bAdvTitle[1]});
-							return itemHandleList[0];
-						}
-						notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {ALBUM: tags.ALBUM[i], MUSICBRAINZ_TRACKID: mbids[i]}});
-						return null;
-					});
-					if (notFound.length && properties.bYouTube[1]) {
-						// Send request in parallel every x ms and process when all are done
-						this.switchAnimation('YouTube Scrapping' , true);
-						Promise.parallel(notFound, youtube.searchForYoutubeTrack, 15).then((results) => {
-							let j = 0;
-							const itemsLen = items.length;
-							results.forEach((result, i) => {
-								for (void(0); j <= itemsLen; j++) {
-									if (result.status !== 'fulfilled') {break;}
-									const link = result.value;
-									if (!link || !link.length) {break;}
-									if (!items[j]) {
-										items[j] = link.url;
-										break;
-									}
+					let count = 0;
+					const user = await (i ? lb.retrieveUser(token) : 'sitewide');
+					this.switchAnimation('ListeBrainz data retrieval', true);
+					lb.getTopRecordings(user, entry.params, token)
+						.then((recordings) => {
+							const report = entry.title + ': ' + recordings.length + '\n\n' + recordings.map((recording, i) => {
+								const mbid = recording.recording_mbid || '';
+								const title = recording.track_name || '';
+								const artist = recording.artist_name || '';
+								const release = recording.release_name || '';
+								mbids.push(mbid);
+								tags.TITLE.push(title);
+								tags.ARTIST.push(artist);
+								tags.ALBUM.push(release);
+								return title + ' - ' + artist + ': ' + mbid;
+							}).join('\n');
+							fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title + ' ' + _p(user));
+							const queryArr = mbids.map((mbid, i) => {
+								const tagArr = ['TITLE', 'ARTIST', 'ALBUM']
+									.map((key) => {return {key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g,'')).toLowerCase()};});
+								const bMBID = mbid.length > 0;
+								const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
+								if (!bMeta && !bMBID) {return;}
+								const query = query_join([
+									bMeta ?  tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') : '',
+									bMeta ?  tagArr.slice(0, 2).map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
+									bMBID ? 'MUSICBRAINZ_TRACKID IS ' + mbid : ''
+									].filter(Boolean)
+								, 'OR');
+								return query;
+							}).filter(Boolean);
+							const libItems = fb.GetLibraryItems();
+							const notFound = [];
+							const items = queryArr.map((query, i) => {
+								let itemHandleList;
+								try {itemHandleList = fb.GetQueryItems(libItems, query);} // Sanity check
+								catch (e) {fb.ShowPopupMessage('Query not valid. Check query:\n' + query); return;}
+								// Filter
+								if (itemHandleList.Count) {
+									itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID']});
+									itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : properties.bAdvTitle[1]});
+									return itemHandleList[0];
 								}
+								notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {ALBUM: tags.ALBUM[i], MUSICBRAINZ_TRACKID: mbids[i]}});
+								return null;
 							});
-							if (bShift) {items.shuffle();}
-							const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entry.title + ' ' + _p(user), true);
-							plman.ClearPlaylist(idx);
-							plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
-							plman.ActivePlaylist = idx;
-							this.switchAnimation('YouTube Scrapping' , false);
+							return {notFound, items};
+						})
+						.then (({notFound, items}) => {
+							if (notFound.length && properties.bYouTube[1]) {
+								// Send request in parallel every x ms and process when all are done
+								this.switchAnimation('YouTube Scrapping' , true);
+								Promise.parallel(notFound, youtube.searchForYoutubeTrack, 5).then((results) => {
+									let j = 0;
+									const itemsLen = items.length;
+									results.forEach((result, i) => {
+										for (void(0); j <= itemsLen; j++) {
+											if (result.status !== 'fulfilled') {
+												console.log(result.status, result.reason.message);
+												break;
+											}
+											const link = result.value;
+											if (!link || !link.length) {break;}
+											if (!items[j]) {
+												items[j] = link.url;
+												break;
+											}
+										}
+									});
+									if (bShift) {items.shuffle();}
+									const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entry.title + ' ' + _p(user), true);
+									plman.ClearPlaylist(idx);
+									plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
+									plman.ActivePlaylist = idx;
+								})
+								.finally(() => {
+									this.switchAnimation('YouTube Scrapping', false);
+								});
+							} else {
+								if (bShift) {items.shuffle();}
+								const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entry.title + ' ' + _p(user), true);
+								plman.ClearPlaylist(idx);
+								plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
+								plman.ActivePlaylist = idx;
+							}
+						})
+						.finally((a) => {
+							if (this.isAnimationActive('ListeBrainz data retrieval')) {this.switchAnimation('ListeBrainz data retrieval', false);}
 						});
-					} else {
-						if (bShift) {items.shuffle();}
-						const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entry.title + ' ' + _p(user), true);
-						plman.ClearPlaylist(idx);
-						plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
-						plman.ActivePlaylist = idx;
-					}
 				}, flags: bListenBrainz ? MF_STRING : MF_GRAYED, data: {bDynamicMenu: true}});
 			});
 		});
@@ -325,7 +371,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 	menu.newEntry({entryText: 'sep'});
 	{
 		const menuName = menu.newMenu('Track recommendations...');
-		menu.newEntry({menuName, entryText: 'User specific recommendations:', flags: MF_GRAYED});
+		menu.newEntry({menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED});
 		menu.newEntry({menuName, entryText: 'sep'});
 		[
 			{params: {artist_type: 'top', count: 200}, title: 'Top artist'},
@@ -337,102 +383,103 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				if (!await checkLBToken()) {return false;}
 				const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
 				if (!token) {return;}
-				const user = await lb.retrieveUser(token);
-				let response = await lb.getRecommendedRecordings(user, entry.params, token);
 				const mbids = [];
 				const tags = {TITLE: [], ARTIST: []};
-				response.forEach((recording, i) => {
-					mbids.push(recording.recording_mbid || '');
-					tags.TITLE.push('');
-					tags.ARTIST.push('');
-				});
-				const infoNames = ['recording_mbid', 'recording_name', 'artist_credit_name'];
-				response = await lb.lookupRecordingInfoByMBIDs(mbids, infoNames, token);
-				const count = mbids.length;
-				for (let i = 0; i < count; i++) {
-					if (mbids[i] === response.recording_mbid[i]) {
-						if (response.recording_name[i]) {tags.TITLE[i] = response.recording_name[i];}
-						if (response.artist_credit_name[i]) {tags.ARTIST[i] = response.artist_credit_name[i];}
-					}
-				}
-				const report = entry.title + ': ' + count + '\n\n' + mbids.map((mbid, i) => {
-					return tags.TITLE[i] + ' - ' + tags.ARTIST[i] + ': ' + mbid;
-				}).join('\n');
-				fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title + ' ' + _p(user));
-				
-				const queryArr = mbids.map((mbid, i) => {
-					const tagArr = ['TITLE', 'ARTIST']
-						.map((key) => {return {key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g,'')).toLowerCase()};});
-					const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
-					if (!bMeta) {return;}
-					const query = query_join([
-						bMeta ?  tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') : '',
-						bMeta ?  tagArr.slice(0, 2).map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
-						'MUSICBRAINZ_TRACKID IS ' + mbid
-						].filter(Boolean)
-					, 'OR');
-					return query;
-				}).filter(Boolean);
-				const libItems = fb.GetLibraryItems();
-				const notFound = [];
-				const items = queryArr.map((query, i) => {
-					let itemHandleList;
-					try {itemHandleList = fb.GetQueryItems(libItems, query);} // Sanity check
-					catch (e) {fb.ShowPopupMessage('Query not valid. Check query:\n' + query); return;}
-					// Filter
-					if (itemHandleList.Count) {
-						itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID']});
-						itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : properties.bAdvTitle[1]});
-						return itemHandleList[0];
-					}
-					notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {MUSICBRAINZ_TRACKID: mbids[i]}});
-					return null;
-				});
-				if (notFound.length && properties.bYouTube[1]) {
-					// Send request in parallel every x ms and process when all are done
-					this.switchAnimation('YouTube Scrapping' , true);
-					Promise.parallel(notFound, youtube.searchForYoutubeTrack, 15).then((results) => {
-						let j = 0;
-						const itemsLen = items.length;
-						results.forEach((result, i) => {
-							for (void(0); j <= itemsLen; j++) {
-								if (result.status !== 'fulfilled') {break;}
-								const link = result.value;
-								if (!link || !link.length) {break;}
-								if (!items[j]) {
-									items[j] = link.url;
-									break;
-								}
-							}
+				let count = 0;
+				const user = await lb.retrieveUser(token);
+				this.switchAnimation('ListeBrainz data retrieval', true);
+				lb.getRecommendedRecordings(user, entry.params, token)
+					.then((recommendations) => {
+						recommendations.forEach((recording, i) => {
+							mbids.push(recording.recording_mbid || '');
+							tags.TITLE.push('');
+							tags.ARTIST.push('');
 						});
-						if (bShift) {items.shuffle();}
-						const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entry.title + ' ' + _p(user), true);
-						plman.ClearPlaylist(idx);
-						plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
-						plman.ActivePlaylist = idx;
-						this.switchAnimation('YouTube Scrapping' , false);
+						count = mbids.length;
+						const infoNames = ['recording_mbid', 'recording_name', 'artist_credit_name'];
+						return lb.lookupRecordingInfoByMBIDs(mbids, infoNames, token);
+					})
+					.then((info) => {
+						this.switchAnimation('ListeBrainz data retrieval', false);
+						for (let i = 0; i < count; i++) {
+							if (mbids[i] === info.recording_mbid[i]) {
+								if (info.recording_name[i]) {tags.TITLE[i] = info.recording_name[i];}
+								if (info.artist_credit_name[i]) {tags.ARTIST[i] = info.artist_credit_name[i];}
+							}
+						}
+						const report = entry.title + ': ' + count + '\n\n' + mbids.map((mbid, i) => {
+							return tags.TITLE[i] + ' - ' + tags.ARTIST[i] + ': ' + mbid;
+						}).join('\n');
+						fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title + ' ' + _p(user));
+						const queryArr = mbids.map((mbid, i) => {
+							const tagArr = ['TITLE', 'ARTIST']
+								.map((key) => {return {key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g,'')).toLowerCase()};});
+							const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
+							if (!bMeta) {return;}
+							const query = query_join([
+								bMeta ?  tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') : '',
+								bMeta ?  tagArr.slice(0, 2).map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
+								'MUSICBRAINZ_TRACKID IS ' + mbid
+								].filter(Boolean)
+							, 'OR');
+							return query;
+						}).filter(Boolean);
+						const libItems = fb.GetLibraryItems();
+						const notFound = [];
+						const items = queryArr.map((query, i) => {
+							let itemHandleList;
+							try {itemHandleList = fb.GetQueryItems(libItems, query);} // Sanity check
+							catch (e) {fb.ShowPopupMessage('Query not valid. Check query:\n' + query); return;}
+							// Filter
+							if (itemHandleList.Count) {
+								itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID']});
+								itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : properties.bAdvTitle[1]});
+								return itemHandleList[0];
+							}
+							notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {MUSICBRAINZ_TRACKID: mbids[i]}});
+							return null;
+						});
+						return {notFound, items};
+					})
+					.then(({notFound, items}) => {
+						console.log(items.length)
+						if (notFound.length && properties.bYouTube[1]) {
+							// Send request in parallel every x ms and process when all are done
+							this.switchAnimation('YouTube Scrapping', true);
+							Promise.parallel(notFound, youtube.searchForYoutubeTrack, 15).then((results) => {
+								let j = 0;
+								const itemsLen = items.length;
+								results.forEach((result, i) => {
+									for (void(0); j <= itemsLen; j++) {
+										if (result.status !== 'fulfilled') {break;}
+										const link = result.value;
+										if (!link || !link.length) {break;}
+										if (!items[j]) {
+											items[j] = link.url;
+											break;
+										}
+									}
+								});
+								if (bShift) {items.shuffle();}
+								const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entry.title + ' ' + _p(user), true);
+								plman.ClearPlaylist(idx);
+								plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
+								plman.ActivePlaylist = idx;
+							})
+							.finally(() => {
+								this.switchAnimation('YouTube Scrapping', false);
+							});
+						} else {
+							if (bShift) {items.shuffle();}
+							const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entry.title + ' ' + _p(user), true);
+							plman.ClearPlaylist(idx);
+							plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
+							plman.ActivePlaylist = idx;
+						}
+					})
+					.finally(() => {
+						if (this.isAnimationActive('ListeBrainz data retrieval')) {this.switchAnimation('ListeBrainz data retrieval', false);}
 					});
-				} else {
-					if (bShift) {items.shuffle();}
-					const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entry.title + ' ' + _p(user), true);
-					plman.ClearPlaylist(idx);
-					plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
-					plman.ActivePlaylist = idx;
-				}
-				
-				
-				
-/* 				const queryArr = mbids.map((mbid, i) => {
-					return mbid.length > 0 ? 'MUSICBRAINZ_TRACKID IS ' + mbid : null;
-				}).filter(Boolean);
-				const query = query_join(queryArr, 'OR');
-				let handleList;
-				try {handleList = fb.GetQueryItems(fb.GetLibraryItems(), query);} // Sanity check
-				catch (e) {fb.ShowPopupMessage('Query not valid. Check query:\n' + query); return;}
-				// Filter in 3 steps
-				handleList = removeDuplicatesV2({handleList, checkKeys: ['MUSICBRAINZ_TRACKID']});
-				if (bShift) {handleList.OrderByFormat(fb.TitleFormat('$rand()'), 1);}
-				sendToPlaylist(handleList, 'ListenBrainz ' + entry.title + ' ' + _p(user)); */
 			}, flags: bListenBrainz ? MF_STRING : MF_GRAYED, data: {bDynamicMenu: true}});
 		});
 	}
@@ -442,6 +489,15 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 		{
 			menu.newEntry({menuName, entryText: 'Set token...', func: async () => {return await checkLBToken('');}});
 			menu.newCheckMenu(menuName, 'Set token...', void(0), () => {return properties.lBrainzToken[1].length ? true : false;});
+			menu.newEntry({menuName, entryText: 'Retrieve token from other panels...', func: () => {
+				this.lBrainzTokenListener = true;
+				let cache = {token: properties.lBrainzToken[1], encrypted: properties.lBrainzEncrypt[1]};
+				window.NotifyOthers('xxx-scripts: lb token', null);
+				setTimeout(() => {
+					this.lBrainzTokenListener = false;
+					fb.ShowPopupMessage('ListenBrainz token report:\n\nOld value:  ' + cache.toStr(true) + '\nNew value:  ' + {token: properties.lBrainzToken[1], encrypted: properties.lBrainzEncrypt[1]}.toStr(true), window.Name);
+				}, 1500);
+			}});
 			menu.newEntry({menuName, entryText: 'Open user profile'  + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 				if (!await checkLBToken()) {return;}
 				const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;

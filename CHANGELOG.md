@@ -14,6 +14,8 @@
 ## [Unreleased][]
 ### Added
 - YouTube: new option to look for not found tracks on library at YouTube when retrieving playlists. Requires 'foo_youtube' component installed. When links are loaded, the entire process is asynchronous and playlist filling may take some seconds. Track order is ensured in the process (contrary to other scripts relying on foobar path loading).
+- Token: on first init, panel will try to retrieve user token from other panels (like [Playlist-Manager-SMP](https://github.com/regorxxx/Playlist-Manager-SMP)).
+- Token: new menu entry to retrieve user token on demand from other panels (like [Playlist-Manager-SMP](https://github.com/regorxxx/Playlist-Manager-SMP)).
 ### Changed
 - Playlists: pressing shift while clicking on any menu entry which creates a playlist will force tracks shuffling (instead of following the order given by ListenBrainz).
 - Helpers: updated helpers.
