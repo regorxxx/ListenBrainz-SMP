@@ -324,7 +324,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 							return {notFound, items};
 						})
 						.then (({notFound, items}) => {
-							if (notFound.length && properties.bYouTube[1]) {
+							if (notFound.length && properties.bYouTube[1] && isYouTube) {
 								// Send request in parallel every x ms and process when all are done
 								this.switchAnimation('YouTube Scrapping' , true);
 								Promise.parallel(notFound, youtube.searchForYoutubeTrack, 5).then((results) => {
@@ -443,10 +443,10 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 					})
 					.then(({notFound, items}) => {
 						console.log(items.length)
-						if (notFound.length && properties.bYouTube[1]) {
+						if (notFound.length && properties.bYouTube[1] && isYouTube) {
 							// Send request in parallel every x ms and process when all are done
 							this.switchAnimation('YouTube Scrapping', true);
-							Promise.parallel(notFound, youtube.searchForYoutubeTrack, 15).then((results) => {
+							Promise.parallel(notFound, youtube.searchForYoutubeTrack, 5).then((results) => {
 								let j = 0;
 								const itemsLen = items.length;
 								results.forEach((result, i) => {
