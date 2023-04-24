@@ -18,7 +18,7 @@ An implementation of [ListenBrainz](https://listenbrainz.org/) for [foobar2000](
 [*] Involves content resolution by Artist, Title or Recording MBID. Displays found matches.
 
 ## To send listens on playback
-Listens sync is not managed by this script. It's recommended to use [foo_listenbrainz2](https://github.com/phw/foo_listenbrainz2).
+Listens syncing is not managed by this script. It's recommended to use [foo_listenbrainz2](https://github.com/phw/foo_listenbrainz2).
 
 ### Compatible with (toolbar)
  1. [Search-by-Distance-SMP](https://github.com/regorxxx/Search-by-Distance-SMP): creates intelligent "spotify-like" playlist using high-level data from tracks and computing their similarity using genres/styles.
