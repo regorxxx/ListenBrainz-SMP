@@ -1,5 +1,4 @@
 # ListenBrainz-SMP
-# -WIP BETA: no release yet, missing docs and wiki but fully functional-
 [![version][version_badge]][changelog]
 [![CodeFactor][codefactor_badge]](https://www.codefactor.io/repository/github/regorxxx/ListenBrainz-SMPP/overview/main)
 [![Codacy Badge][codacy_badge]](https://www.codacy.com/gh/regorxxx/ListenBrainz-SMP/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=regorxxx/ListenBrainz-SMP&amp;utm_campaign=Badge_Grade)
