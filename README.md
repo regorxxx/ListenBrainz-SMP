@@ -12,7 +12,7 @@ An implementation of [ListenBrainz](https://listenbrainz.org/) for [foobar2000](
 - Find loved/hated tracks from server on library. [*]
 - Create playlist fron Top Listens, either by user or site-wide. [*]
 - Create playlist based on user's recommedations: 'Top artist', 'Similar artist', 'Raw recommendations'. [*]
-- Non-found tracks on library can be replaced with youtube links (requires [foo_youtube](https://fy.3dyd.com/download/).
+- Non-found tracks on library can be replaced with youtube links (requires [foo_youtube](https://fy.3dyd.com/download/)).
 - Requires an [user token](https://listenbrainz.org/profile/).
 
 [*] Involves content resolution by Artist, Title or Recording MBID. Displays found matches.
