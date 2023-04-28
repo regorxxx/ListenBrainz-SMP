@@ -1,5 +1,5 @@
 ﻿'use strict';
-//24/04/23
+//28/04/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -495,7 +495,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				window.NotifyOthers('xxx-scripts: lb token', null);
 				setTimeout(() => {
 					this.lBrainzTokenListener = false;
-					fb.ShowPopupMessage('ListenBrainz token report:\n\nOld value:  ' + cache.toStr(true) + '\nNew value:  ' + {token: properties.lBrainzToken[1], encrypted: properties.lBrainzEncrypt[1]}.toStr(true), window.Name);
+					fb.ShowPopupMessage('ListenBrainz token report:\n\nOld value:  ' + cache.toStr({bClosure: true}) + '\nNew value:  ' + {token: properties.lBrainzToken[1], encrypted: properties.lBrainzEncrypt[1]}.toStr({bClosure: true}), window.Name);
 				}, 1500);
 			}});
 			menu.newEntry({menuName, entryText: 'Open user profile'  + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
