@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [1.0.0-beta.9](#100-beta9---2023-05-08)
 - [1.0.0-beta.8](#100-beta8---2023-03-09)
 - [1.0.0-beta.7](#100-beta7---2023-03-08)
 - [1.0.0-beta.6](#100-beta6---2023-03-04)
@@ -13,6 +14,11 @@
 
 ## [Unreleased][]
 ### Added
+### Changed
+### Removed
+### Fixed
+
+## [1.0.0-beta.9] - 2023-05-08
 - YouTube: new option to look for not found tracks on library at YouTube when retrieving playlists. Requires 'foo_youtube' component installed. When links are loaded, the entire process is asynchronous and playlist filling may take some seconds. Track order is ensured in the process (contrary to other scripts relying on foobar path loading).
 - Token: on first init, panel will try to retrieve user token from other panels (like [Playlist-Manager-SMP](https://github.com/regorxxx/Playlist-Manager-SMP)).
 - Token: new menu entry to retrieve user token on demand from other panels (like [Playlist-Manager-SMP](https://github.com/regorxxx/Playlist-Manager-SMP)).
@@ -25,7 +31,6 @@
 ### Fixed
 - ListenBrainz: workaround for windows caching of server requests (so sometimes data was not updated with changes on real time).
 - Query fixes for track's title or artist having quotes.
-
 ## [1.0.0-beta.8] - 2023-03-09
 ### Added
 ### Changed
@@ -98,7 +103,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.8...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.9...HEAD
+[1.0.0-beta.9]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.8...v1.0.0-beta.9
 [1.0.0-beta.8]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.7...v1.0.0-beta.8
 [1.0.0-beta.7]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.6...v1.0.0-beta.7
 [1.0.0-beta.6]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.5...v1.0.0-beta.6
