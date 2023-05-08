@@ -31,6 +31,7 @@
 ### Fixed
 - ListenBrainz: workaround for windows caching of server requests (so sometimes data was not updated with changes on real time).
 - Query fixes for track's title or artist having quotes.
+
 ## [1.0.0-beta.8] - 2023-03-09
 ### Added
 ### Changed
