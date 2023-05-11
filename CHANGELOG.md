@@ -14,7 +14,11 @@
 
 ## [Unreleased][]
 ### Added
+- Feedback: love/hate feedback can now be saved as tags (in addition to the online syncing). Tag is configurable; 'FEEDBACK' by default.
 ### Changed
+- Feedback: report will also compare online values against the file tags (if available).
+- Feedback: retrieving loved/hated tracks from libary will also output library tagged tracks (if available), without duplicates by MBID.
+- UI: all reports are now formated as tabulated tables, making them easier to read.
 ### Removed
 ### Fixed
 
