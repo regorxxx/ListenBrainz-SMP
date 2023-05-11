@@ -1,5 +1,5 @@
 ﻿'use strict';
-//28/04/23
+//11/05/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -14,6 +14,7 @@ include('..\\main\\playlist_manager\\playlist_manager_listenbrainz.js');
 include('..\\main\\playlist_manager\\playlist_manager_youtube.js');
 include('..\\main\\filter_and_query\\remove_duplicates.js');
 include('..\\main\\main_menu\\main_menu_custom.js');
+include('..\\helpers-external\\easy-table-1.2.0\\table.js'); const Table = module.exports;
 var prefix = 'lbt';
 
 try {window.DefineScript('ListenBrainz Tools Button', {author:'xxx', features: {drag_n_drop: false}});} catch (e) {/* console.log('Filter Playlist Button loaded.'); */} //May be loaded along other buttons
@@ -27,7 +28,9 @@ var newButtonsProperties = { //You can simply add new properties here
 	bDynamicMenus:	['Expose menus at  \'File\\Spider Monkey Panel\\Script commands\'', false, {func: isBoolean}, false],
 	bIconMode:		['Icon-only mode?', false, {func: isBoolean}, false],
 	bYouTube:		['Lookup for missing tracks on YouTube?', isYouTube, {func: isBoolean}, isYouTube],
-	firstPopup:		['ListenBrainz Tools: Fired once', false, {func: isBoolean}, false]
+	firstPopup:		['ListenBrainz Tools: Fired once', false, {func: isBoolean}, false],
+	bTagFeedback:	['Tag files with feedback', false, {func: isBoolean}, false],
+	feedbackTag:	['Feedback tag', 'FEEDBACK', {func: isString}, 'FEEDBACK']
 };
 setProperties(newButtonsProperties, prefix, 0); //This sets all the panel properties at once
 newButtonsProperties = getPropertiesPairs(newButtonsProperties, prefix, 0);
@@ -130,6 +133,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 	// Helpers
 	const lb = listenBrainz;
 	const properties = this.buttonsProperties;
+	const feedbackTag = properties.feedbackTag[1];
 	async function checkLBToken(lBrainzToken = properties.lBrainzToken[1]) {
 		if (!lBrainzToken.length) {
 			const encryptToken = '********-****-****-****-************';
@@ -171,13 +175,17 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 			const handleList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
 			const response = await lb.lookupRecordingInfo(handleList, ['recording_name', 'recording_mbid'], token);
 			if (!response) {return;}
-			const report = response.recording_mbid.map((id, i) => {
+			const table = new Table;
+			response.recording_mbid.forEach((id, i) => {
 				const bFound = id.length ? true : false;
 				const title = bFound ? response.recording_name[i] : tfo.EvalWithMetadb(handleList[i]);
 				const mbid = bFound ? id : '-not found-';
-				return title + ':\t' + mbid;
-			}).join('\n');
-			console.popup(report, 'ListenBrainz');
+				table.cell('Title', title);
+				table.cell('MBID', mbid);
+				table.newRow();
+			});
+			const report = table.toString();
+			fb.ShowPopupMessage(report, 'ListenBrainz');
 		}, flags: bListenBrainz ? selectedFlags : MF_GRAYED, data: {bDynamicMenu: true}});
 		menu.newEntry({entryText: 'sep'});
 	}
@@ -196,7 +204,13 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				if (!token) {return;}
 				const handleList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
 				const response = await lb.sendFeedback(handleList, entry.key, token);
-				if (!response) {fb.ShowPopupMessage('Error connecting to server', 'ListenBrainz');}
+				if (!response) {fb.ShowPopupMessage('Error connecting to server. Check console.', 'ListenBrainz');}
+				else if (properties.bTagFeedback[1]) {
+					console.log('Tagging files...')
+					const feedback = entry.key === 'love' ? 1 : entry.key === 'hate' ? -1 : '';
+					const tags = Array(handleList.Count).fill('').map((t) => {return {[feedbackTag]: feedback};})
+					handleList.UpdateFileInfoFromJSON(JSON.stringify(tags));
+				}
 			}, flags: bListenBrainz ? selectedFlags : MF_GRAYED, data: {bDynamicMenu: true}});
 		});
 		menu.newEntry({menuName, entryText: 'sep'});
@@ -206,40 +220,54 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 			if (!token) {return;}
 			const handleList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
 			const response = await lb.getFeedback(handleList, await lb.retrieveUser(token), token);
-			const tfo = fb.TitleFormat('%TITLE%');
-			const report = response.map((obj, i) => {
-				const title = tfo.EvalWithMetadb(handleList[i]);
+			const titles = fb.TitleFormat('%TITLE%').EvalWithMetadbs(handleList);
+			const feedbacks = fb.TitleFormat(_b(_t(feedbackTag))).EvalWithMetadbs(handleList);
+			const table = new Table;
+			response.forEach((obj, i) => {
+				const title = titles[i];
 				const score = obj.score === 1 ? 'love' : obj.score === -1 ? 'hate' : '-none-';
-				return title + ':\t' + score;
-			}).join('\n');
+				const feedbackNum = Number(feedbacks[i]);
+				const feedback = feedbackNum === 1 ? 'love' : feedbackNum === -1 ? 'hate' : '-none-';
+				const bMismatch = feedback !== score;
+				table.cell('Title', title);
+				table.cell('Online', score);
+				table.cell('Tag', bMismatch ? feedback : '');
+				table.newRow();
+			});
+			const report = table.toString();
 			console.popup(report, 'ListenBrainz Feedback');
 		}, flags: bListenBrainz ? selectedFlags : MF_GRAYED, data: {bDynamicMenu: true}});
 	}
 	{
 		const menuName = menu.newMenu('Retrieve user tracks...');
-		menu.newEntry({menuName, entryText: 'User feedback from ListenBrainz:', flags: MF_GRAYED});
+		menu.newEntry({menuName, entryText: 'By feedback: (Shift + Click to randomize)', flags: MF_GRAYED});
 		menu.newEntry({menuName, entryText: 'sep'});
 		[
 			{key: 'love', title: 'Loved tracks', score: 1},
 			{key: 'hate', title: 'Hated tracks', score: -1}
-		].forEach((entry) =>  {
+		].forEach((entry) => {
 			menu.newEntry({menuName, entryText: 'Find ' + entry.title + ' in library' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
+				const bShift = utils.IsKeyPressed(VK_SHIFT);
 				if (!await checkLBToken()) {return false;}
 				const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
 				if (!token) {return;}
-				const response = await lb.getUserFeedback(await lb.retrieveUser(token), {score: entry.score, metadata: 'true'}, token);
+				const user = await (lb.retrieveUser(token));
+				const response = await lb.getUserFeedback(user, {score: entry.score, metadata: 'true'}, token);
 				const mbids = [], titles = [], artists = [];
-				const report = entry.title + ': ' + response.length + '\n\n' + response.map((feedback, i) => {
+				const table = new Table;
+				response.forEach((feedback, i) => {
 					const mbid = feedback.recording_mbid;
 					const trackMetadata = feedback.hasOwnProperty('track_metadata') ? feedback.track_metadata : null
 					const title = trackMetadata ? trackMetadata.track_name : '';
 					const artist = trackMetadata ? trackMetadata.artist_name : '';
-					mbids.push(mbid);
 					titles.push(title);
 					artists.push(artist);
-					return title + ' - ' + artist + ': ' + mbid;
-				}).join('\n');
-				fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title);
+					mbids.push(mbid);
+					table.cell('Title', title);
+					table.cell('Artist', artist);
+					table.cell('MBID', mbid);
+					table.newRow();
+				});
 				const queryArr = mbids.map((mbid, i) => {
 					if (!mbid.length) {return;}
 					const title = _asciify(titles[i]);
@@ -247,10 +275,43 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 					const bMeta = title.length && artist.length;
 					return 'MUSICBRAINZ_TRACKID IS ' + mbid + (bMeta ? ' OR (TITLE IS ' + title + ' AND ARTIST IS ' + artist + ')' : '');
 				}).filter(Boolean);
-				const query = query_join(queryArr, 'OR');
+				let query = query_join(queryArr, 'OR');
 				let handleList;
 				try {handleList = fb.GetQueryItems(fb.GetLibraryItems(), query);} // Sanity check
 				catch (e) {fb.ShowPopupMessage('Query not valid. Check query:\n' + query); return;}
+				let report =  entry.title + ': ' + response.length + '\n\n' + table.toString();
+				// Find tracks with feedback tag, and insert them at the end without duplicates
+				let libHandleList;
+				query = feedbackTag + ' IS ' + entry.score;
+				try {libHandleList = fb.GetQueryItems(fb.GetLibraryItems(), query);} // Sanity check
+				catch (e) {fb.ShowPopupMessage('Query not valid. Check query:\n' + query); return;}
+				const copyHandleList = handleList.Clone();
+				copyHandleList.Sort();
+				let byTagHandleList = new FbMetadbHandleList();
+				libHandleList.Convert().forEach((handle) => {
+					if (copyHandleList.BSearch(handle) === -1) {byTagHandleList.Insert(byTagHandleList.Count, handle);}
+				});
+				// Insert in global list
+				const byTagCount = byTagHandleList.Count;
+				if (byTagCount) {
+					byTagHandleList = removeDuplicatesV2({handleList: byTagHandleList, checkKeys: ['MUSICBRAINZ_TRACKID']});
+					handleList.InsertRange(handleList.Count, byTagHandleList);
+					// Add to report
+					const bRemovedDup = byTagHandleList.Count !== byTagCount;
+					const titles = fb.TitleFormat('%TITLE%').EvalWithMetadbs(byTagHandleList);
+					const artists = fb.TitleFormat('%ARTIST%').EvalWithMetadbs(byTagHandleList);
+					const feedbacks = fb.TitleFormat('%MUSICBRAINZ_TRACKID%').EvalWithMetadbs(byTagHandleList);
+					const table = new Table;
+					for (let i = 0; i < byTagHandleList.Count; i++) {
+						table.cell('Title', titles[i]);
+						table.cell('Artist', artists[i]);
+						table.cell('MBID', mbids[i]);
+						table.newRow();
+					}
+					report += '\n\nAlso found these tracks tagged on library but not on ListenBrainz' +  (bRemovedDup ? ', minus duplicates by MBID,\nTo retrieve the full list, use this query: ' + query : ':') + '\n\n' + table.toString();
+				}
+				fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title + ' ' + _p(user));
+				if (bShift) {handleList = new FbMetadbHandleList(handleList.Convert().shuffle());}
 				sendToPlaylist(handleList, 'ListenBrainz ' + entry.title);
 			}, flags: bListenBrainz ? MF_STRING : MF_GRAYED, data: {bDynamicMenu: true}});
 		});
@@ -280,7 +341,8 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 					this.switchAnimation('ListeBrainz data retrieval', true);
 					lb.getTopRecordings(user, entry.params, token)
 						.then((recordings) => {
-							const report = entry.title + ': ' + recordings.length + '\n\n' + recordings.map((recording, i) => {
+							const table = new Table;
+							recordings.forEach((recording, i) => {
 								const mbid = recording.recording_mbid || '';
 								const title = recording.track_name || '';
 								const artist = recording.artist_name || '';
@@ -289,8 +351,12 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								tags.TITLE.push(title);
 								tags.ARTIST.push(artist);
 								tags.ALBUM.push(release);
-								return title + ' - ' + artist + ': ' + mbid;
-							}).join('\n');
+								table.cell('Title', title);
+								table.cell('Artist', artist);
+								table.cell('MBID', mbid);
+								table.newRow();
+							});
+							const report = entry.title + ': ' + recordings.length + '\n\n' + table.toString();
 							fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title + ' ' + _p(user));
 							const queryArr = mbids.map((mbid, i) => {
 								const tagArr = ['TITLE', 'ARTIST', 'ALBUM']
@@ -374,8 +440,8 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 		menu.newEntry({menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED});
 		menu.newEntry({menuName, entryText: 'sep'});
 		[
-			{params: {artist_type: 'top', count: 200}, title: 'Top artist'},
-			{params: {artist_type: 'similar', count: 200}, title: 'Similar artist'},
+			{params: {artist_type: 'top', count: 200}, title: 'By top artists listened'},
+			{params: {artist_type: 'similar', count: 200}, title: 'Similar to artists listened'},
 			{params: {artist_type: 'raw', count: 200}, title: 'Raw recommendations'},
 		].forEach((entry) =>  {
 			menu.newEntry({menuName, entryText: entry.title + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
@@ -407,9 +473,14 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								if (info.artist_credit_name[i]) {tags.ARTIST[i] = info.artist_credit_name[i];}
 							}
 						}
-						const report = entry.title + ': ' + count + '\n\n' + mbids.map((mbid, i) => {
-							return tags.TITLE[i] + ' - ' + tags.ARTIST[i] + ': ' + mbid;
-						}).join('\n');
+						const table = new Table;
+						mbids.forEach((mbid, i) => {
+							table.cell('Title', tags.TITLE[i]);
+							table.cell('Artist', tags.ARTIST[i]);
+							table.cell('MBID', mbid);
+							table.newRow();
+						});
+						const report = entry.title + ': ' + count + '\n\n' + table.toString();
 						fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title + ' ' + _p(user));
 						const queryArr = mbids.map((mbid, i) => {
 							const tagArr = ['TITLE', 'ARTIST']
