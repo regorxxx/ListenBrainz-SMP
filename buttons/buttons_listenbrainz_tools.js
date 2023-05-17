@@ -665,7 +665,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				const bDone = await checkLBToken('');
 				if (bDone) {
 					// Force following troi-bot user to create daily jams
-					const token = lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], properties.lBrainzEncrypt[1]});
+					const token = lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted: properties.lBrainzEncrypt[1]});
 					listenBrainz.followUser('troi-bot', properties.lBrainzToken[1]);
 				}
 				return bDone;
