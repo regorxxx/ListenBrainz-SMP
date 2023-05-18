@@ -21,6 +21,8 @@
 - YouTube: youtube searches are now cached (during the same session). i.e. matches are found much faster for tracks already searched.
 - Feedback: report will also compare online values against the file tags (if available).
 - Feedback: retrieving loved/hated tracks from libary will also output library tagged tracks (if available), without duplicates by MBID.
+- Playlists: matches on library -for playlist creation- are now preferred by higher rating and not live tracks (if possible).
+- Playlists: optimizations finding tracks on library.
 - UI: all reports are now formated as tabulated tables, making them easier to read.
 ### Removed
 ### Fixed
