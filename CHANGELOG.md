@@ -17,13 +17,18 @@
 - Feedback: love/hate feedback can now be saved as tags (in addition to the online syncing). Tag is configurable; 'FEEDBACK' by default.
 - User Recommendations: added Playlists recommendations for the user associated to the token (found at https://listenbrainz.org/user/[USERNAME]/recommendations/). For ex. Daily Jams, Top Discoveries of [YEAR], Top Missed Recordings of [YEAR], ... Automatically refreshed every 30 min or after clicking on the button (list is refreshed the next time the menu is opened).
 - User Recommendations: daily jams are automatically enabled when the user sets the token, token is retrieved from other panels or by using a new menu entry at Playlists recommendations submenu. It's done by following ['troi-bot' user](https://community.metabrainz.org/t/would-you-like-to-test-drive-our-first-recommendations-feature/626352). Must only be done once.
+- Track Recommendations: added entries to find similar artists to the focused track's artist.
+- Track Recommendations: added entries to find similar recordings to the focused track.
 ### Changed
 - YouTube: youtube searches are now cached (during the same session). i.e. matches are found much faster for tracks already searched.
 - Feedback: report will also compare online values against the file tags (if available).
 - Feedback: retrieving loved/hated tracks from libary will also output library tagged tracks (if available), without duplicates by MBID.
 - Playlists: matches on library -for playlist creation- are now preferred by higher rating and not live tracks (if possible).
 - Playlists: optimizations finding tracks on library.
+- ListenBrainz: key for the token is cached during the same session.
+- ListenBrainz: user name is cached during same session.
 - UI: all reports are now formated as tabulated tables, making them easier to read.
+- UI: tooltip now reports if user playlists recommendations are available and feedback for the selected track.
 ### Removed
 ### Fixed
 
