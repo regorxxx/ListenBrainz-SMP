@@ -1,5 +1,5 @@
 ﻿'use strict';
-//17/05/23
+//19/05/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -30,7 +30,7 @@ var newButtonsProperties = { //You can simply add new properties here
 	bYouTube:		['Lookup for missing tracks on YouTube?', isYouTube, {func: isBoolean}, isYouTube],
 	firstPopup:		['ListenBrainz Tools: Fired once', false, {func: isBoolean}, false],
 	bTagFeedback:	['Tag files with feedback', false, {func: isBoolean}, false],
-	feedbackTag:	['Feedback tag', 'FEEDBACK', {func: isString}, 'FEEDBACK']
+	feedbackTag:	['Feedback tag', globTags.feedback, {func: isString}, globTags.feedback]
 };
 setProperties(newButtonsProperties, prefix, 0); //This sets all the panel properties at once
 newButtonsProperties = getPropertiesPairs(newButtonsProperties, prefix, 0);
@@ -87,13 +87,26 @@ addButton({
 		const bShift = utils.IsKeyPressed(VK_SHIFT);
 		const bInfo = typeof menu_panelProperties === 'undefined' || menu_panelProperties.bTooltipInfo[1];
 		const selMul = plman.ActivePlaylist !== -1 ? plman.GetPlaylistSelectedItems(plman.ActivePlaylist) : null;
-		let info = '';
-		info += 'Token:' + (parent.buttonsProperties.lBrainzToken[1].length ? '\tOk' : ' \t-missing token-');
-		info += '\nPlaylist:\t' +  (plman.ActivePlaylist !== -1 ? plman.GetPlaylistName(plman.ActivePlaylist) : '-none-');
-		info += selMul && selMul.Count ? ' (' + selMul.Count + ' tracks selected)' : ' (No track selected)';
+		let infoMul = '';
+		if (selMul && selMul.Count > 1) {
+			infoMul = ' (multiple tracks selected: ' + selMul.Count + ')';
+		}
+		const sel = fb.GetFocusItem();
+		let info = 'No track selected\nSome menus disabled';
+		if (sel) {
+			const feedbackTag = parent.buttonsProperties.feedbackTag[1];
+			let tfo = fb.TitleFormat(
+					'Current track:	%ARTIST% / %TRACK% - %TITLE%' +
+					'[$and(%' + feedbackTag + '%)$crlf()Feedback:	$select($add(%' + feedbackTag+ '%,2),' + sanitizeTagTfo(chars.sadEmoji) +' Hated...,-,' + sanitizeTagTfo(chars.loveEmojiCycle(2000)) + ' Loved!)]' // Only show if tag is present
+				);
+			info = 'Playlist:		' + (plman.ActivePlaylist !== -1 ? plman.GetPlaylistName(plman.ActivePlaylist) : '-none-') + infoMul + '\n';
+			info += tfo.EvalWithMetadb(sel);
+		}
+		info += '\nToken:\t\t' + (parent.buttonsProperties.lBrainzToken[1].length ? 'Ok' : ' -missing token-');
+		info += '\nUser Playlists:\t' + (parent.userPlaylists.length ? 'Ok' : ' -missing-');
 		if (bShift || bInfo) {
 			info += '\n-----------------------------------------------------';
-			info += '\n(Shift + L. Click to open config menu)';
+			info += '\n(Shift + L. Click to open advanced config menu)';
 		}
 		return info;
 	}, prefix, newButtonsProperties, folders.xxx + 'images\\icons\\listenbrainz_64.png', null, {lBrainzTokenListener: false, userPlaylists: []}, 
@@ -111,6 +124,7 @@ addButton({
 						parent.buttonsProperties.lBrainzToken[1] = info.lBrainzToken;
 						parent.buttonsProperties.lBrainzEncrypt[1] = info.lBrainzEncrypt;
 						overwriteProperties(parent.buttonsProperties);
+						lb.cache.key = null;
 						parent.lBrainzTokenListener = false;
 						if (!parent.buttonsProperties.lBrainzEncrypt[1]) {listenBrainz.followUser('troi-bot', parent.buttonsProperties.lBrainzToken[1])}
 					}
@@ -130,16 +144,17 @@ addButton({
 		}
 		// Retrieve user playlists at startup and every 30 min, also everytime button is clicked
 		parent.retrieveUserRecommendedPlaylists = (bLoop) => {
+			const lb = listenBrainz;
 			const token = parent.buttonsProperties.lBrainzToken[1];
 			const bListenBrainz = token.length;
 			const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
-			if (!bListenBrainz || bEncrypted) {
+			if (!bListenBrainz || (bEncrypted && !lb.cache.key)) {
 				parent.userPlaylists.length = 0;
 				if (bLoop) {setTimeout(parent.retrieveUserRecommendedPlaylists, 3000000, true);}
 				return Promise.resolve(false);
 			}
-			return listenBrainz.retrieveUser(token).then((user) => {
-				return listenBrainz.retrieveUserRecommendedPlaylistsNames(user, {count: 200}, token);
+			return lb.retrieveUser(lb.decryptToken({lBrainzToken: token, bEncrypted})).then((user) => {
+				return lb.retrieveUserRecommendedPlaylistsNames(user, {count: 200}, lb.decryptToken({lBrainzToken: token, bEncrypted}));
 			}).then((playlists) => {
 				parent.userPlaylists.length = 0;
 				if (playlists.length) {
@@ -462,7 +477,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 	}
 	menu.newEntry({entryText: 'sep'});
 	{
-		const menuName = menu.newMenu('Track recommendations...');
+		const menuName = menu.newMenu('User recommendations...');
 		menu.newEntry({menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED});
 		menu.newEntry({menuName, entryText: 'sep'});
 		[
