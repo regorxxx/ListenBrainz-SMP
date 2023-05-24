@@ -17,20 +17,25 @@
 - Feedback: love/hate feedback can now be saved as tags (in addition to the online syncing). Tag is configurable; 'FEEDBACK' by default.
 - User Recommendations: added Playlists recommendations for the user associated to the token (found at https://listenbrainz.org/user/[USERNAME]/recommendations/). For ex. Daily Jams, Top Discoveries of [YEAR], Top Missed Recordings of [YEAR], ... Automatically refreshed every 30 min or after clicking on the button (list is refreshed the next time the menu is opened).
 - User Recommendations: daily jams are automatically enabled when the user sets the token, token is retrieved from other panels or by using a new menu entry at Playlists recommendations submenu. It's done by following ['troi-bot' user](https://community.metabrainz.org/t/would-you-like-to-test-drive-our-first-recommendations-feature/626352). Must only be done once.
-- Track Recommendations: added entries to find similar artists to the focused track's artist.
-- Track Recommendations: added entries to find similar recordings to the focused track.
+- Track Recommendations: added entries to find similar artists or recordings to the focused track's artist. Tracks output are preferred by higher rating and not live tracks (if possible).
 ### Changed
-- YouTube: youtube searches are now cached (during the same session). i.e. matches are found much faster for tracks already searched.
-- Feedback: report will also compare online values against the file tags (if available).
-- Feedback: retrieving loved/hated tracks from libary will also output library tagged tracks (if available), without duplicates by MBID.
+- YouTube: YouTube searches are now cached (during the same session). i.e. matches are found much faster for tracks already searched.
+- Feedback: report will also compare online values against the file tags (if available) and show total number of loved, hated and mismatched tracks.
+- Feedback: retrieving loved/hated tracks from library will also output library tagged tracks (if available), without duplicates by MBID.
+- Feedback: menu entries will be disabled when selection count is higher than the API recommendations.
+- Feedback: in case sending feedback to server fails (usually due to rate limits), connection will be retried once a few ms later. Any error will be reported via console/popups.
 - Playlists: matches on library -for playlist creation- are now preferred by higher rating and not live tracks (if possible).
 - Playlists: optimizations finding tracks on library.
 - ListenBrainz: key for the token is cached during the same session.
 - ListenBrainz: user name is cached during same session.
-- UI: all reports are now formated as tabulated tables, making them easier to read.
+- UI: all reports are now formatted as tabulated tables, making them easier to read.
 - UI: tooltip now reports if user playlists recommendations are available and feedback for the selected track.
+- UI: button is now animated during all asynchronous tasks (including daily jams retrieval).
 ### Removed
 ### Fixed
+- Feedback: retrieval of tracks with feedback on server was incomplete due to API limits of number of items get per request. Now requests are paginated, untill all results are get.
+
+
 
 ## [1.0.0-beta.9] - 2023-05-08
 - YouTube: new option to look for not found tracks on library at YouTube when retrieving playlists. Requires 'foo_youtube' component installed. When links are loaded, the entire process is asynchronous and playlist filling may take some seconds. Track order is ensured in the process (contrary to other scripts relying on foobar path loading).
