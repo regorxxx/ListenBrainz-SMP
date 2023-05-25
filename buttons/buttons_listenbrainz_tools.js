@@ -80,8 +80,8 @@ addButton({
 				}
 			).btn_up(this.currX, this.currY + this.currH);
 		} else {
-			listenBrainzmenu.bind(this)().btn_up(this.currX, this.currY + this.currH);
 			this.retrieveUserRecommendedPlaylists(false);
+			listenBrainzmenu.bind(this)().btn_up(this.currX, this.currY + this.currH);
 		}
 	}, null, void(0), (parent) => {
 		const bShift = utils.IsKeyPressed(VK_SHIFT);
@@ -177,6 +177,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 	const lb = listenBrainz;
 	const properties = this.buttonsProperties;
 	const feedbackTag = properties.feedbackTag[1];
+	const bLookupMBIDs = properties.bLookupMBIDs[1];
 	async function checkLBToken(lBrainzToken = properties.lBrainzToken[1]) {
 		if (!lBrainzToken.length) {
 			const encryptToken = '********-****-****-****-************';
@@ -260,10 +261,22 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
 				if (!token) {return;}
 				const handleList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
-				this.switchAnimation('ListeBrainz data uploading', true);
-				const response = await lb.sendFeedback(handleList, entry.key, token);
-				this.switchAnimation('ListeBrainz data uploading', false);
-				if (!response || !response.every(Boolean)) {fb.ShowPopupMessage('Error connecting to server. Check console.\nIn case some tracks were not properly updated on server, try again setting the feedback for them.\n\nNote sending feedback for a high number of tracks may be rejected due to rate limits...', 'ListenBrainz');}
+				// Check actual feedback
+				this.switchAnimation('ListeBrainz data retrieval', true);
+				const response = await lb.getFeedback(handleList, await lb.retrieveUser(token), token, bLookupMBIDs);
+				const sendMBIDs = [];
+				response.forEach((obj, i) => {
+					if (!obj.recording_mbid) {return;} // Omit not found items
+					if (obj.score === 1 && entry.key !== 'love' || obj.score === -1 && entry.key !== 'hate' || obj.score === 0 && entry.key !== 'remove') {sendMBIDs.push(obj.recording_mbid);}
+				});
+				this.switchAnimation('ListeBrainz data retrieval', false);
+ 				// Only update required tracks
+				if (sendMBIDs.length) {
+					this.switchAnimation('ListeBrainz data uploading', true);
+					const response = await lb.sendFeedback(sendMBIDs, entry.key, token, false, true);
+					this.switchAnimation('ListeBrainz data uploading', false);
+					if (!response || !response.every(Boolean)) {fb.ShowPopupMessage('Error connecting to server. Check console.\nIn case some tracks were not properly updated on server, try again setting the feedback for them.\n\nNote sending feedback for a high number of tracks may be rejected due to rate limits...', 'ListenBrainz');}
+				}
 				if (properties.bTagFeedback[1]) {
 					console.log('Tagging files...')
 					const feedback = entry.key === 'love' ? 1 : entry.key === 'hate' ? -1 : '';
@@ -273,13 +286,14 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 			}, flags: bListenBrainz ? selectedFlagsCount(25) : MF_GRAYED, data: {bDynamicMenu: true}});
 		});
 		menu.newEntry({menuName, entryText: 'sep'});
-		menu.newEntry({menuName, entryText: 'Report for selected tracks' + (bListenBrainz ? selectedCountTitle(70) : '\t(token not set)'), func: async () => {
+		// 100 track limit is imposed although the API with POST method allows an unlimited number
+		menu.newEntry({menuName, entryText: 'Report for selected tracks' + (bListenBrainz ? selectedCountTitle(Infinity) : '\t(token not set)'), func: async () => {
 			if (!await checkLBToken()) {return false;}
 			const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
 			if (!token) {return;}
 			const handleList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
 			this.switchAnimation('ListeBrainz data retrieval', true);
-			const response = await lb.getFeedback(handleList, await lb.retrieveUser(token), token);
+			const response = await lb.getFeedback(handleList, await lb.retrieveUser(token), token, bLookupMBIDs);
 			this.switchAnimation('ListeBrainz data retrieval', false);
 			const titles = fb.TitleFormat('%TITLE%').EvalWithMetadbs(handleList);
 			const feedbacks = fb.TitleFormat(_b(_t(feedbackTag))).EvalWithMetadbs(handleList);
@@ -289,19 +303,23 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				const title = titles[i];
 				const score = obj.score === 1 ? 'love' : obj.score === -1 ? 'hate' : '-none-';
 				const feedbackNum = Number(feedbacks[i]);
-				const feedback = feedbackNum === 1 ? 'love' : feedbackNum === -1 ? 'hate' : '  \u2715  ';
+				const feedback = feedbackNum === 1 ? 'love' : feedbackNum === -1 ? 'hate' : '-none-';
 				const bMismatch = feedback !== score;
 				if (obj.score === 1 || feedbackNum === 1) {loved++;} else if (obj.score === -1 || feedbackNum === -1) {hated++;}
 				if (bMismatch) {missmatch++;}
 				table.cell('Title', title);
 				table.cell('Online', score);
-				table.cell('Tag', bMismatch ? feedback : '  \u2713  ');
+				table.cell('Tag', bMismatch 
+					? feedback !== '-none-' 
+						? feedback 
+						: '  \u2715  ' 
+					: '  \u2713  ');
 				table.newRow();
 			});
 			let report = 'Analyzed ' + response.length + ' tracks:\n  - Loved: ' + loved + '\n  - Hated: ' + hated + '\n  - Missmatch: ' + missmatch;
 			report += '\n\n' + table.toString();
 			fb.ShowPopupMessage(report, 'ListenBrainz Feedback');
-		}, flags: bListenBrainz ? selectedFlagsCount(70) : MF_GRAYED, data: {bDynamicMenu: true}});
+		}, flags: bListenBrainz ? selectedFlagsCount(Infinity) : MF_GRAYED, data: {bDynamicMenu: true}});
 	}
 	{
 		const menuName = menu.newMenu('Retrieve user tracks...');
@@ -489,7 +507,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 						.then((items) => {
 							const user = playlist.extension['https://musicbrainz.org/doc/jspf#playlist'].created_for;
 							if (bShift) {items.shuffle();}
-							const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entryText + ' ' + _p(user), true);
+							const idx = plman.FindOrCreatePlaylist('ListenBrainz: ' + entryText + ' ' + _p(user), true);
 							plman.ClearPlaylist(idx);
 							plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
 							plman.ActivePlaylist = idx;
@@ -519,8 +537,8 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				if (!sel) {return;}
 				this.switchAnimation('ListeBrainz data retrieval', true);
 				const selMbid = (entry.func === 'retrieveSimilarArtists' 
-					? await lb.getArtistMBIDs(new FbMetadbHandleList(sel), token) 
-					: await lb.getMBIDs(new FbMetadbHandleList(sel), token)
+					? await lb.getArtistMBIDs(new FbMetadbHandleList(sel), token, bLookupMBIDs) 
+					: await lb.getMBIDs(new FbMetadbHandleList(sel), token, bLookupMBIDs)
 				)[0];
 				if (!selMbid) {return;}
 				const mbids = [];
@@ -665,7 +683,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 					.then((items) => {
 						if (bShift) {items.shuffle();}
 						const reference = fb.TitleFormat(entry.func === 'retrieveSimilarArtists' ? '%ARTIST%' : '%TITLE%').EvalWithMetadb(sel);
-						const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entry.title + ' ' + _p(reference), true);
+						const idx = plman.FindOrCreatePlaylist('ListenBrainz: similar to ' + reference, true);
 						plman.ClearPlaylist(idx);
 						plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
 						plman.ActivePlaylist = idx;
@@ -682,7 +700,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 		menu.newEntry({menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED});
 		menu.newEntry({menuName, entryText: 'sep'});
 		[
-			{params: {artist_type: 'top', count: lb.MAX_ITEMS_PER_GET}, title: 'By top artists listened'},
+			{params: {artist_type: 'top', count: lb.MAX_ITEMS_PER_GET}, title: 'Top artists listened'},
 			{params: {artist_type: 'similar', count: lb.MAX_ITEMS_PER_GET}, title: 'Similar to artists listened'},
 			{params: {artist_type: 'raw', count: lb.MAX_ITEMS_PER_GET}, title: 'Raw recommendations'},
 		].forEach((entry) =>  {
@@ -789,7 +807,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 					.then((items) => {
 						const user = playlist.extension['https://musicbrainz.org/doc/jspf#playlist'].created_for;
 						if (bShift) {items.shuffle();}
-						const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entryText + ' ' + _p(user), true);
+						const idx = plman.FindOrCreatePlaylist('ListenBrainz: ' + entryText + ' ' + _p(user), true);
 						plman.ClearPlaylist(idx);
 						plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
 						plman.ActivePlaylist = idx;
@@ -851,7 +869,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 						}).then((items) => {
 							const user = playlist.extension['https://musicbrainz.org/doc/jspf#playlist'].created_for;
 							if (bShift) {items.shuffle();}
-							const idx = plman.FindOrCreatePlaylist('ListenBrainz ' + entryText + ' ' + _p(user), true);
+							const idx = plman.FindOrCreatePlaylist('ListenBrainz: ' + entryText + ' ' + _p(user), true);
 							plman.ClearPlaylist(idx);
 							plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
 							plman.ActivePlaylist = idx;

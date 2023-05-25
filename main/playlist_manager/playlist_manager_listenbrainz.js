@@ -383,20 +383,33 @@ listenBrainz.sendFeedback = async function sendFeedback(handleList, feedback = '
 	}, (error) => {console.log(error.message); return false;});
 }
 
-listenBrainz.getFeedback = async function getFeedback(handleList, user, token, bLookupMBIDs = true) {
-	const mbid = (await this.getMBIDs(handleList, token, bLookupMBIDs)).filter(Boolean);
-	const missingCount = handleList.Count - mbid.length;
-	if (missingCount) {console.log('Warning: some tracks don\'t have MUSICBRAINZ_TRACKID tag. Omitted ' + missingCount + ' tracks while setting feedback');}
-	return send({
-		method: 'GET', 
-		URL: 'https://api.listenbrainz.org/1/feedback/user/' + user + '/get-feedback-for-recordings?recording_mbids=' + mbid.join(','),
-		requestHeader: [['Authorization', 'Token ' + token]],
-		bypassCache: true
-	}).then(
+listenBrainz.getFeedback = async function getFeedback(handleList, user, token, bLookupMBIDs = true, method = 'GET') {
+	const mbid = await this.getMBIDs(handleList, token, bLookupMBIDs);
+	const mbidSend = mbid.filter(Boolean);
+	const missingCount = handleList.Count - mbidSend.length;
+	if (missingCount) {console.log('Warning: some tracks don\'t have MUSICBRAINZ_TRACKID tag. Omitted ' + missingCount + ' tracks while getting feedback');}
+	if (mbidSend.Count > 70) {method = 'POST';}
+	const noData = {created: null, recording_mbid: null, recording_msid: null, score: 0, track_metadata: null, user_id: user};
+	return (method === 'POST' 
+		? send({
+			method: 'POST', 
+			URL: 'https://api.listenbrainz.org/1/feedback/user/' + user + '/get-feedback-for-recordings',
+			requestHeader: [['Authorization', 'Token ' + token]],
+			body: JSON.stringify({recording_mbids: mbidSend.join(',')})
+		})
+		: send({ // 75 track limit
+			method: 'GET',
+			URL: 'https://api.listenbrainz.org/1/feedback/user/' + user + '/get-feedback-for-recordings?recording_mbids=' + mbid.join(','),
+			requestHeader: [['Authorization', 'Token ' + token]],
+			bypassCache: true
+		})
+	).then(
 		(resolve) => {
 			if (resolve) {
 				const response = JSON.parse(resolve);
 				if (response.hasOwnProperty('feedback')) {
+					// Add null data to holes, so response respects input length
+					mbid.forEach((m, i) => {if (!m) {response.feedback.splice(i, 0, {...noData});}});
 					return response.feedback;
 				}
 				return [];
@@ -405,6 +418,9 @@ listenBrainz.getFeedback = async function getFeedback(handleList, user, token, b
 		},
 		(reject) => {
 			console.log('getFeedback: ' + reject.status + ' ' + reject.responseText);
+			if (reject.status === 400 && new RegExp('No valid recording msid or recording mbid found').test(reject.responseText)) {
+				return mbid.map((m) => {return {...noData};});
+			}
 			return [];
 		}
 	);
