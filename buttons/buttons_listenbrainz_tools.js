@@ -1,5 +1,5 @@
 ﻿'use strict';
-//26/05/23
+//27/05/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -525,8 +525,9 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 		menu.newEntry({menuName, entryText: 'By selection: (Shift + Click to randomize)', flags: MF_GRAYED});
 		menu.newEntry({menuName, entryText: 'sep'});
 		[
-			{func: 'retrieveSimilarArtists', title: 'By similar artists'},
-			{func: 'retrieveSimilarRecordings', title: 'By similar tracks'},
+			{func: 'retrieveSimilarArtists', args: 'v1', title: 'By similar artists (v1)'},
+			{func: 'retrieveSimilarArtists', args: 'v2', title: 'By similar artists (v2)'},
+			{func: 'retrieveSimilarRecordings', args: 'v1', title: 'By similar tracks'},
 		].forEach((entry) =>  {
 			menu.newEntry({menuName, entryText: entry.title + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 				const bShift = utils.IsKeyPressed(VK_SHIFT);
@@ -542,20 +543,53 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				)[0];
 				if (!selMbid) {return;}
 				const mbids = [];
+				const mbidsAlt = [];
 				const tags = {TITLE: [], ARTIST: [], SCORE: []};
 				let count = 0;
 				const user = await lb.retrieveUser(token);
-				lb[entry.func](selMbid, token)
+				lb[entry.func](selMbid, token, entry.args)
 					.then((recommendations) => {
 						if (entry.func === 'retrieveSimilarArtists') { // [{artist_mbid, comment, gender, name, reference_mbid, score, type}, ...]
 							recommendations.forEach((artist, i) => {
 								mbids.push(artist.artist_mbid || '');
 								tags.ARTIST.push(artist.name);
-								tags.TITLE.push('  \u2715  ');
+								tags.TITLE.push('');
 								tags.SCORE.push(artist.score);
 							});
 							count = mbids.length;
-							return true;
+							return lb.getPopularRecordingsByArtist(mbids.filter(Boolean), token)
+								.then((artistRecommendations) => { // [{artist_mbid, count, recording_mbid}, ...]
+									let cache = '';
+									const selection = [];
+									artistRecommendations.forEach((recording, i) => {
+										if (cache !== recording.artist_mbid) {
+											selection.push(recording);
+											cache = recording.artist_mbid;
+										} else {return;}
+									});
+									mbids.forEach((artist_mbid, i) => {
+										const selLen = selection.length;
+										mbidsAlt.push('');
+										for (let j = 0;j < selLen; j++) {
+											if (selection[j].artist_mbid === artist_mbid) {
+												mbidsAlt[i] = selection.splice(j, 1)[0].recording_mbid;
+												break;
+											}
+										}
+									});
+								})
+								.then(() => {
+									return lb.lookupRecordingInfoByMBIDs(mbidsAlt, ['recording_mbid', 'recording_name'], token);
+								})
+								.then((info) => {
+									if (info) {
+										for (let i = 0; i < count; i++) {
+											if (mbidsAlt[i] === info.recording_mbid[i]) {
+												if (info.recording_name[i]) {tags.TITLE[i] = info.recording_name[i];}
+											}
+										}
+									}
+								});
 						} else { // [{recording_mbid, recording_name, artist_credit_name, [artist_credit_mbids], caa_id, caa_release_mbid, canonical_recording_mbid, score, reference_mbid}, ...]
 							recommendations.forEach((recording, i) => {
 								mbids.push(recording.recording_mbid || '');
@@ -564,7 +598,6 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								tags.SCORE.push(recording.score);
 							});
 							count = mbids.length;
-							const infoNames = ['recording_mbid', 'recording_name', 'artist_credit_name'];
 							return true;
 						}
 					})
@@ -577,19 +610,34 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 						const sortTF = sort.length ? fb.TitleFormat(sort) : null;
 						if (entry.func === 'retrieveSimilarArtists') { // Just add a random track from every artist
 							const queryArr = mbids.map((mbid, i) => {
-								const tagArr = ['ARTIST']
+								const mbidAlt = mbidsAlt[i];
+								const tagArr = ['ARTIST', 'TITLE']
 									.map((key) => {return {key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g,'')).toLowerCase()};});
 								const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
-								if (!bMeta) {return;}
-								const query = query_join([
-									query_join([
-										bMeta ?  tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
-										'MUSICBRAINZ_ALBUMARTISTID IS ' + mbid
+								if (!tagArr[0].val.length > 0) {return;}
+								if (mbidAlt) { // Get specific recordings
+									const query = query_join(
+										[
+											(bMeta 
+												? tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ')
+												: tagArr.slice(0, 1).map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ')
+											) + ' AND NOT GENRE IS live AND NOT STYLE IS live',
+											'MUSICBRAINZ_TRACKID IS ' + mbidAlt
 										].filter(Boolean)
-									, 'OR'),
-									'NOT (%RATING% IS 1 OR %RATING% IS 2)'
-								], 'AND');
-								return query;
+									, 'OR');
+									return query;
+								} else { // Or any track by such artist
+									const query = query_join([
+										query_join(
+											[
+												tagArr.slice(0, 1).map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live',
+												'MUSICBRAINZ_ARTISTID IS ' + mbid + ' OR MUSICBRAINZ_ALBUMARTISTID IS ' + mbid
+											].filter(Boolean)
+										, 'OR'),
+										'NOT (%RATING% IS 1 OR %RATING% IS 2)'
+									], 'AND');
+									return query;
+								}
 							}).filter(Boolean);
 							items = queryArr.map((query, i) => {
 								let itemHandleList;
@@ -602,22 +650,25 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 									itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : properties.bAdvTitle[1]});
 									return itemHandleList[0];
 								}
+								if (tags.TITLE[i].length) {
+									notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags:  mbidsAlt[i] ? {MUSICBRAINZ_TRACKID: mbidsAlt[i]} : {}});
+								}
 								return null;
 							});
 							// Add titles to report, since is a small amount, it's fine to iterate...
-							const tfo = fb.TitleFormat('%TITLE%');
+							const tfo = fb.TitleFormat('[%TITLE%]');
 							items.forEach((handle, i) => {
-								if (handle) {tags.TITLE[i] = tfo.EvalWithMetadb(handle);}
+								if (handle && tags.title[i].length === 0) {tags.TITLE[i] = tfo.EvalWithMetadb(handle) || '  \u2715  ';}
 							});
 						} else {
 							const queryArr = mbids.map((mbid, i) => {
 								const tagArr = ['TITLE', 'ARTIST']
 									.map((key) => {return {key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g,'')).toLowerCase()};});
 								const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
-								if (!bMeta) {return;}
-								const query = query_join([
-									bMeta ?  tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
-									'MUSICBRAINZ_TRACKID IS ' + mbid
+								const query = query_join(
+									[
+										bMeta ?  tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
+										'MUSICBRAINZ_TRACKID IS ' + mbid
 									].filter(Boolean)
 								, 'OR');
 								return query;
