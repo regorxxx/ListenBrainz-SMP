@@ -41,8 +41,6 @@
 - Feedback: retrieval of tracks with feedback on server was incomplete due to API limits of number of items get per request. Now requests are paginated, untill all results are get.
 - Lookup for missing MBIDs setting was not honored (always active).
 
-
-
 ## [1.0.0-beta.9] - 2023-05-08
 - YouTube: new option to look for not found tracks on library at YouTube when retrieving playlists. Requires 'foo_youtube' component installed. When links are loaded, the entire process is asynchronous and playlist filling may take some seconds. Track order is ensured in the process (contrary to other scripts relying on foobar path loading).
 - Token: on first init, panel will try to retrieve user token from other panels (like [Playlist-Manager-SMP](https://github.com/regorxxx/Playlist-Manager-SMP)).
