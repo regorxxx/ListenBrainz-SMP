@@ -30,7 +30,9 @@ var newButtonsProperties = { //You can simply add new properties here
 	bYouTube:		['Lookup for missing tracks on YouTube?', isYouTube, {func: isBoolean}, isYouTube],
 	firstPopup:		['ListenBrainz Tools: Fired once', false, {func: isBoolean}, false],
 	bTagFeedback:	['Tag files with feedback', false, {func: isBoolean}, false],
-	feedbackTag:	['Feedback tag', globTags.feedback, {func: isString}, globTags.feedback]
+	feedbackTag:	['Feedback tag', globTags.feedback, {func: isString}, globTags.feedback],
+	feedbackCache:	['Feedback cache file', folders.data + 'listenbrainz_feedback.json', {func: isString}, folders.data + 'listenbrainz_feedback.json'],
+	userCache:		['User name cache', '', {func: isStringWeak}, ''],
 };
 setProperties(newButtonsProperties, prefix, 0); //This sets all the panel properties at once
 newButtonsProperties = getPropertiesPairs(newButtonsProperties, prefix, 0);
@@ -150,7 +152,7 @@ addButton({
 			const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
 			if (!bListenBrainz || (bEncrypted && !lb.cache.key)) {
 				parent.userPlaylists.length = 0;
-				if (bLoop) {setTimeout(parent.retrieveUserRecommendedPlaylists, 3000000, true);}
+				if (bLoop) {setTimeout(parent.retrieveUserRecommendedPlaylists, 1800000, true);}
 				return Promise.resolve(false);
 			}
 			parent.switchAnimation('ListeBrainz retrieve user playlists', true)
@@ -164,10 +166,78 @@ addButton({
 				return;
 			}).finally(() => {
 				parent.switchAnimation('ListeBrainz retrieve user playlists', false)
-				if (bLoop) {setTimeout(parent.retrieveUserRecommendedPlaylists, 3000000, true);}
+				if (bLoop) {setTimeout(parent.retrieveUserRecommendedPlaylists, 1800000, true);}
 			});
 		};
-		setTimeout(parent.retrieveUserRecommendedPlaylists, 5000, true);
+		setTimeout(parent.retrieveUserRecommendedPlaylists, 20000, true);
+		// Load feedback cache
+		listenBrainz.cache.feedback = new Map();
+		if (_isFile(parent.buttonsProperties.feedbackCache[1])) {
+			const data = _jsonParseFile(parent.buttonsProperties.feedbackCache[1], utf8);
+			if (data) {
+				data.forEach((userData) => {
+					listenBrainz.cache.feedback.set(userData.name, userData.cache);
+				});
+			}
+		}
+		// Save cache
+		parent.saveCache = () => {
+			let oldData = [];
+			const data = [...listenBrainz.cache.feedback].map((userData) => {return {name: userData[0], cache: userData[1]};});
+			if (_isFile(parent.buttonsProperties.feedbackCache[1])) {
+				oldData = _jsonParseFile(parent.buttonsProperties.feedbackCache[1], utf8);
+				_recycleFile(parent.buttonsProperties.feedbackCache[1]);
+			}
+			_save(parent.buttonsProperties.feedbackCache[1], JSON.stringify([...oldData, ...data]));
+		};
+		// Send feedback cache every 10 min
+		parent.sendFeedbackCache = () => {
+			const token = parent.buttonsProperties.lBrainzToken[1];
+			const bListenBrainz = token.length;
+			const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
+			const user = listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}));
+			const promises = [];
+			listenBrainz.cache.feedback.forEach((data, dataUser) => {
+				if (dataUser !== user) {return;}
+				const sendMBIDs = Object.keys(data);
+				if (sendMBIDs.length) {
+					const queue = {love: [], hate: [], remove: []};
+					sendMBIDs.forEach((mbid) => {
+						queue[data[mbid].feedback].push(mbid);
+					});
+					parent.switchAnimation('ListeBrainz feedback cache uploading', true);
+					Object.keys(queue).forEach((key) => {
+						if (queue[key].length) {
+							const mbids = queue[key].slice(0, 25);
+							promises.push(
+								listenBrainz.sendFeedback(mbids, key, listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}), false, true, false)
+									.then((response) => {
+										if (response) {
+											let bDone = false;
+											(Array.isArray(response) ? response : [response]).forEach((bSent, i) => {
+												if (bSent) {
+													delete data[mbids[i]];
+													bDone = true;
+												}
+											});
+											return bDone;
+										}
+									})
+							);
+						}
+					});
+					parent.switchAnimation('ListeBrainz feedback cache uploading', false);
+				}
+			});
+			Promise.allSettled(promises).then((results) => {
+				const count = results.filter(Boolean).length;
+				if (count) {
+					parent.saveCache();
+					console.log('ListeBrainz feedback cache sent: ' + count + ' items');
+				}
+			});
+		};
+		setInterval(parent.sendFeedbackCache, 600000);
 	}),
 });
 
@@ -178,6 +248,8 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 	const properties = this.buttonsProperties;
 	const feedbackTag = properties.feedbackTag[1];
 	const bLookupMBIDs = properties.bLookupMBIDs[1];
+	const bListenBrainz = properties.lBrainzToken[1].length;
+	const bEncrypted = properties.lBrainzEncrypt[1];
 	async function checkLBToken(lBrainzToken = properties.lBrainzToken[1]) {
 		if (!lBrainzToken.length) {
 			const encryptToken = '********-****-****-****-************';
@@ -202,10 +274,17 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 		}
 		return true;
 	}
+	// Update cache
+	if (bListenBrainz) {
+		lb.retrieveUser(lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted})).then((name) => {
+			if (name) {
+				properties.userCache[1] = name;
+				overwriteProperties({userCache: [...properties.userCache]});
+			}
+		});
+	}
 	// Menu
 	const menu = new _menu();
-	const bListenBrainz = properties.lBrainzToken[1].length;
-	const bEncrypted = properties.lBrainzEncrypt[1];
 	const selectedFlags = (idx = plman.ActivePlaylist) => this.selItems && this.selItems.Count || idx !== -1 && plman.GetPlaylistSelectedItems(idx).Count 
 		? MF_STRING 
 		: MF_GRAYED;
@@ -261,21 +340,45 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
 				if (!token) {return;}
 				const handleList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
+				const user = await lb.retrieveUser(token);
 				// Check actual feedback
 				this.switchAnimation('ListeBrainz data retrieval', true);
-				const response = await lb.getFeedback(handleList, await lb.retrieveUser(token), token, bLookupMBIDs);
+				const response = await lb.getFeedback(handleList, user, token, bLookupMBIDs);
 				const sendMBIDs = [];
-				response.forEach((obj, i) => {
-					if (!obj.recording_mbid) {return;} // Omit not found items
-					if (obj.score === 1 && entry.key !== 'love' || obj.score === -1 && entry.key !== 'hate' || obj.score === 0 && entry.key !== 'remove') {sendMBIDs.push(obj.recording_mbid);}
-				});
+				if (response && response.length) {
+					response.forEach((obj, i) => {
+						if (!obj.recording_mbid) {return;} // Omit not found items
+						if (obj.score === 1 && entry.key !== 'love' || obj.score === -1 && entry.key !== 'hate' || obj.score === 0 && entry.key !== 'remove') {sendMBIDs.push(obj.recording_mbid);}
+					});
+				} else {
+					const mbids = await listenBrainz.getMBIDs(handleList, null, false);
+					mbids.filter(Boolean).forEach((mbid) => sendMBIDs.push(mbid));
+				}
 				this.switchAnimation('ListeBrainz data retrieval', false);
  				// Only update required tracks
 				if (sendMBIDs.length) {
 					this.switchAnimation('ListeBrainz data uploading', true);
 					const response = await lb.sendFeedback(sendMBIDs, entry.key, token, false, true);
 					this.switchAnimation('ListeBrainz data uploading', false);
-					if (!response || !response.every(Boolean)) {fb.ShowPopupMessage('Error connecting to server. Check console.\nIn case some tracks were not properly updated on server, try again setting the feedback for them.\n\nNote sending feedback for a high number of tracks may be rejected due to rate limits...', 'ListenBrainz');}
+					if (!response || !response.every(Boolean)) {
+						// fb.ShowPopupMessage('Error connecting to server. Check console.\nIn case some tracks were not properly updated on server, try again setting the feedback for them.\n\nNote sending feedback for a high number of tracks may be rejected due to rate limits...', 'ListenBrainz');
+						if (user || properties.userCache[1].length) {
+							fb.ShowPopupMessage('Error connecting to server. Check console.\nData has been cached and will be sent later...', 'ListenBrainz');
+							const date = Date.now();
+							const data = listenBrainz.cache.feedback.get(user || properties.userCache[1]) || {};
+							if (!response) {
+								sendMBIDs.forEach((mbid) => data[mbid] = {feedback: entry.key, date});
+							} else {
+								response.forEach((bUpdate, i) => {
+									if (!bUpdate) {data[sendMBIDs[i]] = {feedback: entry.key, date};}
+								});
+							}
+							listenBrainz.cache.feedback.set(user || properties.userCache[1], data);
+							setTimeout(this.saveCache, 0);
+						} else {
+							fb.ShowPopupMessage('Error connecting to server. Check console.\nUser has not been retrieved and feedback can not be saved to cache.', 'ListenBrainz');
+						}
+					}
 				}
 				if (properties.bTagFeedback[1]) {
 					console.log('Tagging files...')
