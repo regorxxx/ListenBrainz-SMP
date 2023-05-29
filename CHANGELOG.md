@@ -26,6 +26,7 @@
 - Feedback: in case sending feedback to server fails (usually due to rate limits), connection will be retried once a few ms later. Any error will be reported via console/popups.
 - Feedback: only updates tracks on server if the current feedback differs, this way the timestamp does not get changed.
 - Feedback: improvements when handling tracks without MBIDs.
+- Feedback: when network is not available, feedback will be cached and send later -every 10 min- during the same session or on future sessions.
 - Playlists: matches on library -for playlist creation- are now preferred by higher rating and not live tracks (if possible).
 - Playlists: optimizations finding tracks on library.
 - Playlists: standardized playlists names, similar to playlist created by [Last.fm-SMP](https://regorxxx.github.io/foobar2000-SMP.github.io/scripts/lastfm-smp/).
