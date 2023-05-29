@@ -1,5 +1,5 @@
 ﻿'use strict';
-//27/05/23
+//29/05/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -167,7 +167,7 @@ addButton({
 				if (bLoop) {setTimeout(parent.retrieveUserRecommendedPlaylists, 3000000, true);}
 			});
 		};
-		parent.retrieveUserRecommendedPlaylists(true);
+		setTimeout(parent.retrieveUserRecommendedPlaylists, 5000, true);
 	}),
 });
 
