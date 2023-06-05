@@ -1,5 +1,5 @@
 ﻿'use strict';
-//29/05/23
+//05/06/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -181,21 +181,33 @@ addButton({
 			}
 		}
 		// Save cache
-		parent.saveCache = () => {
-			let oldData = [];
-			const data = [...listenBrainz.cache.feedback].map((userData) => {return {name: userData[0], cache: userData[1]};});
+		parent.saveCache = (user) => {
+			const newData = [];
+			const data = [...listenBrainz.cache.feedback]
+				.filter((userData) => userData[0] === user)
+				.map((userData) => {return {name: userData[0], cache: userData[1]};});
+			if (!data.length) {return;}
 			if (_isFile(parent.buttonsProperties.feedbackCache[1])) {
-				oldData = _jsonParseFile(parent.buttonsProperties.feedbackCache[1], utf8);
+				const oldData = _jsonParseFile(parent.buttonsProperties.feedbackCache[1], utf8);
 				_recycleFile(parent.buttonsProperties.feedbackCache[1]);
+				const idx = oldData.findIndex((userData) => userData.name === user);
+				if (idx !== -1) {
+					oldData[idx] = data[0];
+				} else {
+					oldData.push(data[0]);
+				}
+				oldData.forEach((userData) => newData.push(userData));
+			} else {
+				newData.push(data[0]);
 			}
-			_save(parent.buttonsProperties.feedbackCache[1], JSON.stringify([...oldData, ...data]));
+			_save(parent.buttonsProperties.feedbackCache[1], JSON.stringify(newData));
 		};
 		// Send feedback cache every 10 min
-		parent.sendFeedbackCache = () => {
+		parent.sendFeedbackCache = async () => {
 			const token = parent.buttonsProperties.lBrainzToken[1];
 			const bListenBrainz = token.length;
 			const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
-			const user = listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}));
+			const user = await listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}));
 			const promises = [];
 			listenBrainz.cache.feedback.forEach((data, dataUser) => {
 				if (dataUser !== user) {return;}
@@ -232,12 +244,13 @@ addButton({
 			Promise.allSettled(promises).then((results) => {
 				const count = results.filter(Boolean).length;
 				if (count) {
-					parent.saveCache();
+					parent.saveCache(user);
 					console.log('ListeBrainz feedback cache sent: ' + count + ' items');
 				}
 			});
 		};
 		setInterval(parent.sendFeedbackCache, 600000);
+		setTimeout(parent.sendFeedbackCache, 5000);
 	}),
 });
 
@@ -374,7 +387,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								});
 							}
 							listenBrainz.cache.feedback.set(user || properties.userCache[1], data);
-							setTimeout(this.saveCache, 0);
+							setTimeout(this.saveCache, 0, user || properties.userCache[1]);
 						} else {
 							fb.ShowPopupMessage('Error connecting to server. Check console.\nUser has not been retrieved and feedback can not be saved to cache.', 'ListenBrainz');
 						}
@@ -458,10 +471,10 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				});
 				const queryArr = mbids.map((mbid, i) => {
 					if (!mbid.length) {return;}
-					const title = _asciify(titles[i]);
-					const artist = _asciify(artists[i]);
+					const title = sanitizeQueryVal(sanitizeTagValIds(titles[i]));
+					const artist = sanitizeQueryVal(sanitizeTagValIds(artists[i]));
 					const bMeta = title.length && artist.length;
-					return 'MUSICBRAINZ_TRACKID IS ' + mbid + (bMeta ? ' OR (TITLE IS ' + title + ' AND ARTIST IS ' + artist + ')' : '');
+					return 'MUSICBRAINZ_TRACKID IS ' + mbid + (bMeta ? ' OR (' + _q(sanitizeTagIds(_t(globTags.titleRaw))) + ' IS ' + title + ' AND ' + _q(sanitizeTagIds(_t(globTags.artist))) + ' IS ' + artist + ')' : '');
 				}).filter(Boolean);
 				let query = query_join(queryArr, 'OR');
 				let handleList;
@@ -548,13 +561,13 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 							fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title + ' ' + _p(user));
 							const queryArr = mbids.map((mbid, i) => {
 								const tagArr = ['TITLE', 'ARTIST', 'ALBUM']
-									.map((key) => {return {key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g,'')).toLowerCase()};});
+									.map((key) => {return {key, val: sanitizeQueryVal(sanitizeTagValIds(tags[key][i]))};});
 								const bMBID = mbid.length > 0;
 								const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
 								if (!bMeta && !bMBID) {return;}
 								const query = query_join([
-									bMeta ?  tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') : '',
-									bMeta ?  tagArr.slice(0, 2).map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
+									bMeta ?  tagArr.map((tag) => {return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val;}).join(' AND ') : '',
+									bMeta ?  tagArr.slice(0, 2).map((tag) => {return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
 									bMBID ? 'MUSICBRAINZ_TRACKID IS ' + mbid : ''
 									].filter(Boolean)
 								, 'OR');
@@ -715,15 +728,15 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 							const queryArr = mbids.map((mbid, i) => {
 								const mbidAlt = mbidsAlt[i];
 								const tagArr = ['ARTIST', 'TITLE']
-									.map((key) => {return {key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g,'')).toLowerCase()};});
+									.map((key) => {return {key, val: sanitizeQueryVal(sanitizeTagValIds(tags[key][i]))};});
 								const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
 								if (!tagArr[0].val.length > 0) {return;}
 								if (mbidAlt) { // Get specific recordings
 									const query = query_join(
 										[
 											(bMeta 
-												? tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ')
-												: tagArr.slice(0, 1).map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ')
+												? tagArr.map((tag) => {return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val;}).join(' AND ')
+												: tagArr.slice(0, 1).map((tag) => {return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val;}).join(' AND ')
 											) + ' AND NOT GENRE IS live AND NOT STYLE IS live',
 											'MUSICBRAINZ_TRACKID IS ' + mbidAlt
 										].filter(Boolean)
@@ -733,7 +746,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 									const query = query_join([
 										query_join(
 											[
-												tagArr.slice(0, 1).map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live',
+												tagArr.slice(0, 1).map((tag) => {return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live',
 												'MUSICBRAINZ_ARTISTID IS ' + mbid + ' OR MUSICBRAINZ_ALBUMARTISTID IS ' + mbid
 											].filter(Boolean)
 										, 'OR'),
@@ -895,12 +908,12 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 						fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title + ' ' + _p(user));
 						const queryArr = mbids.map((mbid, i) => {
 							const tagArr = ['TITLE', 'ARTIST']
-								.map((key) => {return {key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g,'')).toLowerCase()};});
+								.map((key) => {return {key, val: sanitizeQueryVal(sanitizeTagValIds(tags[key][i]))};});
 							const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
 							if (!bMeta) {return;}
 							const query = query_join([
-								bMeta ?  tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') : '',
-								bMeta ?  tagArr.slice(0, 2).map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
+								bMeta ?  tagArr.map((tag) => {return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val;}).join(' AND ') : '',
+								bMeta ?  tagArr.slice(0, 2).map((tag) => {return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
 								'MUSICBRAINZ_TRACKID IS ' + mbid
 								].filter(Boolean)
 							, 'OR');
