@@ -1,5 +1,5 @@
 ﻿'use strict';
-//29/05/23
+//05/06/23
 
 include('..\\..\\helpers\\helpers_xxx_basic_js.js');
 include('..\\..\\helpers\\helpers_xxx_prototypes.js');
@@ -839,10 +839,10 @@ listenBrainz.contentResolver = function contentResolver(jspf, filter = '', sort 
 		let identifier = '';
 		lookupKeys.forEach((look) => {
 			const key = look.xspfKey;
-			const queryKey = look.queryKey;
+			const queryKey = _q(sanitizeTagIds(_t(look.queryKey)));
 			if (rows[i].hasOwnProperty(key) && rows[i][key] && rows[i][key].length) {
 				if (key === 'identifier') {identifier = decodeURI(rows[i][key]).replace(this.regEx,'');}
-				lookup[queryKey] = queryKey + ' IS ' + this.sanitizeQueryValue(key === 'identifier' ? identifier : rows[i][key]);
+				lookup[look.queryKey] = queryKey + ' IS ' + this.sanitizeQueryValue(key === 'identifier' ? identifier : rows[i][key]);
 			}
 		});
 		for (let condition of conditions) {
@@ -866,7 +866,7 @@ listenBrainz.contentResolver = function contentResolver(jspf, filter = '', sort 
 };
 
 listenBrainz.sanitizeQueryValue = function sanitizeQueryValue(value) {
-	return sanitizeQueryVal(value).toLowerCase().replace(/’/g, '\'');
+	return sanitizeQueryVal(sanitizeTagValIds(value));
 };
 
 /*
