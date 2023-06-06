@@ -1,5 +1,5 @@
 ﻿'use strict';
-//05/06/23
+//06/06/23
 
 include('..\\..\\helpers\\helpers_xxx_basic_js.js');
 include('..\\..\\helpers\\helpers_xxx_prototypes.js');
@@ -14,7 +14,15 @@ const listenBrainz = {
 		user: new Map(),
 		key: null,
 	},
-	algorithm: {},
+	algorithm: {
+		retrieveSimilarArtists: {
+			v1: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30',
+			v2: 'session_based_days_7500_session_300_contribution_5_threshold_10_limit_100_filter_True_skip_30',
+		},
+		retrieveSimilarRecordings: {
+			v1: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30',
+		},
+	},
 	// API constants
 	// https://listenbrainz.readthedocs.io/en/latest/users/api/core.html#constants
 	// https://github.com/metabrainz/listenbrainz-server/blob/master/listenbrainz/webserver/views/api_tools.py
@@ -637,6 +645,36 @@ listenBrainz.lookupRecordingInfoByMBIDs = function lookupRecordingInfoByMBIDs(MB
 }
 
 /*
+	Lookup recordings
+*/
+
+// To use along listenBrainz.retrieveSimilarArtists (unstable API)
+listenBrainz.getRecordingsByTag = function getRecordingsByTag(tagsArr, token, bReleaseGroup = false) {
+	const data = tagsArr.map((tag) => {return {"[tag]": tag};}); // [{"[tag]": "rock"}, ...]
+	return send({
+		method: 'POST', 
+		URL: (bReleaseGroup ? 'https://datasets.listenbrainz.org/recording-from-rg-tag/json' : 'https://datasets.listenbrainz.org/recording-from-tag/json'),
+		requestHeader: [['Content-Type', 'application/json'], ['Authorization', 'Token ' + token]],
+		body: JSON.stringify(data)
+	}).then(
+		(resolve) => {
+			if (resolve) {
+				const response = JSON.parse(resolve);
+				if (response) {
+					console.log('getRecordingsByTag: ' + response.length + ' found items');
+					return response; // [{recording_mbid}, ...]
+				}
+			}
+			return []; 
+		},
+		(reject) => {
+			console.log('getRecordingsByTag: ' + reject.status + ' ' + reject.responseText);
+			return [];
+		}
+	);
+}
+
+/*
 	Statistics
 */
 listenBrainz.getTopRecordings = function getTopRecordings(user = 'sitewide', params = {/*count, offset, range*/}, token) {
@@ -718,7 +756,7 @@ listenBrainz.retrieveUserRecommendedPlaylistsNames = function retrieveUserRecomm
 	);
 }
 
-// To use along listenBrainz.retrieveSimilarArtists
+// To use along listenBrainz.retrieveSimilarArtists (unstable API)
 listenBrainz.getPopularRecordingsByArtist = function getPopularRecordingsByArtist(artist_mbids, token) {
 	const data = artist_mbids.map((mbid) => {return {"[artist_mbid]": mbid};}); // [{"[artist_mbid]": "69ec6867-bda0-404b-bac4-338df8d73723"}, ...]
 	return send({
@@ -738,7 +776,7 @@ listenBrainz.getPopularRecordingsByArtist = function getPopularRecordingsByArtis
 			return []; 
 		},
 		(reject) => {
-			console.log('retrieveSimilarArtists: ' + reject.status + ' ' + reject.responseText);
+			console.log('getPopularRecordingsByArtist: ' + reject.status + ' ' + reject.responseText);
 			return [];
 		}
 	);
@@ -748,10 +786,6 @@ listenBrainz.getPopularRecordingsByArtist = function getPopularRecordingsByArtis
 	Similarity
 */
 // Only default algorithms work
-listenBrainz.algorithm.retrieveSimilarArtists = {
-	v1: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30',
-	v2: 'session_based_days_7500_session_300_contribution_5_threshold_10_limit_100_filter_True_skip_30',
-};
 listenBrainz.retrieveSimilarArtists = function retrieveSimilarArtists(artistMbid, token, algorithm = 'v1') { // May add algorithm directly or by key
 	if (this.algorithm.retrieveSimilarArtists.hasOwnProperty(algorithm)) {algorithm = this.algorithm.retrieveSimilarArtists[algorithm];}
 	const data = [{
@@ -782,9 +816,6 @@ listenBrainz.retrieveSimilarArtists = function retrieveSimilarArtists(artistMbid
 }
 
 // Only default algorithm works
-listenBrainz.algorithm.retrieveSimilarRecordings = {
-	v1: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30',
-};
 listenBrainz.retrieveSimilarRecordings = function retrieveSimilarRecordings(recordingMBId, token, algorithm = 'v1') {
 	if (this.algorithm.retrieveSimilarRecordings.hasOwnProperty(algorithm)) {algorithm = this.algorithm.retrieveSimilarRecordings[algorithm];}
 	const data = [{
