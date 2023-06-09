@@ -1,5 +1,5 @@
 ﻿'use strict';
-//06/06/23
+//07/06/23
 
 include('..\\..\\helpers\\helpers_xxx_basic_js.js');
 include('..\\..\\helpers\\helpers_xxx_prototypes.js');
@@ -615,7 +615,12 @@ listenBrainz.lookupTracksByMBIDs = function lookupTracksByMBIDs(MBIds, token) {
 	);
 }
 
+// Check output with:
+// if (infoNames.every((tag) => info.hasOwnProperty(tag))) {...}
 listenBrainz.lookupRecordingInfoByMBIDs = function lookupRecordingInfoByMBIDs(MBIds, infoNames = ['recording_mbid', 'recording_name', 'artist_credit_name'], token) {
+	const count = MBIds.length;
+	if (!count) {return Promise.resolve({});}
+	console.log('lookupRecordingInfoByMBIDs', count, MBIds)
 	const allInfo = [
 		'recording_mbid', 'recording_name', 'length', 'artist_credit_id', 
 		'artist_credit_name', 'artist_credit_mbids', 
@@ -625,7 +630,7 @@ listenBrainz.lookupRecordingInfoByMBIDs = function lookupRecordingInfoByMBIDs(MB
 	return this.lookupTracksByMBIDs(MBIds, token).then(
 		(resolve) => {
 			const info = {};
-			infoNames.forEach((tag) => {info[tag] = new Array(MBIds.length).fill('');});
+			infoNames.forEach((tag) => {info[tag] = new Array(count).fill('');});
 			if (resolve.length) {
 				infoNames.forEach((tag) => {
 					if (allInfo.indexOf(tag) !== -1) {
@@ -639,7 +644,7 @@ listenBrainz.lookupRecordingInfoByMBIDs = function lookupRecordingInfoByMBIDs(MB
 		},
 		(reject) => {
 			console.log('lookupRecordingInfoByMBIDs: ' + reject);
-			return null;
+			return {};
 		}
 	);
 }
