@@ -30,6 +30,7 @@
 - Playlists: matches on library -for playlist creation- are now preferred by higher rating and not live tracks (if possible).
 - Playlists: optimizations finding tracks on library.
 - Playlists: standardized playlists names, similar to playlist created by [Last.fm-SMP](https://regorxxx.github.io/foobar2000-SMP.github.io/scripts/lastfm-smp/).
+- Remove duplicates: when removing duplicates, tracks left for comparison are now preferred by default higher rating and not live tracks.
 - ListenBrainz: key for the token is cached during the same session.
 - ListenBrainz: user name is cached during same session.
 - ListenBrainz: updated getFeedback method (with POST), without limits on data size.
@@ -40,6 +41,7 @@
 ### Fixed
 - Feedback: retrieval of tracks with feedback on server was incomplete due to API limits of number of items get per request. Now requests are paginated, untill all results are get.
 - Lookup for missing MBIDs setting was not honored (always active).
+- UI: tooltip flickering while pressing Shift/Ctrl over a button in icon-only mode.
 
 ## [1.0.0-beta.9] - 2023-05-08
 - YouTube: new option to look for not found tracks on library at YouTube when retrieving playlists. Requires 'foo_youtube' component installed. When links are loaded, the entire process is asynchronous and playlist filling may take some seconds. Track order is ensured in the process (contrary to other scripts relying on foobar path loading).
