@@ -1,5 +1,5 @@
 ﻿'use strict';
-//07/06/23
+//12/06/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -82,9 +82,15 @@ addButton({
 			listenBrainzmenu.bind(this)().btn_up(this.currX, this.currY + this.currH);
 		}
 	}, null, void(0), (parent) => {
+		const token = parent.buttonsProperties.lBrainzToken[1];
+		const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
+		const bListenBrainz = token.length;
+		listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}));
+		const user = listenBrainz.cache.user.get(token) || '';
 		const bShift = utils.IsKeyPressed(VK_SHIFT);
 		const bInfo = typeof menu_panelProperties === 'undefined' || menu_panelProperties.bTooltipInfo[1];
 		const selMul = plman.ActivePlaylist !== -1 ? plman.GetPlaylistSelectedItems(plman.ActivePlaylist) : null;
+		const data = (listenBrainz.cache.feedback ? [...listenBrainz.cache.feedback] : [['',{}]]).filter((userData) => userData[0] === user);
 		let infoMul = '';
 		if (selMul && selMul.Count > 1) {
 			infoMul = ' (multiple tracks selected: ' + selMul.Count + ')';
@@ -100,8 +106,9 @@ addButton({
 			info = 'Playlist:		' + (plman.ActivePlaylist !== -1 ? plman.GetPlaylistName(plman.ActivePlaylist) : '-none-') + infoMul + '\n';
 			info += tfo.EvalWithMetadb(sel);
 		}
-		info += '\nToken:\t\t' + (parent.buttonsProperties.lBrainzToken[1].length ? 'Ok' : ' -missing token-');
+		info += '\nToken:\t\t' + (bListenBrainz ? 'Ok' : ' -missing token-');
 		info += '\nUser Playlists:\t' + (parent.userPlaylists.length ? 'Ok' : ' -missing-');
+		info += '\nCache:\t\t' + (data.length ? Object.keys(data[0][1]).length : 0) + ' item(s)';
 		if (bShift || bInfo) {
 			info += '\n-----------------------------------------------------';
 			info += '\n(Shift + L. Click to open advanced config menu)';
@@ -206,6 +213,7 @@ addButton({
 			const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
 			const user = await listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}));
 			const promises = [];
+			let count = 0;
 			listenBrainz.cache.feedback.forEach((data, dataUser) => {
 				if (dataUser !== user) {return;}
 				const sendMBIDs = Object.keys(data);
@@ -226,6 +234,7 @@ addButton({
 											(Array.isArray(response) ? response : [response]).forEach((bSent, i) => {
 												if (bSent) {
 													delete data[mbids[i]];
+													count++;
 													bDone = true;
 												}
 											});
@@ -239,8 +248,7 @@ addButton({
 				}
 			});
 			Promise.allSettled(promises).then((results) => {
-				const count = results.filter(Boolean).length;
-				if (count) {
+				if (results.some((p) => p.status === 'fulfilled')) {
 					parent.saveCache(user);
 					console.log('ListeBrainz: submitted ' + count + ' item(s) from the feedback cache.');
 				}
