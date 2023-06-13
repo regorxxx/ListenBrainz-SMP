@@ -79,6 +79,7 @@ addButton({
 			).btn_up(this.currX, this.currY + this.currH);
 		} else {
 			this.retrieveUserRecommendedPlaylists(false);
+			if (!listenBrainz.isFollowing(listenBrainz.decryptToken({lBrainzToken: this.buttonsProperties.lBrainzToken[1], bEncrypted: this.buttonsProperties.lBrainzEncrypt[1]}), 'troi-bot')) {this.retrieveFollowing();}
 			listenBrainzmenu.bind(this)().btn_up(this.currX, this.currY + this.currH);
 		}
 	}, null, void(0), (parent) => {
@@ -256,5 +257,16 @@ addButton({
 		};
 		setInterval(parent.sendFeedbackCache, 600000);
 		setTimeout(parent.sendFeedbackCache, 5000);
+		// Retrieve list of following users
+		parent.retrieveFollowing = () => {
+			const token = parent.buttonsProperties.lBrainzToken[1];
+			const bListenBrainz = token.length;
+			const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
+			if (!bListenBrainz || (bEncrypted && !listenBrainz.cache.key)) {return;}
+			listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted})).then((user) => {
+				if (user) {listenBrainz.retrieveFollowing(user, token);}
+			});
+		};
+		setTimeout(parent.retrieveFollowing, 3000);
 	}),
 });
