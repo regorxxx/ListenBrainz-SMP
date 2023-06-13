@@ -1,5 +1,5 @@
 ﻿'use strict';
-//12/06/23
+//13/06/23
 
 include('playlist_manager_listenbrainz.js');
 
@@ -72,8 +72,6 @@ function getRecommendedRecordings(user, params /* {artist_type, count, offset} *
 			.then(({notFound, items}) => {
 				if (notFound.length && bYoutube) {
 					parent && parent.switchAnimation('YouTube Scrapping', true);
-					// Add MBIDs to youtube track metadata
-					notFound.forEach((track) => track.tags = {musicbrainz_trackid: track.identifier});
 					// Send request in parallel every x ms and process when all are done
 					return Promise.parallel(notFound, youtube.searchForYoutubeTrack, 5).then((results) => {
 						let j = 0;
