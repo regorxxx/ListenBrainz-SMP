@@ -15,8 +15,9 @@
 ## [Unreleased][]
 ### Added
 - Feedback: love/hate feedback can now be saved as tags (in addition to the online syncing). Tag is configurable; 'FEEDBACK' by default.
-- User Recommendations: added Playlists recommendations for the user associated to the token (found at https://listenbrainz.org/user/[USERNAME]/recommendations/). For ex. Daily Jams, Top Discoveries of [YEAR], Top Missed Recordings of [YEAR], ... Automatically refreshed every 30 min or after clicking on the button (list is refreshed the next time the menu is opened).
-- User Recommendations: daily jams are automatically enabled when the user sets the token, token is retrieved from other panels or by using a new menu entry at Playlists recommendations submenu. It's done by following ['troi-bot' user](https://community.metabrainz.org/t/would-you-like-to-test-drive-our-first-recommendations-feature/626352). Must only be done once.
+- Playlists Recommendations: added Playlists recommendations for the user associated to the token (found at https://listenbrainz.org/user/[USERNAME]/recommendations/). For ex. Daily Jams, Top Discoveries of [YEAR], Top Missed Recordings of [YEAR], ... Automatically refreshed every 30 min or after clicking on the button (list is refreshed the next time the menu is opened).
+- Playlists Recommendations: daily jams are automatically enabled when the user sets the token, token is retrieved from other panels or by using a new menu entry at Playlists recommendations submenu. It's done by following ['troi-bot' user](https://community.metabrainz.org/t/would-you-like-to-test-drive-our-first-recommendations-feature/626352). Must only be done once. This playlist is just a mix of music already listened to.
+- Similar users: recommendations by similar users. A mix from the ones available at 'User recommendations' is chosen for a random similar user. Meant to discover similar music to the one you like.
 - Track Recommendations: added entries to find similar artists or recordings to the focused track's artist. Tracks output are preferred by higher rating and not live tracks (if possible).
 ### Changed
 - YouTube: YouTube searches are now cached (during the same session). i.e. matches are found much faster for tracks already searched.
