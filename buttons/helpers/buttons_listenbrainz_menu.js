@@ -1,5 +1,5 @@
 'use strict';
-//12/06/23
+//13/06/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -66,10 +66,9 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 	const tags = [
 		{name: 'Artist top tracks', tf: ['ARTIST', 'ALBUMARTIST'], val: [], valSet: new Set(), type: 'getPopularRecordingsByArtist'},
 		// {name: 'Artist shuffle', tf: ['ARTIST', 'ALBUMARTIST'], val: [], valSet: new Set(), type: 'ARTIST_RADIO'},
-		{name: 'Similar artists to', tf: ['ARTIST', 'ALBUMARTIST'], val: [], valSet: new Set(), type: 'retrieveSimilarArtists'},
-		{name: 'Similar artists', tf: ['SIMILAR ARTISTS SEARCHBYDISTANCE', 'LASTFM_SIMILAR_ARTIST', 'SIMILAR ARTISTS LAST.FM'], val: [], valSet: new Set(), type: 'getPopularRecordingsByArtist'},
+		{name: 'Similar artists to', tf: ['ARTIST', 'ALBUMARTIST'], val: [], valSet: new Set(), type: 'retrieveSimilarArtists'}, 
+		// {name: 'Similar artists', tf: ['SIMILAR ARTISTS SEARCHBYDISTANCE', 'LASTFM_SIMILAR_ARTIST', 'SIMILAR ARTISTS LAST.FM'], val: [], valSet: new Set(), type: 'getPopularRecordingsByArtist'}, // TODO needs a MBID lookup first
 		{name: 'Similar tracks', tf: ['TITLE'], val: [], valSet: new Set(), type: 'retrieveSimilarRecordings'},
-		// {name: 'Album tracks', tf: ['ALBUM', 'ARTIST'], val: [], valSet: new Set(), type: 'ALBUM_TRACKS'},
 		{name: 'Genre & Style(s)', tf: ['GENRE', 'STYLE', 'ARTIST GENRE LAST.FM', 'ARTIST GENRE ALLMUSIC', 'ALBUM GENRE LAST.FM', 'ALBUM GENRE ALLMUSIC', 'ALBUM GENRE WIKIPEDIA', 'ARTIST GENRE WIKIPEDIA'], val: [], valSet: new Set(), type: 'getRecordingsByTag'},
 		{name: 'Folksonomy & Date(s)', tf: ['FOLKSONOMY', 'OCCASION', 'ALBUMOCCASION', 'LOCALE', 'LOCALE LAST.FM', 'DATE', 'LOCALE WORLD MAP'], val: [], valSet: new Set(), type: 'getRecordingsByTag'},
 		{name: 'Mood & Theme(s)', tf: ['MOOD','THEME', 'ALBUMMOOD', 'ALBUM THEME ALLMUSIC', 'ALBUM MOOD ALLMUSIC'], val: [], valSet: new Set(), type: 'getRecordingsByTag'},
@@ -507,36 +506,71 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 		});
 	}
 	menu.newEntry({entryText: 'sep'});
-	{	// Selection
+	{	// Selection 
 		const menuName = menu.newMenu('Track recommendations...');
-		menu.newEntry({menuName, entryText: 'By selection: (Shift + Click to randomize)', flags: MF_GRAYED});
+		menu.newEntry({menuName, entryText: 'By selection:\t(Shift + Click to randomize)', flags: MF_GRAYED});
 		menu.newEntry({menuName, entryText: 'sep'});
-		[
-			{func: 'retrieveSimilarArtists', args: 'v1', title: 'By similar artists (v1)'},
-			{func: 'retrieveSimilarArtists', args: 'v2', title: 'By similar artists (v2)'},
-			{func: 'retrieveSimilarRecordings', args: 'v1', title: 'By similar tracks'},
-		].forEach((entry) =>  {
-			menu.newEntry({menuName, entryText: entry.title + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
-				const bShift = utils.IsKeyPressed(VK_SHIFT);
-				if (!await checkLBToken()) {return false;}
-				const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
-				if (!token) {return;}
-				const sel = fb.GetFocusItem(true);
-				if (!sel) {return;}
-				this.switchAnimation('ListeBrainz data retrieval', true);
-				const selMbid = (entry.func === 'retrieveSimilarArtists' 
-					? await lb.getArtistMBIDs(new FbMetadbHandleList(sel), token, bLookupMBIDs) 
-					: await lb.getMBIDs(new FbMetadbHandleList(sel), token, bLookupMBIDs)
-				)[0];
-				if (!selMbid) {return;}
-				const mbids = [];
-				const mbidsAlt = [];
-				const tags = {TITLE: [], ARTIST: [], SCORE: []};
-				let count = 0;
-				const user = await lb.retrieveUser(token);
-				lb[entry.func](selMbid, token, entry.args)
-					.then((recommendations) => {
-						if (entry.func === 'retrieveSimilarArtists') { // [{artist_mbid, comment, gender, name, reference_mbid, score, type}, ...]
+		{
+			tags.forEach((tag) => {
+				const bSingle = tag.valSet.size <= 1;
+				const subMenu = bSingle ? menuName : menu.newMenu(tag.name + '...', menuName);
+				if (tag.valSet.size === 0) {tag.valSet.add('');}
+				[...tag.valSet].sort((a,b) => a.localeCompare(b, 'en', {'sensitivity': 'base'})).forEach((val, i) => {
+					menu.newEntry({menuName: subMenu, entryText: bSingle ? tag.name + '\t[' + (val.cut(20) || (sel ? 'no tag' : 'no sel')) + ']' : val.cut(20), func: () => {
+						switch (tag.type) {
+							case 'getPopularRecordingsByArtist':
+								runSimilar(tag.type, 'By artist top tracks', 'v1', val); break;
+							case 'getRecordingsByTag':
+								runSimilar(tag.type, 'By tag', false, val); break;
+							case 'retrieveSimilarArtists':
+								runSimilar(tag.type, 'By similar artists', 'v1', val); break;
+							case 'retrieveSimilarRecordings':
+								runSimilar(tag.type, 'By similar tracks', 'v1', val); break;
+						}
+					}, flags: (val ? MF_STRING : MF_GRAYED) | (!bSingle && i % 8 === 0 ? MF_MENUBREAK : MF_STRING)});
+				});
+			});
+		}
+		const runSimilar = async (type, reportTitle, args, val) => {
+			const bShift = utils.IsKeyPressed(VK_SHIFT);
+			if (!await checkLBToken()) {return false;}
+			const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
+			if (!token) {return;}
+			if (!sel) {return;}
+			this.switchAnimation('ListeBrainz data retrieval', true);
+			let selMbid;
+			switch (type) {
+				case 'getPopularRecordingsByArtist': {
+					const selMbids = await lb.getArtistMBIDs(new FbMetadbHandleList(sel), token, bLookupMBIDs, false);
+					const artistDic = await lb.joinArtistMBIDs([val], selMbids, token, true);
+					selMbid = [(artistDic.find((entry) => entry.artist === val) || {mbids: []}).mbids[0]].filter(Boolean);
+					break;
+				}
+				case 'retrieveSimilarArtists': {
+					const selMbids = await lb.getArtistMBIDs(new FbMetadbHandleList(sel), token, bLookupMBIDs, false);
+					const artistDic = await lb.joinArtistMBIDs([val], selMbids, token, true);
+					selMbid = (artistDic.find((entry) => entry.artist === val) || {mbids: []}).mbids[0];
+					break;
+				}
+				case 'getRecordingsByTag': {
+					selMbid = [val];
+					break;
+				}
+				case 'retrieveSimilarRecordings': {
+					selMbid = (await lb.getMBIDs(new FbMetadbHandleList(sel), token, bLookupMBIDs))[0]; 
+					break;
+				}
+			}
+			if (!selMbid || !selMbid.length) {this.switchAnimation('ListeBrainz data retrieval', false); return;}
+			const mbids = [];
+			const mbidsAlt = [];
+			const tags = {TITLE: [], ARTIST: [], SCORE: []};
+			let count = 0;
+			const user = await lb.retrieveUser(token);
+			lb[type](selMbid, token, args)
+				.then((recommendations) => {
+					switch (type) {
+						case 'retrieveSimilarArtists': { // [{artist_mbid, comment, gender, name, reference_mbid, score, type}, ...]
 							recommendations.forEach((artist, i) => {
 								mbids.push(artist.artist_mbid || '');
 								tags.ARTIST.push(artist.name);
@@ -544,6 +578,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								tags.SCORE.push(artist.score);
 							});
 							count = mbids.length;
+							// Retrieve some recordings from given artists
 							return lb.getPopularRecordingsByArtist(mbids.filter(Boolean), token)
 								.then((artistRecommendations) => { // [{artist_mbid, count, recording_mbid}, ...]
 									let cache = '';
@@ -565,8 +600,8 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 										}
 									});
 								})
-								.then(() => {
-									return lb.lookupRecordingInfoByMBIDs(mbidsAlt, ['recording_mbid', 'recording_name'], token);
+								.then(() => { // Retrieve title info
+									return lb.lookupRecordingInfoByMBIDs(mbidsAlt.filter(Boolean), ['recording_mbid', 'recording_name'], token);
 								})
 								.then((info) => {
 									if (['recording_mbid', 'recording_name'].every((tag) => info.hasOwnProperty(tag))) {
@@ -577,7 +612,8 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 										}
 									}
 								});
-						} else { // [{recording_mbid, recording_name, artist_credit_name, [artist_credit_mbids], caa_id, caa_release_mbid, canonical_recording_mbid, score, reference_mbid}, ...]
+						}
+						case 'retrieveSimilarRecordings': { // [{recording_mbid, recording_name, artist_credit_name, [artist_credit_mbids], caa_id, caa_release_mbid, canonical_recording_mbid, score, reference_mbid}, ...]
 							recommendations.forEach((recording, i) => {
 								mbids.push(recording.recording_mbid || '');
 								tags.TITLE.push(recording.recording_name);
@@ -587,13 +623,57 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 							count = mbids.length;
 							return true;
 						}
-					})
-					.then(() => {
-						this.switchAnimation('ListeBrainz data retrieval', false);
-						const libItems = fb.GetLibraryItems();
-						const notFound = [];
-						let items = [];
-						if (entry.func === 'retrieveSimilarArtists') { // Just add a random track from every artist
+						case 'getPopularRecordingsByArtist': { // [{artist_mbid, count, recording_mbid}, ...]
+							recommendations.length = 50;
+							recommendations.forEach((recording, i) => {
+								mbids.push(recording.recording_mbid || '');
+								tags.TITLE.push('');
+								tags.ARTIST.push(val);
+								tags.SCORE.push(recording.count);
+							});
+							count = mbids.length;
+							// Retrieve title info
+							return lb.lookupRecordingInfoByMBIDs(mbids.filter(Boolean), ['recording_mbid', 'recording_name'], token)
+								.then((info) => {
+									if (['recording_mbid', 'recording_name'].every((tag) => info.hasOwnProperty(tag))) {
+										for (let i = 0; i < count; i++) {
+											if (mbids[i] === info.recording_mbid[i]) {
+												if (info.recording_name[i]) {tags.TITLE[i] = info.recording_name[i];}
+											}
+										}
+									}
+								});
+						}
+						case 'getRecordingsByTag': { // [{recording_mbid}, ...]
+							recommendations.forEach((recording, i) => {
+								mbids.push(recording.recording_mbid || '');
+								tags.TITLE.push('');
+								tags.ARTIST.push('');
+								tags.SCORE.push('');
+							});
+							count = mbids.length;
+							// Retrieve title info
+							return lb.lookupRecordingInfoByMBIDs(mbids.filter(Boolean), ['artist_credit_name', 'recording_mbid', 'recording_name'], token)
+								.then((info) => {
+									if (['artist_credit_name', 'recording_mbid', 'recording_name'].every((tag) => info.hasOwnProperty(tag))) {
+										for (let i = 0; i < count; i++) {
+											if (mbids[i] === info.recording_mbid[i]) {
+												if (info.recording_name[i]) {tags.TITLE[i] = info.recording_name[i];}
+												if (info.artist_credit_name[i]) {tags.ARTIST[i] = info.artist_credit_name[i];}
+											}
+										}
+									}
+								});
+						}
+					}
+				})
+				.then(() => {
+					this.switchAnimation('ListeBrainz data retrieval', false);
+					const libItems = fb.GetLibraryItems();
+					const notFound = [];
+					let items = [];
+					switch (type) {
+						case 'retrieveSimilarArtists': { // Just add a random track from every artist
 							const queryArr = mbids.map((mbid, i) => {
 								const mbidAlt = mbidsAlt[i];
 								const tagArr = ['ARTIST', 'TITLE']
@@ -644,7 +724,10 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 							items.forEach((handle, i) => {
 								if (handle && tags.TITLE[i].length === 0) {tags.TITLE[i] = tfo.EvalWithMetadb(handle) || '  \u2715  ';}
 							});
-						} else {
+							break;
+						}
+						case 'getRecordingsByTag':
+						case 'retrieveSimilarRecordings': {
 							const queryArr = mbids.map((mbid, i) => {
 								const tagArr = ['TITLE', 'ARTIST']
 									.map((key) => {return {key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g,'')).toLowerCase()};});
@@ -670,61 +753,109 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {MUSICBRAINZ_TRACKID: mbids[i]}});
 								return null;
 							});
+							break;
 						}
-						const table = new Table;
-						mbids.forEach((mbid, i) => {
-							table.cell('Title', tags.TITLE[i]);
-							table.cell('Artist', tags.ARTIST[i]);
-							table.cell('MBID', mbid);
-							table.cell('Score', tags.SCORE[i]);
-							table.newRow();
-						});
-						const report = entry.title + ': ' + count + '\n\n' + table.toString();
-						fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title + ' ' + _p(user));
-						return {notFound, items};
-					})
-					.then(({notFound, items}) => {
-						if (notFound.length && properties.bYouTube[1] && isYouTube) {
-							this.switchAnimation('YouTube Scrapping', true);
-							// Add MBIDs to youtube track metadata
-							notFound.forEach((track) => track.tags = {musicbrainz_trackid: track.identifier});
-							// Send request in parallel every x ms and process when all are done
-							return Promise.parallel(notFound, youtube.searchForYoutubeTrack, 5).then((results) => {
-								let j = 0;
-								const itemsLen = items.length;
-								results.forEach((result, i) => {
-									for (void(0); j <= itemsLen; j++) {
-										if (result.status !== 'fulfilled') {break;}
-										const link = result.value;
-										if (!link || !link.length) {break;}
-										if (!items[j]) {
-											items[j] = link.url;
-											break;
-										}
-									}
-								});
-								return items;
-							})
-							.finally(() => {
-								this.switchAnimation('YouTube Scrapping', false);
+						case 'getPopularRecordingsByArtist': {
+							const queryArr = mbids.map((mbid, i) => {
+								const tagArr = ['TITLE', 'ARTIST']
+									.map((key) => {return {key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g,'')).toLowerCase()};});
+								const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
+								const query = query_join(
+									[
+										bMeta ?  tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
+										'MUSICBRAINZ_TRACKID IS ' + mbid
+									].filter(Boolean)
+								, 'OR');
+								return query;
+							}).filter(Boolean);
+							const artistItems = fb.GetQueryItems(libItems, 'ARTIST IS ' + tags.ARTIST[0] + ' OR ALBUMARTIST IS ' + tags.ARTIST[0]);
+							items = queryArr.map((query, i) => {
+								let itemHandleList;
+								try {itemHandleList = fb.GetQueryItems(artistItems, query);} // Sanity check
+								catch (e) {fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return;}
+								// Filter
+								if (itemHandleList.Count) {
+									itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false});
+									itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : properties.bAdvTitle[1]});
+									return itemHandleList[0];
+								}
+								notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {MUSICBRAINZ_TRACKID: mbids[i]}});
+								return null;
 							});
-						} else {
-							return items;
+							// Add titles to report, since is a small amount, it's fine to iterate...
+							const tfo = fb.TitleFormat('[%TITLE%]');
+							items.forEach((handle, i) => {
+								if (handle && tags.TITLE[i].length === 0) {tags.TITLE[i] = tfo.EvalWithMetadb(handle) || '  \u2715  ';}
+							});
+							break;
 						}
-					})
-					.then((items) => {
-						if (bShift) {items.shuffle();}
-						const reference = fb.TitleFormat(entry.func === 'retrieveSimilarArtists' ? '%ARTIST%' : '%TITLE%').EvalWithMetadb(sel);
-						const idx = plman.FindOrCreatePlaylist('ListenBrainz: similar to ' + reference, true);
-						plman.ClearPlaylist(idx);
-						plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
-						plman.ActivePlaylist = idx;
-					})
-					.finally(() => {
-						if (this.isAnimationActive('ListeBrainz data retrieval')) {this.switchAnimation('ListeBrainz data retrieval', false);}
+					}
+					const table = new Table;
+					mbids.forEach((mbid, i) => {
+						table.cell('Title', tags.TITLE[i]);
+						table.cell('Artist', tags.ARTIST[i]);
+						table.cell('MBID', mbid);
+						if (type !== 'getRecordingsByTag') {table.cell('Score', tags.SCORE[i]);}
+						table.newRow();
 					});
-			}, flags: bListenBrainz ? selectedFlags : MF_GRAYED, data: {bDynamicMenu: true}});
-		});
+					const report = reportTitle + ': ' + count + '\n\n' + table.toString();
+					fb.ShowPopupMessage(report, 'ListenBrainz ' + reportTitle + ' ' + _p(user));
+					return {notFound, items};
+				})
+				.then(({notFound, items}) => {
+					if (notFound.length && properties.bYouTube[1] && isYouTube) {
+						this.switchAnimation('YouTube Scrapping', true);
+						const search = notFound.filter((t) => t.title.length && t.creator.length);
+						// Send request in parallel every x ms and process when all are done
+						return Promise.parallel(search, youtube.searchForYoutubeTrack, 5).then((results) => {
+							let j = 0;
+							const itemsLen = items.length;
+							results.forEach((result, i) => {
+								for (void(0); j <= itemsLen; j++) {
+									if (result.status !== 'fulfilled') {break;}
+									const link = result.value;
+									if (!link || !link.length) {break;}
+									if (!items[j]) {
+										items[j] = link.url;
+										break;
+									}
+								}
+							});
+							return items;
+						})
+						.finally(() => {
+							this.switchAnimation('YouTube Scrapping', false);
+						});
+					} else {
+						return items;
+					}
+				})
+				.then((items) => {
+					if (bShift) {items.shuffle();}
+					let plsName;
+					switch (type) {
+						case 'getPopularRecordingsByArtist':
+							plsName = 'ListenBrainz: popular recordings by ' + val;
+							break;
+						case 'retrieveSimilarArtists':
+							plsName = 'ListenBrainz: similar to ' + val;
+							break;
+						case 'getRecordingsByTag':
+							plsName = 'ListenBrainz: radio ' + val;
+							break;
+						case 'retrieveSimilarRecordings':
+							plsName = 'ListenBrainz: similar to ' + val;
+							break;
+					}
+					const idx = plman.FindOrCreatePlaylist(plsName, true);
+					plman.ClearPlaylist(idx);
+					plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
+					plman.ActivePlaylist = idx;
+				})
+				.finally(() => {
+					if (this.isAnimationActive('ListeBrainz data retrieval')) {this.switchAnimation('ListeBrainz data retrieval', false);}
+				});
+		};
 	}
 	{	// Similar Users
 		const menuName = menu.newMenu('Similar Users...');
