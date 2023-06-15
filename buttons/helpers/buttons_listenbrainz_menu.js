@@ -1,5 +1,5 @@
 'use strict';
-//13/06/23
+//15/06/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -927,6 +927,8 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								// Find missing tracks on youtube
 								if (notFound.length && properties.bYouTube[1] && isYouTube) {
 									this.switchAnimation('YouTube Scrapping', true);
+									// Add MBIDs to youtube track metadata
+									notFound.forEach((track) => track.tags = {musicbrainz_trackid: track.identifier});
 									// Send request in parallel every x ms and process when all are done
 									return Promise.parallel(notFound, youtube.searchForYoutubeTrack, 5).then((results) => {
 										let j = 0;
