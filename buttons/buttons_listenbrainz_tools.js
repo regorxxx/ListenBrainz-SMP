@@ -161,7 +161,7 @@ addButton({
 				return Promise.resolve(false);
 			}
 			parent.switchAnimation('ListeBrainz retrieve user playlists', true)
-			return lb.retrieveUser(lb.decryptToken({lBrainzToken: token, bEncrypted})).then((user) => {
+			return lb.retrieveUser(lb.decryptToken({lBrainzToken: token, bEncrypted}), false).then((user) => {
 				return lb.retrieveUserRecommendedPlaylistsNames(user, {count: lb.MAX_ITEMS_PER_GET}, lb.decryptToken({lBrainzToken: token, bEncrypted}));
 			}).then((playlists) => {
 				parent.userPlaylists.length = 0;
@@ -212,7 +212,7 @@ addButton({
 			const token = parent.buttonsProperties.lBrainzToken[1];
 			const bListenBrainz = token.length;
 			const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
-			const user = await listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}));
+			const user = await listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}), false);
 			const promises = [];
 			let count = 0;
 			listenBrainz.cache.feedback.forEach((data, dataUser) => {
@@ -263,7 +263,7 @@ addButton({
 			const bListenBrainz = token.length;
 			const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
 			if (!bListenBrainz || (bEncrypted && !listenBrainz.cache.key)) {return;}
-			listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted})).then((user) => {
+			listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}), false).then((user) => {
 				if (user) {listenBrainz.retrieveFollowing(user, token);}
 			});
 		};
