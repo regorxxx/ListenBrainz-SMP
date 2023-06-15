@@ -27,6 +27,7 @@
 - Forced query: added forced query to pre-filter library for all lookups. Greatly speedups the process of searching matches in library.
 ### Changed
 - YouTube: YouTube searches are now cached (during the same session). i.e. matches are found much faster for tracks already searched.
+- YouTube: YouTube searches now have 'MUSICBRAINZ_TRACKID', 'MUSICBRAINZ_ALBUMARTISTID' and 'MUSICBRAINZ_ARTISTID' tags if available.
 - Feedback: report will also compare online values against the file tags (if available) and show total number of loved, hated and mismatched tracks.
 - Feedback: retrieving loved/hated tracks from library will also output library tagged tracks (if available), without duplicates by MBID.
 - Feedback: menu entries will be disabled when selection count is higher than the API recommendations.

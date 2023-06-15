@@ -936,7 +936,11 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								if (notFound.length && properties.bYouTube[1] && isYouTube) {
 									this.switchAnimation('YouTube Scrapping', true);
 									// Add MBIDs to youtube track metadata
-									notFound.forEach((track) => track.tags = {musicbrainz_trackid: track.identifier});
+									notFound.forEach((track) => track.tags = {
+										musicbrainz_trackid: track.identifier,
+										musicbrainz_albumartistid: track.artistIndentifier[0],
+										musicbrainz_artistid: track.artistIndentifier[0],
+									});
 									// Send request in parallel every x ms and process when all are done
 									return Promise.parallel(notFound, youtube.searchForYoutubeTrack, 5).then((results) => {
 										let j = 0;

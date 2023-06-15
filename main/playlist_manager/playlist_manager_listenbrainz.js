@@ -8,7 +8,7 @@ include('..\\..\\helpers\\helpers_xxx_web.js');
 const SimpleCrypto = require('..\\helpers-external\\SimpleCrypto-js\\SimpleCrypto.min');
 
 const listenBrainz = {
-	regEx: /^(https:\/\/(listenbrainz|musicbrainz).org\/)|(recording)|(playlist)|\//g,
+	regEx: /^(https:\/\/(listenbrainz|musicbrainz).org\/)|(recording)|(playlist)|(artist)|\//g,
 	bProfile: false,
 	cache: {
 		user: new Map(),
@@ -958,15 +958,23 @@ listenBrainz.contentResolver = function contentResolver(jspf, filter = '', sort 
 			: fb.GetLibraryItems();
 	const sortTF = sort.length ? fb.TitleFormat(sort) : null;
 	for (let i = 0; i < rowsLength; i++) {
+		const row = rows[i];
+		const rowExt = row.extension['https://musicbrainz.org/doc/jspf#track'];
 		let query = '';
 		let lookup = {};
 		let identifier = '';
+		const artistIndentifier = rowExt.hasOwnProperty('artist_identifiers') && rowExt.artist_identifiers && rowExt.artist_identifiers.length
+			? rowExt.artist_identifiers.map((val) => decodeURI(val).replace(this.regEx,''))
+			: [''];
 		lookupKeys.forEach((look) => {
 			const key = look.xspfKey;
 			const queryKey = _q(sanitizeTagIds(_t(look.queryKey)));
-			if (rows[i].hasOwnProperty(key) && rows[i][key] && rows[i][key].length) {
-				if (key === 'identifier') {identifier = decodeURI(rows[i][key]).replace(this.regEx,'');}
-				lookup[look.queryKey] = queryKey + ' IS ' + this.sanitizeQueryValue(key === 'identifier' ? identifier : rows[i][key]);
+			if (row.hasOwnProperty(key)) {
+				const value = row[key];
+				if (value && value.length) {
+					if (key === 'identifier') {identifier = decodeURI(value).replace(this.regEx,'');}
+					lookup[look.queryKey] = queryKey + ' IS ' + this.sanitizeQueryValue(key === 'identifier' ? identifier : value);
+				}
 			}
 		});
 		for (let condition of conditions) {
@@ -982,7 +990,7 @@ listenBrainz.contentResolver = function contentResolver(jspf, filter = '', sort 
 				}
 			}
 		}
-		if (!handleArr[i]) {notFound.push({creator: rows[i].creator, title: rows[i].title, identifier});}
+		if (!handleArr[i]) {notFound.push({creator: rows[i].creator, title: rows[i].title, identifier, artistIndentifier});}
 	}
 	if (notFound.length) {console.log('Some tracks have not been found on library:\n\t' + notFound.map((row) => row.creator + ' - ' + row.title + ': ' + row.identifier).join('\n\t'));}
 	if (this.bProfile) {profiler.Print('');}
