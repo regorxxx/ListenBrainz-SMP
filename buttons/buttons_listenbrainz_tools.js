@@ -29,6 +29,8 @@ var newButtonsProperties = { //You can simply add new properties here
 	feedbackTag:	['Feedback tag', globTags.feedback, {func: isString}, globTags.feedback],
 	feedbackCache:	['Feedback cache file', folders.data + 'listenbrainz_feedback.json', {func: isString}, folders.data + 'listenbrainz_feedback.json'],
 	userCache:		['User name cache', '', {func: isStringWeak}, ''],
+	bPlsMatchMBID:	['Match only by MBID?', false, {func: isBoolean}, false],
+	forcedQuery: 	['Forced query to pre-filter database', globQuery.filter, {func: (query) => {return checkQuery(query, true);}}, globQuery.filter],
 };
 setProperties(newButtonsProperties, prefix, 0); //This sets all the panel properties at once
 newButtonsProperties = getPropertiesPairs(newButtonsProperties, prefix, 0);

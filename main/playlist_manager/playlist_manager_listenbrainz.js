@@ -936,7 +936,8 @@ listenBrainz.retrieveSimilarUsers = function retrieveSimilarUsers(user, token, i
 /*
 	Content resolver by MBID
 */
-listenBrainz.contentResolver = function contentResolver(jspf, filter = '', sort = globQuery.remDuplBias) {
+// Recommended filter: NOT (%RATING% EQUAL 1 OR %RATING% EQUAL 2) AND NOT (GENRE IS live OR STYLE IS live)
+listenBrainz.contentResolver = function contentResolver(jspf, filter = '', sort = globQuery.remDuplBias, bOnlyMBID = false) {
 	if (!jspf) {return null;}
 	const profiler = this.bProfile ? new FbProfiler('listenBrainz.contentResolver') : null;
 	// Query cache (Library)
@@ -949,8 +950,12 @@ listenBrainz.contentResolver = function contentResolver(jspf, filter = '', sort 
 	const rows = playlist.track;
 	const rowsLength = rows.length;
 	const lookupKeys = [{xspfKey: 'identifier', queryKey: 'MUSICBRAINZ_TRACKID'}, {xspfKey: 'title', queryKey: 'TITLE'}, {xspfKey: 'creator', queryKey: 'ARTIST'}];
-	const conditions = [['MUSICBRAINZ_TRACKID'], ['TITLE','ARTIST'], ['TITLE']];
-	const libItems = checkQuery(filter, false) ? fb.GetQueryItems(fb.GetLibraryItems(), filter) : fb.GetLibraryItems();
+	const conditions = bOnlyMBID ? [['MUSICBRAINZ_TRACKID']] : [['MUSICBRAINZ_TRACKID'], ['TITLE','ARTIST'], ['TITLE']];
+	const libItems = checkQuery(filter, false) // Filtering can easily speedup the entire process up to 50%
+		? fb.GetQueryItems(fb.GetLibraryItems(), filter + (bOnlyMBID ? ' AND MUSICBRAINZ_TRACKID PRESENT' : '')) 
+		: bOnlyMBID 
+			? fb.GetQueryItems(fb.GetLibraryItems(), 'MUSICBRAINZ_TRACKID PRESENT')
+			: fb.GetLibraryItems();
 	const sortTF = sort.length ? fb.TitleFormat(sort) : null;
 	for (let i = 0; i < rowsLength; i++) {
 		let query = '';

@@ -444,7 +444,11 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								, 'OR');
 								return query;
 							}).filter(Boolean);
-							const libItems = fb.GetLibraryItems();
+							let libItems;
+							if (properties.forcedQuery[1].length) {
+								try {libItems = fb.GetQueryItems(fb.GetLibraryItems(), properties.forcedQuery[1]);} // Sanity check
+								catch (e) {libItems = fb.GetLibraryItems();}
+							} else {libItems = fb.GetLibraryItems();}
 							const notFound = [];
 							const items = queryArr.map((query, i) => {
 								let itemHandleList;
@@ -669,7 +673,11 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				})
 				.then(() => {
 					this.switchAnimation('ListeBrainz data retrieval', false);
-					const libItems = fb.GetLibraryItems();
+					let libItems;
+					if (properties.forcedQuery[1].length) {
+						try {libItems = fb.GetQueryItems(fb.GetLibraryItems(), properties.forcedQuery[1]);} // Sanity check
+						catch (e) {libItems = fb.GetLibraryItems();}
+					} else {libItems = fb.GetLibraryItems();}
 					const notFound = [];
 					let items = [];
 					switch (type) {
@@ -921,7 +929,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 					lb.importPlaylist({playlist_mbid: playlist.identifier.replace(lb.regEx, '')}, token)
 						.then((jspf) => {
 							if (jspf) {
-								const data = lb.contentResolver(jspf);
+								const data = lb.contentResolver(jspf, properties.forcedQuery[1], void(0), properties.bPlsMatchMBID[1]);
 								const items = data.handleArr;
 								const notFound = data.notFound;
 								// Find missing tracks on youtube
@@ -989,34 +997,68 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 	{	// Configuration
 		const menuName = menu.newMenu('Configuration...');
 		{
-			menu.newEntry({menuName, entryText: 'Set token...', func: async () => {
-				const bDone = await checkLBToken('');
-				if (bDone) {
-					// Force following troi-bot user to create daily jams
-					const token = lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted: properties.lBrainzEncrypt[1]});
-					listenBrainz.followUser('troi-bot', properties.lBrainzToken[1]);
-				}
-				return bDone;
-			}});
-			menu.newCheckMenu(menuName, 'Set token...', void(0), () => {return properties.lBrainzToken[1].length ? true : false;});
-			menu.newEntry({menuName, entryText: 'Retrieve token from other panels...', func: () => {
-				this.lBrainzTokenListener = true;
-				let cache = {token: properties.lBrainzToken[1], encrypted: properties.lBrainzEncrypt[1]};
-				window.NotifyOthers('xxx-scripts: lb token', null);
-				setTimeout(() => {
-					this.lBrainzTokenListener = false;
-					fb.ShowPopupMessage('ListenBrainz token report:\n\nOld value:  ' + cache.toStr({bClosure: true}) + '\nNew value:  ' + {token: properties.lBrainzToken[1], encrypted: properties.lBrainzEncrypt[1]}.toStr({bClosure: true}), 'ListenBrainz');
-				}, 1500);
-			}});
-			menu.newEntry({menuName, entryText: 'Open user profile'  + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
-				if (!await checkLBToken()) {return;}
-				const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
-				if (!token) {return;}
-				const user = await lb.retrieveUser(token);
-				if (user.length) {_runCmd('CMD /C START https://listenbrainz.org/user/' + user + '/playlists/', false);}
-			}, flags: bListenBrainz ? MF_STRING: MF_GRAYED});
+			const subMenuName = menu.newMenu('User...', menuName);
+			{
+				menu.newEntry({menuName: subMenuName, entryText: 'Set token...', func: async () => {
+					const bDone = await checkLBToken('');
+					if (bDone) {
+						// Force following troi-bot user to create daily jams
+						const token = lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted: properties.lBrainzEncrypt[1]});
+						listenBrainz.followUser('troi-bot', properties.lBrainzToken[1]);
+					}
+					return bDone;
+				}});
+				menu.newCheckMenu(subMenuName, 'Set token...', void(0), () => {return properties.lBrainzToken[1].length ? true : false;});
+				menu.newEntry({menuName: subMenuName, entryText: 'Retrieve token from other panels...', func: () => {
+					this.lBrainzTokenListener = true;
+					let cache = {token: properties.lBrainzToken[1], encrypted: properties.lBrainzEncrypt[1]};
+					window.NotifyOthers('xxx-scripts: lb token', null);
+					setTimeout(() => {
+						this.lBrainzTokenListener = false;
+						fb.ShowPopupMessage('ListenBrainz token report:\n\nOld value:  ' + cache.toStr({bClosure: true}) + '\nNew value:  ' + {token: properties.lBrainzToken[1], encrypted: properties.lBrainzEncrypt[1]}.toStr({bClosure: true}), 'ListenBrainz');
+					}, 1500);
+				}});
+				menu.newEntry({menuName: subMenuName, entryText: 'Open user profile'  + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
+					if (!await checkLBToken()) {return;}
+					const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
+					if (!token) {return;}
+					const user = await lb.retrieveUser(token);
+					if (user.length) {_runCmd('CMD /C START https://listenbrainz.org/user/' + user + '/playlists/', false);}
+				}, flags: bListenBrainz ? MF_STRING: MF_GRAYED});
+			}
+		}
+		{
+			const subMenuName = menu.newMenu('Playlists...', menuName);
+			{
+				menu.newEntry({menuName: subMenuName, entryText: 'Match only by MBID?', func: async () => {
+					properties.bPlsMatchMBID[1] = !properties.bPlsMatchMBID[1];
+					if (properties.bPlsMatchMBID[1]) {
+						fb.ShowPopupMessage('When importing playlists (not applicable to the other lookups), track are matched by MBID, Title + Artist or Title. Enabling this option skips all checks but the MBID one, greatly optimizing the library search and providing faster results.\n\nUse this option if most of your library have been tagged with MBIDs.', 'ListenBrainz');
+					}
+					overwriteProperties(properties);
+				}});
+				menu.newCheckMenu(subMenuName, 'Match only by MBID?', void(0), () => {return properties.lBrainzToken[1].length ? true : false;});
+			}
 		}
 		menu.newEntry({menuName, entryText: 'sep'});
+		menu.newEntry({menuName, entryText: 'Set Global Forced Query...', func: (cache) => {
+			let input = '';
+			try {input = utils.InputBox(window.ID, 'Enter global query used to pre-filter library:', 'ListenBrainz Tools', cache || properties.forcedQuery[1], true);}
+			catch(e) {return;}
+			if ((!cache || cache !== input) && properties.forcedQuery[1] === input) {return;}
+			try {if (input.length && fb.GetQueryItems(fb.GetLibraryItems(), input).Count === 0) {throw new Error('No items');}} // Sanity check
+			catch (e) {
+				if (e.message === 'No items') {
+					fb.ShowPopupMessage('Query returns zero items on current library. Check it and add it again:\n' + input, 'Search by distance'); 
+				} else {
+					fb.ShowPopupMessage('Query not valid. Check it and add it again:\n' + input, 'Search by distance'); 
+				}
+				menu.retry({pos: -1, args: input || properties.forcedQuery[1]});
+				return;
+			}
+			properties.forcedQuery[1] = input;
+			overwriteProperties(properties); // Updates panel
+		}});
 		{
 			menu.newEntry({menuName, entryText: 'Lookup for missing track MBIDs?', func: () => {
 				properties.bLookupMBIDs[1] = !properties.bLookupMBIDs[1];
