@@ -1,5 +1,5 @@
 ﻿'use strict';
-//14/06/23
+//15/06/23
 
 include('..\\..\\helpers\\helpers_xxx_basic_js.js');
 include('..\\..\\helpers\\helpers_xxx_prototypes.js');
@@ -1011,7 +1011,7 @@ listenBrainz.retrieveUserPlaylistsNames = function retrieveUserPlaylistsNames(us
 	);
 };
 
-listenBrainz.retrieveUserResponse = function retrieveUserResponse(token) {
+listenBrainz.retrieveUserResponse = function retrieveUserResponse(token, bLog = true) {
 	if (!token || !token.length) {console.log('retrieveUserResponse: no token provided'); return Promise.resolve(null);}
 	return send({
 		method: 'GET', 
@@ -1022,7 +1022,7 @@ listenBrainz.retrieveUserResponse = function retrieveUserResponse(token) {
 			return JSON.parse(resolve);
 		},
 		(reject) => {
-			console.log('retrieveUser: ' + JSON.stringify(reject));
+			if (bLog) {console.log('retrieveUser: ' + JSON.stringify(reject));}
 			return null;
 		}
 	);

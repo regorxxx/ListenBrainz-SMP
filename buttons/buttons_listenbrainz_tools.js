@@ -1,5 +1,5 @@
 ﻿'use strict';
-//12/06/23
+//15/06/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -86,7 +86,7 @@ addButton({
 		const token = parent.buttonsProperties.lBrainzToken[1];
 		const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
 		const bListenBrainz = token.length;
-		listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}));
+		listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}), false);
 		const user = listenBrainz.cache.user.get(token) || '';
 		const bShift = utils.IsKeyPressed(VK_SHIFT);
 		const bInfo = typeof menu_panelProperties === 'undefined' || menu_panelProperties.bTooltipInfo[1];
