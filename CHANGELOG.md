@@ -27,7 +27,7 @@
 - Forced query: added forced query to pre-filter library for all lookups. Greatly speedups the process of searching matches in library.
 ### Changed
 - YouTube: YouTube searches are now cached (during the same session). i.e. matches are found much faster for tracks already searched.
-- YouTube: YouTube searches now have 'MUSICBRAINZ_TRACKID', 'MUSICBRAINZ_ALBUMARTISTID' and 'MUSICBRAINZ_ARTISTID' tags if available.
+- YouTube: YouTube searches now have 'MUSICBRAINZ_TRACKID', 'MUSICBRAINZ_ALBUMARTISTID', and 'MUSICBRAINZ_ARTISTID' tags if available.
 - Feedback: report will also compare online values against the file tags (if available) and show total number of loved, hated and mismatched tracks.
 - Feedback: retrieving loved/hated tracks from library will also output library tagged tracks (if available), without duplicates by MBID.
 - Feedback: menu entries will be disabled when selection count is higher than the API recommendations.
@@ -48,7 +48,8 @@
 ### Removed
 ### Fixed
 - Feedback: retrieval of tracks with feedback on server was incomplete due to API limits of number of items get per request. Now requests are paginated, untill all results are get.
-- Lookup for missing MBIDs setting was not honored (always active).
+- ListenBrainz: Lookup for missing MBIDs setting was not honored (always active).
+- YouTube: rare errors parsing some titles/artists on YouTube.
 - UI: tooltip flickering while pressing Shift/Ctrl over a button in icon-only mode.
 
 ## [1.0.0-beta.9] - 2023-05-08
