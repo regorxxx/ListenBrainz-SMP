@@ -1,5 +1,5 @@
 'use strict';
-//15/06/23
+//16/06/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -406,7 +406,8 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 					if (!await checkLBToken()) {return false;}
 					const token = bListenBrainz ? lb.decryptToken({lBrainzToken: properties.lBrainzToken[1], bEncrypted}) : null;
 					if (!token) {return;}
-					const mbids = [];
+					const mbids = []; // Tracks
+					const mbidsAlt = []; // Artists
 					const tags = {TITLE: [], ARTIST: [], ALBUM: []};
 					let count = 0;
 					this.switchAnimation('ListeBrainz data retrieval', true);
@@ -416,10 +417,12 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 							const table = new Table;
 							recordings.forEach((recording, i) => {
 								const mbid = recording.recording_mbid || '';
+								const mbidAlt = (recording.artist_mbids || ['']).filter(Boolean);
 								const title = recording.track_name || '';
 								const artist = recording.artist_name || '';
 								const release = recording.release_name || '';
 								mbids.push(mbid);
+								mbidsAlt.push(mbidAlt);
 								tags.TITLE.push(title);
 								tags.ARTIST.push(artist);
 								tags.ALBUM.push(release);
@@ -460,7 +463,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 									itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : properties.bAdvTitle[1]});
 									return itemHandleList[0];
 								}
-								notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {ALBUM: tags.ALBUM[i], MUSICBRAINZ_TRACKID: mbids[i]}});
+								notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {ALBUM: tags.ALBUM[i], MUSICBRAINZ_TRACKID: mbids[i], MUSICBRAINZ_ALBUMARTISTID: mbidsAlt[i][0], MUSICBRAINZ_ARTISTID: mbidsAlt[i]}});
 								return null;
 							});
 							return {notFound, items};
@@ -474,8 +477,8 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 									const itemsLen = items.length;
 									results.forEach((result, i) => {
 										for (void(0); j <= itemsLen; j++) {
-											if (result.status !== 'fulfilled') {
-												console.log(result.status, result.reason.message);
+											if (result.status !== 'fulfilled') { // Only code errors are output
+												console.log('YouTube:', result.status, result.reason.message);
 												break;
 											}
 											const link = result.value;
@@ -620,6 +623,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 						case 'retrieveSimilarRecordings': { // [{recording_mbid, recording_name, artist_credit_name, [artist_credit_mbids], caa_id, caa_release_mbid, canonical_recording_mbid, score, reference_mbid}, ...]
 							recommendations.forEach((recording, i) => {
 								mbids.push(recording.recording_mbid || '');
+								mbidsAlt.push(recording['[artist_credit_mbids]'] || ['']);
 								tags.TITLE.push(recording.recording_name);
 								tags.ARTIST.push(recording.artist_credit_name);
 								tags.SCORE.push(recording.score);
@@ -631,6 +635,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 							recommendations.length = 50;
 							recommendations.forEach((recording, i) => {
 								mbids.push(recording.recording_mbid || '');
+								mbidsAlt.push(recording.artist_mbid || '');
 								tags.TITLE.push('');
 								tags.ARTIST.push(val);
 								tags.SCORE.push(recording.count);
@@ -651,19 +656,21 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 						case 'getRecordingsByTag': { // [{recording_mbid}, ...]
 							recommendations.forEach((recording, i) => {
 								mbids.push(recording.recording_mbid || '');
+								mbidsAlt.push(['']);
 								tags.TITLE.push('');
 								tags.ARTIST.push('');
 								tags.SCORE.push('');
 							});
 							count = mbids.length;
 							// Retrieve title info
-							return lb.lookupRecordingInfoByMBIDs(mbids.filter(Boolean), ['artist_credit_name', 'recording_mbid', 'recording_name'], token)
+							return lb.lookupRecordingInfoByMBIDs(mbids.filter(Boolean), ['artist_credit_name', 'recording_mbid', 'recording_name', '[artist_credit_mbids]'], token)
 								.then((info) => {
-									if (['artist_credit_name', 'recording_mbid', 'recording_name'].every((tag) => info.hasOwnProperty(tag))) {
+									if (['artist_credit_name', 'recording_mbid', 'recording_name', '[artist_credit_mbids]'].every((tag) => info.hasOwnProperty(tag))) {
 										for (let i = 0; i < count; i++) {
 											if (mbids[i] === info.recording_mbid[i]) {
 												if (info.recording_name[i]) {tags.TITLE[i] = info.recording_name[i];}
 												if (info.artist_credit_name[i]) {tags.ARTIST[i] = info.artist_credit_name[i];}
+												if (info['[artist_credit_mbids]'][i]) {mbidsAlt[i] = info['[artist_credit_mbids]'][i];}
 											}
 										}
 									}
@@ -723,7 +730,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 									return itemHandleList[0];
 								}
 								if (tags.TITLE[i].length) {
-									notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags:  mbidsAlt[i] ? {MUSICBRAINZ_TRACKID: mbidsAlt[i]} : {}});
+									notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {MUSICBRAINZ_TRACKID: mbidsAlt[i], MUSICBRAINZ_ALBUMARTISTID: mbids[i], MUSICBRAINZ_ARTISTID: mbids[i]}});
 								}
 								return null;
 							});
@@ -758,7 +765,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 									itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : properties.bAdvTitle[1]});
 									return itemHandleList[0];
 								}
-								notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {MUSICBRAINZ_TRACKID: mbids[i]}});
+								notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {MUSICBRAINZ_TRACKID: mbids[i], MUSICBRAINZ_ALBUMARTISTID: mbidsAlt[i][0], MUSICBRAINZ_ARTISTID: mbidsAlt[i]}});
 								return null;
 							});
 							break;
@@ -787,7 +794,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 									itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : properties.bAdvTitle[1]});
 									return itemHandleList[0];
 								}
-								notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {MUSICBRAINZ_TRACKID: mbids[i]}});
+								notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {MUSICBRAINZ_TRACKID: mbids[i], MUSICBRAINZ_ALBUMARTISTID: mbidsAlt[i], MUSICBRAINZ_ARTISTID: mbidsAlt[i]}});
 								return null;
 							});
 							// Add titles to report, since is a small amount, it's fine to iterate...
@@ -820,7 +827,10 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 							const itemsLen = items.length;
 							results.forEach((result, i) => {
 								for (void(0); j <= itemsLen; j++) {
-									if (result.status !== 'fulfilled') {break;}
+									if (result.status !== 'fulfilled') { // Only code errors are output
+										console.log('YouTube:', result.status, result.reason.message);
+										break;
+									}
 									const link = result.value;
 									if (!link || !link.length) {break;}
 									if (!items[j]) {
@@ -932,14 +942,14 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								const data = lb.contentResolver(jspf, properties.forcedQuery[1], void(0), properties.bPlsMatchMBID[1]);
 								const items = data.handleArr;
 								const notFound = data.notFound;
-								// Find missing tracks on youtube
+								// Find missing tracks on YouTube
 								if (notFound.length && properties.bYouTube[1] && isYouTube) {
 									this.switchAnimation('YouTube Scrapping', true);
 									// Add MBIDs to youtube track metadata
 									notFound.forEach((track) => track.tags = {
 										musicbrainz_trackid: track.identifier,
 										musicbrainz_albumartistid: track.artistIndentifier[0],
-										musicbrainz_artistid: track.artistIndentifier[0],
+										musicbrainz_artistid: track.artistIndentifier,
 									});
 									// Send request in parallel every x ms and process when all are done
 									return Promise.parallel(notFound, youtube.searchForYoutubeTrack, 5).then((results) => {
@@ -948,7 +958,10 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 										let foundLinks = 0;
 										results.forEach((result, i) => {
 											for (void(0); j <= itemsLen; j++) {
-												if (result.status !== 'fulfilled') {break;}
+												if (result.status !== 'fulfilled') { // Only code errors are output
+													console.log('YouTube:', result.status, result.reason.message);
+													break;
+												}
 												const link = result.value;
 												if (!link || !link.length) {break;}
 												if (!items[j]) {

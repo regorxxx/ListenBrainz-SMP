@@ -1,10 +1,11 @@
 ﻿'use strict';
-//15/06/23
+//16/06/23
 
 include('..\\..\\helpers\\helpers_xxx_basic_js.js');
 include('..\\..\\helpers\\helpers_xxx_prototypes.js');
 include('..\\..\\helpers\\helpers_xxx_tags.js');
 include('..\\..\\helpers\\helpers_xxx_web.js');
+include('..\\..\\helpers\\helpers_xxx_levenshtein.js');
 const SimpleCrypto = require('..\\helpers-external\\SimpleCrypto-js\\SimpleCrypto.min');
 
 const listenBrainz = {
@@ -676,7 +677,7 @@ listenBrainz.lookupRecordingInfoByMBIDs = function lookupRecordingInfoByMBIDs(MB
 	if (!count) {console.log('lookupRecordingInfoByMBIDs: no MBIds provided'); return Promise.resolve({});}
 	const allInfo = [
 		'recording_mbid', 'recording_name', 'length', 'artist_credit_id', 
-		'artist_credit_name', 'artist_credit_mbids', 
+		'artist_credit_name', '[artist_credit_mbids]', 
 		'canonical_recording_mbid', 'original_recording_mbid'
 	];
 	if (!infoNames || !infoNames.length) {infoNames = allInfo;}
@@ -708,7 +709,7 @@ listenBrainz.lookupRecordingInfoByMBIDs = function lookupRecordingInfoByMBIDs(MB
 
 // To use along listenBrainz.retrieveSimilarArtists (unstable API)
 listenBrainz.getRecordingsByTag = function getRecordingsByTag(tagsArr, token, bReleaseGroup = false) {
-	const data = tagsArr.map((tag) => {return {"[tag]": tag};}); // [{"[tag]": "rock"}, ...]
+	const data = tagsArr.map((tag) => {return {"[tag]": tag, operator: 'and', threshold: '4'};}); // [{"[tag]": "rock", "operator": "and", "threshold": "4"}, ...]
 	return send({
 		method: 'POST', 
 		URL: (bReleaseGroup ? 'https://datasets.listenbrainz.org/recording-from-rg-tag/json' : 'https://datasets.listenbrainz.org/recording-from-tag/json'),
@@ -748,7 +749,7 @@ listenBrainz.getTopRecordings = function getTopRecordings(user = 'sitewide', par
 			if (resolve) {
 				const response = JSON.parse(resolve);
 				if (response.hasOwnProperty('payload') && response.payload.hasOwnProperty('recordings')) {
-					return response.payload.recordings;
+					return response.payload.recordings; /* {artist_mbids: [], artist_name, caa_id, caa_release_mbid, listen_count, recording_mbid, release_mbid, release_name, track_name} */
 				}
 				return [];
 			}
@@ -990,7 +991,7 @@ listenBrainz.contentResolver = function contentResolver(jspf, filter = '', sort 
 				}
 			}
 		}
-		if (!handleArr[i]) {notFound.push({creator: rows[i].creator, title: rows[i].title, identifier, artistIndentifier});}
+		if (!handleArr[i]) {notFound.push({creator: rows[i].creator, title: rows[i].title, identifier /* str */, artistIndentifier /* [str, ...]*/});}
 	}
 	if (notFound.length) {console.log('Some tracks have not been found on library:\n\t' + notFound.map((row) => row.creator + ' - ' + row.title + ': ' + row.identifier).join('\n\t'));}
 	if (this.bProfile) {profiler.Print('');}
