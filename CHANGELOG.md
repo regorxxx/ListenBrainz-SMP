@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [1.0.0-beta.10](#100-beta10---2023-06-27)
 - [1.0.0-beta.9](#100-beta9---2023-05-08)
 - [1.0.0-beta.8](#100-beta8---2023-03-09)
 - [1.0.0-beta.7](#100-beta7---2023-03-08)
@@ -14,12 +15,18 @@
 
 ## [Unreleased][]
 ### Added
+### Changed
+### Removed
+### Fixed
+
+## [1.0.0-beta.10] - 2023-06-27
+### Added
 - Feedback: love/hate feedback can now be saved as tags (in addition to the online syncing). Tag is configurable; 'FEEDBACK' by default.
 - Playlists Recommendations: added Playlists recommendations for the user associated to the token (found at https://listenbrainz.org/user/[USERNAME]/recommendations/). For ex. Daily Jams, Top Discoveries of [YEAR], Top Missed Recordings of [YEAR], ... Automatically refreshed every 30 min or after clicking on the button (list is refreshed the next time the menu is opened).
 - Playlists Recommendations: daily jams are automatically enabled when the user sets the token, token is retrieved from other panels or by using a new menu entry at Playlists recommendations submenu. It's done by following ['troi-bot' user](https://community.metabrainz.org/t/would-you-like-to-test-drive-our-first-recommendations-feature/626352). Must only be done once. This playlist is just a mix of music already listened to.
 - Playlists Recommendations: added setting to only find matches by MBID. Greatly speedups the process of searching matches in library.
 - Similar users: recommendations by similar users. A mix from the ones available at 'User recommendations' is chosen for a random similar user. Meant to discover similar music to the one you like.
-- Track Recommendations: added entries to find similar artists or recordings to the focused track's artist. Also by multiple tags and folksonomy. Tracks output are preferred by higher rating and not live tracks (if possible).
+- Track Recommendations: added entries to find similar artists or recordings to the focused track's artist. Also by multiple tags and folksonomy. Tracks output are preferred by higher rating and not live tracks (if possible). Delete '[foobar_profile]\js_data\presets\global\globQuery.json' and '[foobar_profile]\foobar2000\js_data\presets\global\globTags.json' files after installation.
 - Track Recommendations: supports -full- tag retrieval from [WilB's Biography script](https://github.com/Wil-B/Biography). i.e. genres, styles, locale tags, etc. are added to the file tags on the submenus as available values. Bio tags state is displayed at tooltip, warning when tags are not found (usually requires some seconds).
 - Track Recommendations: supports 'locale' tag retrieval from [World-Map-SMP](https://github.com/regorxxx/World-Map-SMP), independently of Bio panel. i.e. it looks at the local database for matches by artist (so it works even for artists not found by Bio panel, multi-value artists tags and artists manually tagged by user on the panel). Bio and World Map tag retrieval can coexist, duplicates are removed in any case.
 - Track Recommendations: supports 'LASTFM_SIMILAR_ARTIST' tag retrieval from [foo_uie_biography](https://foobar2000.xrea.jp/?User+interface/UI+extension#kbe7a3bd), independently of Bio panel. Bio and foo_uie_biography tag retrieval can coexist, duplicates are removed in any case.
@@ -38,7 +45,7 @@
 - Playlists: matches on library -for playlist creation- are now preferred by higher rating and not live tracks (if possible).
 - Playlists: optimizations finding tracks on library.
 - Playlists: standardized playlists names, similar to playlist created by [Last.fm-SMP](https://regorxxx.github.io/foobar2000-SMP.github.io/scripts/lastfm-smp/).
-- Remove duplicates: when removing duplicates, tracks left for comparison are now preferred by default higher rating and not live tracks.
+- Remove duplicates: when removing duplicates, tracks left for comparison are now preferred by default higher rating and not live tracks. Delete '[foobar_profile]\js_data\presets\global\globQuery.json' and '[foobar_profile]\foobar2000\js_data\presets\global\globTags.json' files after installation.
 - ListenBrainz: key for the token is cached during the same session.
 - ListenBrainz: user name is cached during same session.
 - ListenBrainz: updated getFeedback method (with POST), without limits on data size.
@@ -138,7 +145,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.9...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.10...HEAD
+[1.0.0-beta.10]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.9...v1.0.0-beta.10
 [1.0.0-beta.9]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.8...v1.0.0-beta.9
 [1.0.0-beta.8]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.7...v1.0.0-beta.8
 [1.0.0-beta.7]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.6...v1.0.0-beta.7
