@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [1.0.0-beta.11](#100-beta11---2023-06-29)
 - [1.0.0-beta.10](#100-beta10---2023-06-27)
 - [1.0.0-beta.9](#100-beta9---2023-05-08)
 - [1.0.0-beta.8](#100-beta8---2023-03-09)
@@ -18,6 +19,13 @@
 ### Changed
 ### Removed
 ### Fixed
+
+## [1.0.0-beta.11] - 2023-06-29
+### Added
+### Changed
+### Removed
+### Fixed
+- Helpers: fixed incorrect warning about missing font.
 
 ## [1.0.0-beta.10] - 2023-06-27
 ### Added
@@ -145,7 +153,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.10...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.110...HEAD
+[1.0.0-beta.11]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.10...v1.0.0-beta.11
 [1.0.0-beta.10]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.9...v1.0.0-beta.10
 [1.0.0-beta.9]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.8...v1.0.0-beta.9
 [1.0.0-beta.8]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.7...v1.0.0-beta.8
