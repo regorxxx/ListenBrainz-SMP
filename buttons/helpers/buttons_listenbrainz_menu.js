@@ -64,9 +64,9 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 	const info = sel ? sel.GetFileInfo() : null;
 	const bioTags = this.bioTags || {};
 	const tags = [
-		{name: 'Artist top tracks', tf: ['ARTIST', 'ALBUMARTIST'], val: [], valSet: new Set(), type: 'getPopularRecordingsByArtist'},
-		// {name: 'Artist shuffle', tf: ['ARTIST', 'ALBUMARTIST'], val: [], valSet: new Set(), type: 'ARTIST_RADIO'},
-		{name: 'Similar artists to', tf: ['ARTIST', 'ALBUMARTIST'], val: [], valSet: new Set(), type: 'retrieveSimilarArtists'}, 
+		{name: 'Artist top tracks', tf: ['ARTIST', 'ALBUM ARTIST'], val: [], valSet: new Set(), type: 'getPopularRecordingsByArtist'},
+		// {name: 'Artist shuffle', tf: ['ARTIST', 'ALBUM ARTIST'], val: [], valSet: new Set(), type: 'ARTIST_RADIO'},
+		{name: 'Similar artists to', tf: ['ARTIST', 'ALBUM ARTIST'], val: [], valSet: new Set(), type: 'retrieveSimilarArtists'}, 
 		// {name: 'Similar artists', tf: ['SIMILAR ARTISTS SEARCHBYDISTANCE', 'LASTFM_SIMILAR_ARTIST', 'SIMILAR ARTISTS LAST.FM'], val: [], valSet: new Set(), type: 'getPopularRecordingsByArtist'}, // TODO needs a MBID lookup first
 		{name: 'Similar tracks', tf: ['TITLE'], val: [], valSet: new Set(), type: 'retrieveSimilarRecordings'},
 		{name: 'Genre & Style(s)', tf: ['GENRE', 'STYLE', 'ARTIST GENRE LAST.FM', 'ARTIST GENRE ALLMUSIC', 'ALBUM GENRE LAST.FM', 'ALBUM GENRE ALLMUSIC', 'ALBUM GENRE WIKIPEDIA', 'ARTIST GENRE WIKIPEDIA'], val: [], valSet: new Set(), type: 'getRecordingsByTag'},
@@ -118,7 +118,8 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 		const sbdPath = (_isFile(fb.FoobarPath + 'portable_mode_enabled') ? '.\\profile\\' + folders.dataName : folders.data) + 'searchByDistance_artists.json';
 		if (_isFile(sbdPath)) {
 			const dataId = 'artist';
-			const selIds = [...(tags.find((tag) => tag.tf.some((tf) => tf.toLowerCase() === dataId)) || {valSet: []}).valSet];
+			const tagId = globTags.artist.toLowerCase();
+			const selIds = [...(tags.find((tag) => tag.tf.some((tf) => tf.toLowerCase() === tagId)) || {valSet: []}).valSet];
 			if (selIds.length) {
 				const data = _jsonParseFileCheck(sbdPath, 'Tags json', window.Name, utf8);
 				const sdbData = new Set();
@@ -145,7 +146,8 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 		const worldMapPath = (_isFile(fb.FoobarPath + 'portable_mode_enabled') ? '.\\profile\\' + folders.dataName : folders.data) + 'worldMap.json';
 		if (_isFile(worldMapPath)) {
 			const dataId = 'artist';
-			const selIds = [...(tags.find((tag) => tag.tf.some((tf) => tf.toLowerCase() === dataId)) || {valSet: []}).valSet];
+			const tagId = globTags.artist.toLowerCase();
+			const selIds = [...(tags.find((tag) => tag.tf.some((tf) => tf.toLowerCase() === tagId)) || {valSet: []}).valSet];
 			if (selIds.length) {
 				const data = _jsonParseFileCheck(worldMapPath, 'Tags json', window.Name, utf8);
 				const worldMapData = new Set();
@@ -783,7 +785,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								, 'OR');
 								return query;
 							}).filter(Boolean);
-							const artistItems = fb.GetQueryItems(libItems, 'ARTIST IS ' + tags.ARTIST[0] + ' OR ALBUMARTIST IS ' + tags.ARTIST[0]);
+							const artistItems = fb.GetQueryItems(libItems, 'ARTIST IS ' + tags.ARTIST[0] + ' OR ALBUM ARTIST IS ' + tags.ARTIST[0]);
 							items = queryArr.map((query, i) => {
 								let itemHandleList;
 								try {itemHandleList = fb.GetQueryItems(artistItems, query);} // Sanity check
