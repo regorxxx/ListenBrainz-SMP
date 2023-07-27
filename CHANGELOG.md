@@ -21,6 +21,7 @@
 - Helpers: updated helpers.
 ### Removed
 ### Fixed
+- Crash using recommended recordings by user.
 - Fix for non [standard hyphen chars](https://jakubmarian.com/hyphen-minus-en-dash-and-em-dash-difference-and-usage-in-english/) on path names.
 
 ## [1.0.0-beta.11] - 2023-06-29
