@@ -1,5 +1,5 @@
 ﻿'use strict';
-//13/06/23
+//27/07/23
 
 include('playlist_manager_listenbrainz.js');
 
@@ -61,7 +61,7 @@ function getRecommendedRecordings(user, params /* {artist_type, count, offset} *
 					// Filter
 					if (itemHandleList.Count) {
 						itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false});
-						itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : properties.bAdvTitle[1]});
+						itemHandleList = removeDuplicatesV2({handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle : true});
 						return itemHandleList[0];
 					}
 					notFound.push({creator: tags.ARTIST[i], title: tags.TITLE[i], tags: {MUSICBRAINZ_TRACKID: mbids[i]}});
