@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [1.0.0](#100---2023-07-28)
 - [1.0.0-beta.11](#100-beta11---2023-06-29)
 - [1.0.0-beta.10](#100-beta10---2023-06-27)
 - [1.0.0-beta.9](#100-beta9---2023-05-08)
@@ -17,8 +18,15 @@
 ## [Unreleased][]
 ### Added
 ### Changed
+### Removed
+### Fixed
+
+## [1.0.0] - 2023-07-28
+### Added
+### Changed
 - Configuration: ALBUM ARTIST is now used instead of ARTIST by default (on new installations). This ensures better compatibility with classical music, where the artist is the actual performer but the album artist is the original composer/artist. To apply the change on existing installations, delete '[foobar_profile]\js_data\presets\global\globQuery.json' and '[foobar_profile]\foobar2000\js_data\presets\global\globTags.json' files. Further configuration may be needed via menus.
 - Helpers: updated helpers.
+- Console: remove unnecessary logging retrieving user response.
 ### Removed
 ### Fixed
 - Crash using recommended recordings by user.
@@ -157,7 +165,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.110...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.11...v1.0.0
 [1.0.0-beta.11]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.10...v1.0.0-beta.11
 [1.0.0-beta.10]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.9...v1.0.0-beta.10
 [1.0.0-beta.9]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.8...v1.0.0-beta.9
