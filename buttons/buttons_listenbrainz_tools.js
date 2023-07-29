@@ -1,5 +1,5 @@
 ﻿'use strict';
-//27/07/23
+//29/07/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -103,7 +103,7 @@ addButton({
 		if (sel) {
 			const feedbackTag = parent.buttonsProperties.feedbackTag[1];
 			let tfo = fb.TitleFormat(
-					'Current track:	' + _t(globTags.artist) + ' / %TRACK% - %TITLE%' +
+					'Current track:	' + globTags.artist + ' / %TRACK% - %TITLE%' +
 					'[$and(%' + feedbackTag + '%)$crlf()Feedback:	$select($add(%' + feedbackTag+ '%,2),' + sanitizeTagTfo(chars.sadEmoji) +' Hated...,-,' + sanitizeTagTfo(chars.loveEmojiCycle(2000)) + ' Loved!)]' // Only show if tag is present
 				);
 			info = 'Playlist:		' + (plman.ActivePlaylist !== -1 ? plman.GetPlaylistName(plman.ActivePlaylist) : '-none-') + infoMul + '\n';

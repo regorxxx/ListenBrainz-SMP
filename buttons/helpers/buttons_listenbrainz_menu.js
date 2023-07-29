@@ -1,5 +1,5 @@
 'use strict';
-//16/06/23
+//29/07/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -118,7 +118,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 		const sbdPath = (_isFile(fb.FoobarPath + 'portable_mode_enabled') ? '.\\profile\\' + folders.dataName : folders.data) + 'searchByDistance_artists.json';
 		if (_isFile(sbdPath)) {
 			const dataId = 'artist';
-			const tagId = globTags.artist.toLowerCase();
+			const tagId = globTags.artistRaw.toLowerCase();
 			const selIds = [...(tags.find((tag) => tag.tf.some((tf) => tf.toLowerCase() === tagId)) || {valSet: []}).valSet];
 			if (selIds.length) {
 				const data = _jsonParseFileCheck(sbdPath, 'Tags json', window.Name, utf8);
@@ -347,7 +347,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 					const title = sanitizeQueryVal(sanitizeTagValIds(titles[i]));
 					const artist = sanitizeQueryVal(sanitizeTagValIds(artists[i]));
 					const bMeta = title.length && artist.length;
-					return 'MUSICBRAINZ_TRACKID IS ' + mbid + (bMeta ? ' OR (' + _q(sanitizeTagIds(_t(globTags.titleRaw))) + ' IS ' + title + ' AND ' + _q(sanitizeTagIds(_t(globTags.artist))) + ' IS ' + artist + ')' : '');
+					return 'MUSICBRAINZ_TRACKID IS ' + mbid + (bMeta ? ' OR (' + _q(sanitizeTagIds(_t(globTags.titleRaw))) + ' IS ' + title + ' AND ' + _q(sanitizeTagIds(globTags.artist)) + ' IS ' + artist + ')' : '');
 				}).filter(Boolean);
 				let query = query_join(queryArr, 'OR');
 				let handleList;
