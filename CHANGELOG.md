@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [1.0.2](#102---2023-09-14)
 - [1.0.1](#101---2023-07-29)
 - [1.0.0](#100---2023-07-28)
 - [1.0.0-beta.11](#100-beta11---2023-06-29)
@@ -17,6 +18,13 @@
 - [1.0.0-beta.1](#100-beta1---2023-02-15)
 
 ## [Unreleased][]
+### Added
+### Changed
+- Helpers: updated helpers
+### Removed
+### Fixed
+
+## [1.0.2] - 2023-09-14
 ### Added
 ### Changed
 - Helpers: updated helpers
@@ -174,7 +182,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.11...v1.0.0
 [1.0.0-beta.11]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.0-beta.10...v1.0.0-beta.11
