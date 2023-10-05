@@ -24,6 +24,8 @@
 - Track Recommendations: tag remapping is now available (configuration) along customizable entries (advanced configuration) for 'Tracks recommendations'.
 - Track Recommendations: new submenu at 'Tracks recommendations to get popular tracks by the chosen similar artist, like the one found at [Last.fm tools](https://github.com/regorxxx/Playlist-Tools-SMP).
 ### Changed
+- Configuration: expanded user configurable files at '[FOOBAR PROFILE FOLDER]\js_data\presets\global' with new queries. File will be automatically updated with new values (maintaining the user settings).
+- Configuration: improved the user configurable files update check for missing keys.
 ### Removed
 ### Fixed
 
