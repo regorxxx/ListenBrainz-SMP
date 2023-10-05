@@ -1,5 +1,5 @@
 'use strict';
-//29/07/23
+//05/10/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -63,16 +63,14 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 	const sel = this.sel || plman.ActivePlaylist !== -1 ? fb.GetFocusItem(true) : null;
 	const info = sel ? sel.GetFileInfo() : null;
 	const bioTags = this.bioTags || {};
-	const tags = [
-		{name: 'Artist top tracks', tf: ['ARTIST', 'ALBUM ARTIST'], val: [], valSet: new Set(), type: 'getPopularRecordingsByArtist'},
-		// {name: 'Artist shuffle', tf: ['ARTIST', 'ALBUM ARTIST'], val: [], valSet: new Set(), type: 'ARTIST_RADIO'},
-		{name: 'Similar artists to', tf: ['ARTIST', 'ALBUM ARTIST'], val: [], valSet: new Set(), type: 'retrieveSimilarArtists'}, 
-		// {name: 'Similar artists', tf: ['SIMILAR ARTISTS SEARCHBYDISTANCE', 'LASTFM_SIMILAR_ARTIST', 'SIMILAR ARTISTS LAST.FM'], val: [], valSet: new Set(), type: 'getPopularRecordingsByArtist'}, // TODO needs a MBID lookup first
-		{name: 'Similar tracks', tf: ['TITLE'], val: [], valSet: new Set(), type: 'retrieveSimilarRecordings'},
-		{name: 'Genre & Style(s)', tf: ['GENRE', 'STYLE', 'ARTIST GENRE LAST.FM', 'ARTIST GENRE ALLMUSIC', 'ALBUM GENRE LAST.FM', 'ALBUM GENRE ALLMUSIC', 'ALBUM GENRE WIKIPEDIA', 'ARTIST GENRE WIKIPEDIA'], val: [], valSet: new Set(), type: 'getRecordingsByTag'},
-		{name: 'Folksonomy & Date(s)', tf: ['FOLKSONOMY', 'OCCASION', 'ALBUMOCCASION', 'LOCALE', 'LOCALE LAST.FM', 'DATE', 'LOCALE WORLD MAP'], val: [], valSet: new Set(), type: 'getRecordingsByTag'},
-		{name: 'Mood & Theme(s)', tf: ['MOOD','THEME', 'ALBUMMOOD', 'ALBUM THEME ALLMUSIC', 'ALBUM MOOD ALLMUSIC'], val: [], valSet: new Set(), type: 'getRecordingsByTag'},
-	];
+	// Set tags for lookup and filter wrong values
+	const tags = (JSON.parse(properties.tags[1]) || []).filter((tag) => {
+		return tag && tag.tf && tag.tf.length && tag.name.length && tag.type;
+	});
+	tags.forEach((tag) => {
+		tag.val = [];
+		tag.valSet = new Set();
+	});
 	if (info) {
 		tags.forEach((tag) => {
 			tag.tf.forEach((tf, i) => {
@@ -520,25 +518,31 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 		menu.newEntry({menuName, entryText: 'By selection:\t(Shift + Click to randomize)', flags: MF_GRAYED});
 		menu.newEntry({menuName, entryText: 'sep'});
 		{
-			tags.forEach((tag) => {
-				const bSingle = tag.valSet.size <= 1;
-				const subMenu = bSingle ? menuName : menu.newMenu(tag.name + '...', menuName);
-				if (tag.valSet.size === 0) {tag.valSet.add('');}
-				[...tag.valSet].sort((a,b) => a.localeCompare(b, 'en', {'sensitivity': 'base'})).forEach((val, i) => {
-					menu.newEntry({menuName: subMenu, entryText: bSingle ? tag.name + '\t[' + (val.cut(20) || (sel ? 'no tag' : 'no sel')) + ']' : val.cut(20), func: () => {
-						switch (tag.type) {
-							case 'getPopularRecordingsByArtist':
-								runSimilar(tag.type, 'By artist top tracks', 'v1', val); break;
-							case 'getRecordingsByTag':
-								runSimilar(tag.type, 'By tag', false, val); break;
-							case 'retrieveSimilarArtists':
-								runSimilar(tag.type, 'By similar artists', 'v1', val); break;
-							case 'retrieveSimilarRecordings':
-								runSimilar(tag.type, 'By similar tracks', 'v1', val); break;
-						}
-					}, flags: (val ? MF_STRING : MF_GRAYED) | (!bSingle && i % 8 === 0 ? MF_MENUBREAK : MF_STRING)});
+			if (tags.length) {
+				tags.forEach((tag) => {
+					const bSingle = tag.valSet.size <= 1;
+					const subMenu = bSingle ? menuName : menu.newMenu(tag.name + '...', menuName);
+					if (tag.valSet.size === 0) {tag.valSet.add('');}
+					[...tag.valSet].sort((a,b) => a.localeCompare(b, 'en', {'sensitivity': 'base'})).forEach((val, i) => {
+						menu.newEntry({menuName: subMenu, entryText: bSingle ? tag.name + '\t[' + (val.cut(20) || (sel ? 'no tag' : 'no sel')) + ']' : val.cut(20), func: () => {
+							switch (tag.type) {
+								case 'getPopularRecordingsByArtist':
+									runSimilar(tag.type, 'By artist top tracks', 'v1', val); break;
+								case 'getPopularRecordingsBySimilarArtist':
+									runSimilar(tag.type, 'By similar artists', 'v1', val); break;
+								case 'getRecordingsByTag':
+									runSimilar(tag.type, 'By tag', false, val); break;
+								case 'retrieveSimilarArtists':
+									runSimilar(tag.type, 'By similar artists', 'v1', val); break;
+								case 'retrieveSimilarRecordings':
+									runSimilar(tag.type, 'By similar tracks', 'v1', val); break;
+							}
+						}, flags: (val ? MF_STRING : MF_GRAYED) | (!bSingle && i % 8 === 0 ? MF_MENUBREAK : MF_STRING)});
+					});
 				});
-			});
+			} else {
+				menu.newEntry({menuName, entryText: 'No entries enabled.', flags: MF_GRAYED});
+			}
 		}
 		const runSimilar = async (type, reportTitle, args, val) => {
 			const bShift = utils.IsKeyPressed(VK_SHIFT);
@@ -553,6 +557,12 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 					const selMbids = await lb.getArtistMBIDs(new FbMetadbHandleList(sel), token, bLookupMBIDs, false);
 					const artistDic = await lb.joinArtistMBIDs([val], selMbids, token, true);
 					selMbid = [(artistDic.find((entry) => entry.artist === val) || {mbids: []}).mbids[0]].filter(Boolean);
+					break;
+				}
+				case 'getPopularRecordingsBySimilarArtist': {
+					const lookup = await lb.lookupArtistMBIDsByName([val], token);
+					selMbid = lookup && lookup[0] ? [lookup[0].mbid] : null;
+					type = 'getPopularRecordingsByArtist';
 					break;
 				}
 				case 'retrieveSimilarArtists': {
@@ -1058,6 +1068,22 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 				}});
 				menu.newCheckMenu(subMenuName, 'Match only by MBID?', void(0), () => {return properties.lBrainzToken[1].length ? true : false;});
 			}
+		}
+		menu.newEntry({menuName, entryText: 'sep'});
+		{
+			const subMenuName = menu.newMenu('Track recommendations...', menuName);
+			menu.newEntry({menuName: subMenuName, entryText: 'Tag remap:', flags: MF_GRAYED});
+			menu.newEntry({menuName: subMenuName, entryText: 'sep'});
+			const tags = JSON.parse(properties.tags[1]);
+			tags.forEach((tag) => {
+				menu.newEntry({menuName: subMenuName, entryText: tag.name + (tag.tf && tag.tf.length ? '' : '\t-disabled-'), func: () => {
+					const input = Input.json('array strings', tag.tf, 'Enter tag(s) or TF expression(s):\n(JSON)\n\nSetting it to [] will disable the menu entry.', 'ListenBrainz Tools', '["ARTIST","ALBUM ARTIST"]', void(0), true);
+					if (input === null) {return;}
+					tag.tf = input;
+					properties.tags[1] = JSON.stringify(tags);
+					overwriteProperties(properties);
+				}});
+			});
 		}
 		menu.newEntry({menuName, entryText: 'sep'});
 		menu.newEntry({menuName, entryText: 'Set Global Forced Query...', func: (cache) => {

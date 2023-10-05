@@ -1,5 +1,5 @@
 ﻿'use strict';
-//29/07/23
+//05/10/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -31,7 +31,18 @@ var newButtonsProperties = { //You can simply add new properties here
 	userCache:		['User name cache', '', {func: isStringWeak}, ''],
 	bPlsMatchMBID:	['Match only by MBID?', false, {func: isBoolean}, false],
 	forcedQuery: 	['Forced query to pre-filter database', globQuery.filter, {func: (query) => {return checkQuery(query, true);}}, globQuery.filter],
+	tags: 			['Tags remap for lookups', JSON.stringify([
+		{name: 'Artist top tracks',		tf: ['ARTIST', 'ALBUM ARTIST'], type: 'getPopularRecordingsByArtist'},
+		// {name: 'Artist shuffle', tf: ['ARTIST', 'ALBUM ARTIST'], type: '??'}, TODO
+		{name: 'Similar artists to',	tf: ['ARTIST', 'ALBUM ARTIST'], type: 'retrieveSimilarArtists'}, 
+		{name: 'Similar artists',		tf: ['SIMILAR ARTISTS SEARCHBYDISTANCE', 'LASTFM_SIMILAR_ARTIST', 'SIMILAR ARTISTS LAST.FM'], type: 'getPopularRecordingsBySimilarArtist'},
+		{name: 'Similar tracks',		tf: ['TITLE'], type: 'retrieveSimilarRecordings'},
+		{name: 'Genre & Style(s)',		tf: ['GENRE', 'STYLE', 'ARTIST GENRE LAST.FM', 'ARTIST GENRE ALLMUSIC', 'ALBUM GENRE LAST.FM', 'ALBUM GENRE ALLMUSIC', 'ALBUM GENRE WIKIPEDIA', 'ARTIST GENRE WIKIPEDIA'], type: 'getRecordingsByTag'},
+		{name: 'Folksonomy & Date(s)',	tf: ['FOLKSONOMY', 'OCCASION', 'ALBUMOCCASION', 'LOCALE', 'LOCALE LAST.FM', 'DATE', 'LOCALE WORLD MAP'], type: 'getRecordingsByTag'},
+		{name: 'Mood & Theme(s)',		tf: ['MOOD','THEME', 'ALBUMMOOD', 'ALBUM THEME ALLMUSIC', 'ALBUM MOOD ALLMUSIC'], type: 'getRecordingsByTag'}
+	])],
 };
+newButtonsProperties.tags.push({func: isJSON}, newButtonsProperties.tags[1]);
 setProperties(newButtonsProperties, prefix, 0); //This sets all the panel properties at once
 newButtonsProperties = getPropertiesPairs(newButtonsProperties, prefix, 0);
 buttonsBar.list.push(newButtonsProperties);
