@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [1.1.0](#110---2023-10-05)
 - [1.0.4](#104---2023-09-25)
 - [1.0.3](#103---2023-09-20)
 - [1.0.2](#102---2023-09-14)
@@ -20,6 +21,12 @@
 - [1.0.0-beta.1](#100-beta1---2023-02-15)
 
 ## [Unreleased][]
+### Added
+### Changed
+### Removed
+### Fixed
+
+## [1.1.0] - 2023-10-05
 ### Added
 - Track Recommendations: tag remapping is now available (configuration) along customizable entries (advanced configuration) for 'Tracks recommendations'.
 - Track Recommendations: new submenu at 'Tracks recommendations to get popular tracks by the chosen similar artist, like the one found at [Last.fm tools](https://github.com/regorxxx/Playlist-Tools-SMP).
@@ -201,7 +208,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.4...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.4...v1.1.0
 [1.0.4]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.1...v1.0.2
