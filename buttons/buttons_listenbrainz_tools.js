@@ -8,6 +8,7 @@
 include('..\\helpers\\helpers_xxx.js');
 include('..\\helpers\\buttons_xxx.js');
 include('..\\helpers\\helpers_xxx_properties.js');
+include('..\\helpers\\helpers_xxx_tags.js');
 include('..\\helpers\\buttons_xxx_menu.js'); // Shift menu
 include('..\\main\\main_menu\\main_menu_custom.js'); // Dynamic SMP menu
 include('helpers\\buttons_listenbrainz_menu.js'); // Button menu
@@ -18,9 +19,9 @@ prefix = getUniquePrefix(prefix, ''); // Puts new ID before '_'
 
 var newButtonsProperties = { //You can simply add new properties here
 	lBrainzToken:	['ListenBrainz user token', ''				, {func: isStringWeak}, ''],
-	lBrainzEncrypt:	['Encript ListenBrainz user token?', false	, {func: isBoolean}, false],
+	lBrainzEncrypt:	['Encrypt ListenBrainz user token?', false	, {func: isBoolean}, false],
 	bLookupMBIDs: 	['Lookup for missing track MBIDs?', true	, {func: isBoolean}, true ],
-	bAdvTitle:		['Advanced RegExp title matching?', true	, {func: isBoolean}, true],
+	bAdvTitle:		['Duplicates advanced RegExp title matching?', true	, {func: isBoolean}, true],
 	bDynamicMenus:	['Expose menus at  \'File\\Spider Monkey Panel\\Script commands\'', false, {func: isBoolean}, false],
 	bIconMode:		['Icon-only mode?', false, {func: isBoolean}, false],
 	bYouTube:		['Lookup for missing tracks on YouTube?', isYouTube, {func: isBoolean}, isYouTube],
@@ -88,6 +89,23 @@ addButton({
 							});
 						} else {deleteMainMenuDynamic('ListenBrainz');}
 					}
+				},
+				(menu) => { // Append this menu entries to the config menu
+					const menuName = menu.getMainMenuName();
+					menu.newEntry({menuName: menu.getMainMenuName(), entryText: 'sep'});
+					const subMenuName = menu.newMenu('Tag remap...', menuName);
+					menu.newEntry({menuName: subMenuName, entryText: 'Available entries:', flags: MF_GRAYED});
+					menu.newEntry({menuName: subMenuName, entryText: 'sep'});
+					const tags = JSON.parse(this.buttonsProperties.tags[1]);
+					tags.forEach((tag) => {
+						menu.newEntry({menuName: subMenuName, entryText: tag.name + (tag.tf && tag.tf.length ? '' : '\t-disabled-'), func: () => {
+							const input = Input.json('array strings', tag.tf, 'Enter tag(s) or TF expression(s):\n(JSON)\n\nSetting it to [] will disable the menu entry.', 'ListenBrainz Tools', '["ARTIST","ALBUM ARTIST"]', void(0), true);
+							if (input === null) {return;}
+							tag.tf = input;
+							this.buttonsProperties.tags[1] = JSON.stringify(tags);
+							overwriteProperties(this.buttonsProperties);
+						}});
+					});
 				}
 			).btn_up(this.currX, this.currY + this.currH);
 		} else {

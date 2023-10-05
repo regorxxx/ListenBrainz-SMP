@@ -6,6 +6,7 @@
 */
 
 include('..\\..\\helpers\\helpers_xxx.js');
+include('..\\..\\helpers\\helpers_xxx_input.js');
 include('..\\..\\helpers\\helpers_xxx_properties.js');
 include('..\\..\\helpers\\buttons_xxx_menu.js');
 include('..\\..\\helpers\\helpers_xxx_playlists.js');
