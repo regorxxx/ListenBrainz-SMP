@@ -21,6 +21,8 @@
 
 ## [Unreleased][]
 ### Added
+- Track Recommendations: tag remapping is now available (configuration) along customizable entries (advanced configuration) for 'Tracks recommendations'.
+- Track Recommendations: new submenu at 'Tracks recommendations to get popular tracks by the chosen similar artist, like the one found at [Last.fm tools](https://github.com/regorxxx/Playlist-Tools-SMP).
 ### Changed
 ### Removed
 ### Fixed
