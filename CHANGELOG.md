@@ -25,6 +25,7 @@
 ### Changed
 ### Removed
 ### Fixed
+- Feedback: minor fix to cache reports when an upload throws an error.
 
 ## [1.1.0] - 2023-10-05
 ### Added
