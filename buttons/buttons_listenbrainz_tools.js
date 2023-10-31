@@ -1,5 +1,5 @@
 ﻿'use strict';
-//05/10/23
+//15/10/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -280,7 +280,7 @@ addButton({
 				}
 			});
 			Promise.allSettled(promises).then((results) => {
-				if (results.some((p) => p.status === 'fulfilled')) {
+				if (results.some((p) => p.status === 'fulfilled' && p.result)) {
 					parent.saveCache(user);
 					console.log('ListeBrainz: submitted ' + count + ' item(s) from the feedback cache.');
 				}
