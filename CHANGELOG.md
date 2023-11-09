@@ -22,7 +22,11 @@
 
 ## [Unreleased][]
 ### Added
+- Auto-update: added -optional- automatic checks for updates on script load; enabled by default. Compares version of current file against GitHub repository. Manual checking can also be found at the settings menu. For buttons within the toolbar every button will check for updates independently (although the toolbar menu has an entry for batch checking). Setting may also be globally switched at '[FOOBAR PROFILE FOLDER]\js_data\presets\global\globSettings.json', by changing 'bAutoUpdateCheck'. It will apply by default to any new installed script (previous scripts will still need to be manually configured to change them).
+- Buttons bar: added some safe-checks to panel properties.
 ### Changed
+- UI: toolbar's color menu entries now show the color name along the menu entry. 'none' equals to no color.
+- Helpers: updated helpers.
 ### Removed
 ### Fixed
 - Feedback: minor fix to cache reports when an upload throws an error.
