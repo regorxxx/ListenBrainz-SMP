@@ -24,7 +24,6 @@
 ### Added
 - Auto-update: added -optional- automatic checks for updates on script load; enabled by default. Compares version of current file against GitHub repository. Manual checking can also be found at the settings menu. For buttons within the toolbar every button will check for updates independently (although the toolbar menu has an entry for batch checking). Setting may also be globally switched at '[FOOBAR PROFILE FOLDER]\js_data\presets\global\globSettings.json', by changing 'bAutoUpdateCheck'. It will apply by default to any new installed script (previous scripts will still need to be manually configured to change them).
 - Buttons bar: added some safe-checks to panel properties.
-- Buttons bar: added some safe-checks to panel properties.
 - Buttons bar: added custom button hover color and customization.
 - Buttons bar: added custom offset for buttons along X/Y axis.
 - Buttons bar: added full size mode for buttons, which will use full Width/Height according to Y/X orientation.
