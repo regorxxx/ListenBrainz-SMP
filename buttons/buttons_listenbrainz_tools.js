@@ -1,5 +1,5 @@
 ﻿'use strict';
-//15/10/23
+//15/11/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -11,10 +11,12 @@ include('..\\helpers\\helpers_xxx_properties.js');
 include('..\\helpers\\helpers_xxx_tags.js');
 include('..\\helpers\\buttons_xxx_menu.js'); // Shift menu
 include('..\\main\\main_menu\\main_menu_custom.js'); // Dynamic SMP menu
+include('..\\main\\bio\\bio_tags.js');
 include('helpers\\buttons_listenbrainz_menu.js'); // Button menu
 var prefix = 'lbt';
+var version = '1.2.0';
 
-try {window.DefineScript('ListenBrainz Tools Button', {author:'xxx', features: {drag_n_drop: false}});} catch (e) {/* console.log('Filter Playlist Button loaded.'); */} //May be loaded along other buttons
+try {window.DefineScript('ListenBrainz Tools Button', {author:'regorxxx', version, features: {drag_n_drop: false}});} catch (e) {/* console.log('Filter Playlist Button loaded.'); */} //May be loaded along other buttons
 prefix = getUniquePrefix(prefix, ''); // Puts new ID before '_'
 
 var newButtonsProperties = { //You can simply add new properties here
@@ -117,7 +119,7 @@ addButton({
 		const token = parent.buttonsProperties.lBrainzToken[1];
 		const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
 		const bListenBrainz = token.length;
-		listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}), false);
+		parent.retrieveUser(token, bEncrypted);
 		const user = listenBrainz.cache.user.get(token) || '';
 		const bShift = utils.IsKeyPressed(VK_SHIFT);
 		const bInfo = typeof menu_panelProperties === 'undefined' || menu_panelProperties.bTooltipInfo[1];
@@ -146,7 +148,13 @@ addButton({
 			info += '\n(Shift + L. Click to open advanced config menu)';
 		}
 		return info;
-	}, prefix, newButtonsProperties, folders.xxx + 'images\\icons\\listenbrainz_64.png', null, {lBrainzTokenListener: false, userPlaylists: [], bioSelectionMode: 'Prefer nowplaying', bioTags: {}}, 
+	}, prefix, newButtonsProperties, folders.xxx + 'images\\icons\\listenbrainz_64.png', null,
+	{
+		lBrainzTokenListener: false, userPlaylists: [], bioSelectionMode: 'Prefer nowplaying', bioTags: {},
+		retrieveUser: debounce((parent, token, bEncrypted) => {
+			listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}), false)
+		}, 2500, true)
+	}, 
 	{
 		on_notify_data: (parent, name, info) => {
 			lastfmListeners.on_notify_data(parent, name, info);
@@ -299,5 +307,6 @@ addButton({
 			});
 		};
 		setTimeout(parent.retrieveFollowing, 3000);
-	}),
+	},
+	{scriptName: 'ListenBrainz-SMP', version}),
 });
