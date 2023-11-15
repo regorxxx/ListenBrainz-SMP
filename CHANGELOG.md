@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [1.2.0](#120---2023-11-15)
 - [1.1.0](#110---2023-10-05)
 - [1.0.4](#104---2023-09-25)
 - [1.0.3](#103---2023-09-20)
@@ -22,6 +23,12 @@
 
 ## [Unreleased][]
 ### Added
+### Changed
+### Removed
+### Fixed
+
+## [1.2.0] - 2023-11-15
+### Added
 - Auto-update: added -optional- automatic checks for updates on script load; enabled by default. Compares version of current file against GitHub repository. Manual checking can also be found at the settings menu. For buttons within the toolbar every button will check for updates independently (although the toolbar menu has an entry for batch checking). Setting may also be globally switched at '[FOOBAR PROFILE FOLDER]\js_data\presets\global\globSettings.json', by changing 'bAutoUpdateCheck'. It will apply by default to any new installed script (previous scripts will still need to be manually configured to change them).
 - Buttons bar: added some safe-checks to panel properties.
 - Buttons bar: added custom button hover color and customization.
@@ -29,12 +36,15 @@
 - Buttons bar: added full size mode for buttons, which will use full Width/Height according to Y/X orientation.
 - Added setting to disable popups related to features not being supported by the OS (at startup). Found at '[FOOBAR PROFILE FOLDER]\js_data\presets\global\globSettings.json', by changing 'bPopupOnCheckSOFeatures'. By default popups are always shown. This setting will never be exposed within foobar, only at this file.
 ### Changed
+- Configuration: improved user retrieval on mouse over button, limited to run once per 2500 ms.
 - UI: toolbar's color menu entries now show the color name along the menu entry. 'none' equals to no color.
 - Buttons bar: renamed background buttons to 'Use themed buttons', which depends on the windows theme.
 - Helpers: updated helpers.
 ### Removed
+- Configuration: unnecessary logging on mouse over button if no user was provided.
 ### Fixed
 - Feedback: minor fix to cache reports when an upload throws an error.
+- Crash without lastfm tools button also loaded.
 
 ## [1.1.0] - 2023-10-05
 ### Added
@@ -218,7 +228,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.4...v1.1.0
 [1.0.4]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.2...v1.0.3
