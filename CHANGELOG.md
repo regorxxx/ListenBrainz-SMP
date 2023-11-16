@@ -28,7 +28,7 @@
 ### Removed
 ### Fixed
 
-## [1.2.1] - 2023-11-15
+## [1.2.1] - 2023-11-16
 ### Added
 ### Changed
 - Buttons bar: transparency input popup now has a description for the values.
