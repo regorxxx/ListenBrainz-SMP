@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [1.2.1](#121---2023-11-16)
 - [1.2.0](#120---2023-11-15)
 - [1.1.0](#110---2023-10-05)
 - [1.0.4](#104---2023-09-25)
@@ -22,6 +23,12 @@
 - [1.0.0-beta.1](#100-beta1---2023-02-15)
 
 ## [Unreleased][]
+### Added
+### Changed
+### Removed
+### Fixed
+
+## [1.2.1] - 2023-11-15
 ### Added
 ### Changed
 - Buttons bar: transparency input popup now has a description for the values.
@@ -230,7 +237,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.4...v1.1.0
 [1.0.4]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.3...v1.0.4

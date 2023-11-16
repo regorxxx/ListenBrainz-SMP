@@ -1,5 +1,5 @@
 ﻿'use strict';
-//15/11/23
+//16/11/23
 
 /* 
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -14,7 +14,7 @@ include('..\\main\\main_menu\\main_menu_custom.js'); // Dynamic SMP menu
 include('..\\main\\bio\\bio_tags.js');
 include('helpers\\buttons_listenbrainz_menu.js'); // Button menu
 var prefix = 'lbt';
-var version = '1.2.0';
+var version = '1.2.1';
 
 try {window.DefineScript('ListenBrainz Tools Button', {author:'regorxxx', version, features: {drag_n_drop: false}});} catch (e) {/* console.log('Filter Playlist Button loaded.'); */} //May be loaded along other buttons
 prefix = getUniquePrefix(prefix, ''); // Puts new ID before '_'
