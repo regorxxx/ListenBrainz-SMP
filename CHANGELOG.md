@@ -26,6 +26,8 @@
 ### Added
 - Buttons bar: new setting to enable asynchronous loading of buttons, now the default behavior.
 ### Changed
+- Helpers: updated helpers.
+- Console: reduced max log file size to 1 MB.
 ### Removed
 ### Fixed
 
