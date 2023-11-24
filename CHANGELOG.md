@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [1.3.0](#130---2023-11-24)
 - [1.2.1](#121---2023-11-16)
 - [1.2.0](#120---2023-11-15)
 - [1.1.0](#110---2023-10-05)
@@ -24,12 +25,19 @@
 
 ## [Unreleased][]
 ### Added
+### Changed
+### Removed
+### Fixed
+
+## [1.3.0] - 2023-11-24
+### Added
 - Buttons bar: new setting to enable asynchronous loading of buttons, now the default behavior.
 ### Changed
 - Helpers: updated helpers.
 - Console: reduced max log file size to 1 MB.
 ### Removed
 ### Fixed
+- Auto-update: changed logic to check [Playlist Tools](https://github.com/regorxxx/Playlist-Tools-SMP/)'s buttons updates independently to the toolbar version, so mixed scripts versions no longer produce false negatives.
 
 ## [1.2.1] - 2023-11-16
 ### Added
@@ -240,7 +248,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.3.1...HEAD
+[1.3.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.0.4...v1.1.0
