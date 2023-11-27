@@ -24,6 +24,7 @@ Listens syncing is not managed by this script. It's recommended to use [foo_list
  1. [Search-by-Distance-SMP](https://github.com/regorxxx/Search-by-Distance-SMP): creates intelligent "spotify-like" playlist using high-level data from tracks and computing their similarity using genres/styles.
  2. [Playlist-Tools-SMP](https://github.com/regorxxx/Playlist-Tools-SMP): Offers different pre-defefined examples for intelligent playlist creation.
  3. [Device-Priority-SMP](https://github.com/regorxxx/Device-Priority-SMP): Automatic output device selection.
+ 4. [Autobackup-SMP](https://github.com/regorxxx/Autobackup-SMP): Automatic saving and backup of configuration and other data in foobar2000.
 
 ![LB_1](https://user-images.githubusercontent.com/83307074/193407662-92a43011-c3cb-4473-b9cf-7da5780fbec1.gif)
 
