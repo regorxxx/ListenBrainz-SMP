@@ -14,7 +14,7 @@ include('..\\main\\main_menu\\main_menu_custom.js'); // Dynamic SMP menu
 include('..\\main\\bio\\bio_tags.js');
 include('helpers\\buttons_listenbrainz_menu.js'); // Button menu
 var prefix = 'lbt';
-var version = '1.3.0';
+var version = '1.4.0';
 
 try {window.DefineScript('ListenBrainz Tools Button', {author:'regorxxx', version, features: {drag_n_drop: false}});} catch (e) {/* console.log('Filter Playlist Button loaded.'); */} //May be loaded along other buttons
 prefix = getUniquePrefix(prefix, ''); // Puts new ID before '_'
