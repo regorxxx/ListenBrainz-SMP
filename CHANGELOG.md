@@ -26,7 +26,9 @@
 
 ## [Unreleased][]
 ### Added
+- Toolbar: now supports color for image icons (which are not drawn using fonts).
 ### Changed
+- ListenBrainz icon now matches the button text color, instead of being only black or white.
 ### Removed
 ### Fixed
 
