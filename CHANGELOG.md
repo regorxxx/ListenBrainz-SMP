@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [1.5.0](#150---2023-12-08)
 - [1.4.0](#140---2023-11-28)
 - [1.3.0](#130---2023-11-24)
 - [1.2.1](#121---2023-11-16)
@@ -25,6 +26,12 @@
 - [1.0.0-beta.1](#100-beta1---2023-02-15)
 
 ## [Unreleased][]
+### Added
+### Changed
+### Removed
+### Fixed
+
+## [1.5.0] - 2023-12-08
 ### Added
 - Toolbar: now supports color for image icons (which are not drawn using fonts).
 ### Changed
@@ -262,7 +269,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.2.0...v1.2.1
