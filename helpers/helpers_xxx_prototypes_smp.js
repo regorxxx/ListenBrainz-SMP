@@ -1,7 +1,7 @@
 ﻿'use strict';
-//29/06/23
+//14/12/23
 
-/* 
+/*
 	FbTitleFormat
 */
 // Add async calculation
@@ -64,31 +64,31 @@ Object.defineProperty(fb, 'tfCache', {
 	gr
 */
 // Augment gr.DrawRoundRect() with error handling
-function extendGR (gr , options = {DrawRoundRect: true, FillRoundRect: true}) {
+function extendGR(gr , options = {DrawRoundRect: true, FillRoundRect: true, Repaint: true}) {
 	if (!gr.Extended) {gr.Extended = options;}
 	else {Object.keys(options).forEach((opt) => {if (options[opt]) {gr.Extended[opt] = true;}});}
 	if (options.DrawRoundRect) {
-		const old = gr.DrawRoundRect;
+		const old = gr.DrawRoundRect.bind(gr);
 		gr.DrawRoundRect = function DrawRoundRect() { // x, y, w, h, arc_width, arc_height, line_width, colour
 			let that;
 			try {
-				that = old.apply(gr, [...arguments]);
+				that = old(...arguments);
 			} catch (e) {
 				let bRetry = true;
 				const newArgs = [...arguments];
 				newArgs[4] = newArgs[3] / 2 - Number.EPSILON;
 				newArgs[5] = newArgs[5] / 2 - Number.EPSILON;
 				try {
-					that = old.apply(gr,[...arguments]);
+					that = old(...arguments);
 				} catch(e) {bRetry = false;}
 				if (typeof doOnce !== 'undefined') {
 					doOnce('Paint bug', fb.ShowPopupMessage.bind(fb))(
 						'SMP bug drawing: DrawRoundRect\n' +
-						e.message + '\n\n' + 
+						e.message + '\n\n' +
 						'x, y, w, h, arc: ' + [...arguments].join(', ') + '\n' +
 						(
-							bRetry 
-								? 'Bypassed on second retry: ' + '\n' + 'x, y, w, h, arc: ' + [...newArgs].join(', ') 
+							bRetry
+								? 'Bypassed on second retry: ' + '\n' + 'x, y, w, h, arc: ' + [...newArgs].join(', ')
 								: ''
 						)
 						, window.Name
@@ -99,27 +99,27 @@ function extendGR (gr , options = {DrawRoundRect: true, FillRoundRect: true}) {
 		}
 	}
 	if (options.FillRoundRect) {
-		const old = gr.FillRoundRect;
+		const old = gr.FillRoundRect.bind(gr);
 		gr.FillRoundRect = function FillRoundRect() { // x, y, w, h, arc_width, arc_height, colour
 			let that;
 			try {
-				that = old.apply(gr, [...arguments]);
+				that = old(...arguments);
 			} catch (e) {
 				let bRetry = true;
 				const newArgs = [...arguments];
 				newArgs[4] = newArgs[3] / 2 - Number.EPSILON;
 				newArgs[5] = newArgs[5] / 2 - Number.EPSILON;
 				try {
-					that = old.apply(gr,[...arguments]);
+					that = old(...arguments);
 				} catch(e) {bRetry = false;}
 				if (typeof doOnce !== 'undefined') {
 					doOnce('Paint bug', fb.ShowPopupMessage.bind(fb))(
 						'SMP bug drawing: FillRoundRect\n' +
-						e.message + '\n\n' + 
+						e.message + '\n\n' +
 						'x, y, w, h, arc: ' + [...arguments].join(', ') + '\n' +
 						(
-							bRetry 
-								? 'Bypassed on second retry: ' + '\n' + 'x, y, w, h, arc: ' + [...newArgs].join(', ') 
+							bRetry
+								? 'Bypassed on second retry: ' + '\n' + 'x, y, w, h, arc: ' + [...newArgs].join(', ')
 								: ''
 						)
 						, window.Name
@@ -129,9 +129,21 @@ function extendGR (gr , options = {DrawRoundRect: true, FillRoundRect: true}) {
 			return that;
 		}
 	}
+	if (options.Repaint && !window.debugPainting) {
+		window.debugPainting = true;
+		const old = window.RepaintRect.bind(window);
+		window.RepaintRect = (function() {
+			if (this.debugPainting) {
+				this.debugPaintingRects.push([...arguments].slice(0, 4));
+				this.Repaint();
+			} else {
+				old(...arguments);
+			}
+		}).bind(window);
+	}
 }
 
-/* 
+/*
 	FbMetadbHandleList
 */
 // Sort handleList following another handleList; orderHandleList may differ in size
@@ -158,7 +170,7 @@ FbMetadbHandleList.partialSort = (handleList, orderHandleList) => { // 600 ms on
 	return bOutputList ? new FbMetadbHandleList(output.filter(Boolean)) : output.filter(Boolean);
 };
 
-/* 
+/*
 	fb
 */
 // Add caching
@@ -182,7 +194,7 @@ fb.GetQueryItemsCheck = (handleList = fb.GetLibraryItems(), query, bCache = fals
 	return outputHandleList;
 }
 
-/* 
+/*
 	plman
 */
 
@@ -215,8 +227,8 @@ plman.AddPlaylistItemsOrLocations = (plsIdx, items /*[handle, handleList, filePa
 		}
 	};
 	const processItem = (item) => {
-		let type = typeof item.RawPath !== 'undefined'
-			? 'handle' 
+		const type = typeof item.RawPath !== 'undefined'
+			? 'handle'
 			: typeof item.Count !== 'undefined'
 				? 'handleList'
 				: 'path';
@@ -232,7 +244,7 @@ plman.AddPlaylistItemsOrLocations = (plsIdx, items /*[handle, handleList, filePa
 			return Promise.resolve();
 		} else {
 			if (type !== lastType) {
-				sendQueue(item, lastType); 
+				sendQueue(item, lastType);
 				lastType = type;
 			}
 			addToQueue(item, type);
@@ -261,3 +273,33 @@ plman.AddPlaylistItemsOrLocations = (plsIdx, items /*[handle, handleList, filePa
 		return true;
 	}
 };
+
+/*
+	Paint
+*/
+
+// Add caching
+Object.defineProperty(window, 'debugPainting', {
+	enumerable: true,
+	configurable: false,
+	writable: true,
+	value: false
+});
+Object.defineProperty(window, 'debugPaintingRects', {
+	enumerable: false,
+	configurable: false,
+	writable: false,
+	value: []
+});
+Object.defineProperty(window, 'drawDebugRectAreas', {
+	enumerable: false,
+	configurable: false,
+	writable: false,
+	value: (function drawDebugRectAreas(gr, px = 2, color = 1694433280) { // Red 90%
+		if (!this.debugPaintingRects.length) {return;}
+		try {
+			this.debugPaintingRects.forEach((coords) => gr.DrawRect(...coords, px, color));
+			this.debugPaintingRects.length = 0;
+		} catch (e) {}
+	}).bind(window)
+});
