@@ -29,8 +29,10 @@
 ### Added
 ### Changed
 - Helpers: updated helpers.
+- Code cleanup.
 ### Removed
 ### Fixed
+- Minor fixes.
 
 ## [1.5.0] - 2023-12-08
 ### Added
