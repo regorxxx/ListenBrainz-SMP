@@ -1,63 +1,82 @@
 ﻿'use strict';
-//08/12/23
+//30/12/23
 
-/* 
+/*
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
 */
 
+/* global menu_panelProperties:readable */
 include('..\\helpers\\helpers_xxx.js');
+/* global globTags:readable, MK_SHIFT:readable, VK_SHIFT:readable, folders:readable, isYouTube:readable, globQuery:readable, debounce:readable, MF_GRAYED:readable, globRegExp:readable */
 include('..\\helpers\\buttons_xxx.js');
+/* global getUniquePrefix:readable, buttonsBar:readable, addButton:readable, themedButton:readable */
+include('..\\helpers\\buttons_xxx_menu.js');
+/* global settingsMenu:readable  */
+include('..\\helpers\\helpers_xxx_prototypes.js');
+/* global isBoolean:readable, isStringWeak:readable, isJSON:readable, isString:readable , _p:readable */
+include('..\\helpers\\helpers_xxx_file.js');
+/* global utf8:readable, _isFile:readable, _jsonParseFile:readable, _recycleFile:readable, _save:readable */
+include('..\\helpers\\helpers_xxx_UI.js');
+/* global chars:readable */
 include('..\\helpers\\helpers_xxx_properties.js');
+/* global setProperties:readable, getPropertiesPairs:readable, overwriteProperties:readable */
+include('..\\helpers\\helpers_xxx_input.js');
+/* global Input:readable */
 include('..\\helpers\\helpers_xxx_tags.js');
-include('..\\helpers\\buttons_xxx_menu.js'); // Shift menu
+/* global checkQuery:readable, sanitizeTagTfo:readable, checkQuery:readable */
 include('..\\main\\main_menu\\main_menu_custom.js'); // Dynamic SMP menu
+/* global deleteMainMenuDynamic:readable, bindDynamicMenus:readable */
+include('..\\main\\playlist_manager\\playlist_manager_listenbrainz.js');
+/* global listenBrainz:readable */
 include('..\\main\\bio\\bio_tags.js');
+/* global lastfmListeners:readable */
 include('helpers\\buttons_listenbrainz_menu.js'); // Button menu
-var prefix = 'lbt';
-var version = '1.5.0';
+/* global listenBrainzmenu:readable */
+var prefix = 'lbt'; // NOSONAR[global]
+var version = '1.5.0'; // NOSONAR[global]
 
-try {window.DefineScript('ListenBrainz Tools Button', {author:'regorxxx', version, features: {drag_n_drop: false}});} catch (e) {/* console.log('Filter Playlist Button loaded.'); */} //May be loaded along other buttons
+try { window.DefineScript('ListenBrainz Tools Button', { author: 'regorxxx', version, features: { drag_n_drop: false } }); } catch (e) { /* May be loaded along other buttons */ }
 prefix = getUniquePrefix(prefix, ''); // Puts new ID before '_'
 
-var newButtonsProperties = { //You can simply add new properties here
-	lBrainzToken:	['ListenBrainz user token', ''				, {func: isStringWeak}, ''],
-	lBrainzEncrypt:	['Encrypt ListenBrainz user token?', false	, {func: isBoolean}, false],
-	bLookupMBIDs: 	['Lookup for missing track MBIDs?', true	, {func: isBoolean}, true ],
-	bAdvTitle:		['Duplicates advanced RegExp title matching?', true	, {func: isBoolean}, true],
-	bDynamicMenus:	['Expose menus at  \'File\\Spider Monkey Panel\\Script commands\'', false, {func: isBoolean}, false],
-	bIconMode:		['Icon-only mode?', false, {func: isBoolean}, false],
-	bYouTube:		['Lookup for missing tracks on YouTube?', isYouTube, {func: isBoolean}, isYouTube],
-	firstPopup:		['ListenBrainz Tools: Fired once', false, {func: isBoolean}, false],
-	bTagFeedback:	['Tag files with feedback', false, {func: isBoolean}, false],
-	feedbackTag:	['Feedback tag', globTags.feedback, {func: isString}, globTags.feedback],
-	feedbackCache:	['Feedback cache file', folders.data + 'listenbrainz_feedback.json', {func: isString}, folders.data + 'listenbrainz_feedback.json'],
-	userCache:		['User name cache', '', {func: isStringWeak}, ''],
-	bPlsMatchMBID:	['Match only by MBID?', false, {func: isBoolean}, false],
-	forcedQuery: 	['Forced query to pre-filter database', globQuery.filter, {func: (query) => {return checkQuery(query, true);}}, globQuery.filter],
-	tags: 			['Tags remap for lookups', JSON.stringify([
-		{name: 'Artist top tracks',		tf: ['ARTIST', 'ALBUM ARTIST'], type: 'getPopularRecordingsByArtist'},
+var newButtonsProperties = { // NOSONAR[global]
+	lBrainzToken: ['ListenBrainz user token', '', { func: isStringWeak }, ''],
+	lBrainzEncrypt: ['Encrypt ListenBrainz user token?', false, { func: isBoolean }, false],
+	bLookupMBIDs: ['Lookup for missing track MBIDs?', true, { func: isBoolean }, true],
+	bAdvTitle: ['Duplicates advanced RegExp title matching?', true, { func: isBoolean }, true],
+	bDynamicMenus: ['Expose menus at  \'File\\Spider Monkey Panel\\Script commands\'', false, { func: isBoolean }, false],
+	bIconMode: ['Icon-only mode?', false, { func: isBoolean }, false],
+	bYouTube: ['Lookup for missing tracks on YouTube?', isYouTube, { func: isBoolean }, isYouTube],
+	firstPopup: ['ListenBrainz Tools: Fired once', false, { func: isBoolean }, false],
+	bTagFeedback: ['Tag files with feedback', false, { func: isBoolean }, false],
+	feedbackTag: ['Feedback tag', globTags.feedback, { func: isString }, globTags.feedback],
+	feedbackCache: ['Feedback cache file', folders.data + 'listenbrainz_feedback.json', { func: isString }, folders.data + 'listenbrainz_feedback.json'],
+	userCache: ['User name cache', '', { func: isStringWeak }, ''],
+	bPlsMatchMBID: ['Match only by MBID?', false, { func: isBoolean }, false],
+	forcedQuery: ['Forced query to pre-filter database', globQuery.filter, { func: (query) => { return checkQuery(query, true); } }, globQuery.filter],
+	tags: ['Tags remap for lookups', JSON.stringify([
+		{ name: 'Artist top tracks', tf: ['ARTIST', 'ALBUM ARTIST'], type: 'getPopularRecordingsByArtist' },
 		// {name: 'Artist shuffle', tf: ['ARTIST', 'ALBUM ARTIST'], type: '??'}, TODO
-		{name: 'Similar artists to',	tf: ['ARTIST', 'ALBUM ARTIST'], type: 'retrieveSimilarArtists'}, 
-		{name: 'Similar artists',		tf: ['SIMILAR ARTISTS SEARCHBYDISTANCE', 'LASTFM_SIMILAR_ARTIST', 'SIMILAR ARTISTS LAST.FM'], type: 'getPopularRecordingsBySimilarArtist'},
-		{name: 'Similar tracks',		tf: ['TITLE'], type: 'retrieveSimilarRecordings'},
-		{name: 'Genre & Style(s)',		tf: ['GENRE', 'STYLE', 'ARTIST GENRE LAST.FM', 'ARTIST GENRE ALLMUSIC', 'ALBUM GENRE LAST.FM', 'ALBUM GENRE ALLMUSIC', 'ALBUM GENRE WIKIPEDIA', 'ARTIST GENRE WIKIPEDIA'], type: 'getRecordingsByTag'},
-		{name: 'Folksonomy & Date(s)',	tf: ['FOLKSONOMY', 'OCCASION', 'ALBUMOCCASION', 'LOCALE', 'LOCALE LAST.FM', 'DATE', 'LOCALE WORLD MAP'], type: 'getRecordingsByTag'},
-		{name: 'Mood & Theme(s)',		tf: ['MOOD','THEME', 'ALBUMMOOD', 'ALBUM THEME ALLMUSIC', 'ALBUM MOOD ALLMUSIC'], type: 'getRecordingsByTag'}
+		{ name: 'Similar artists to', tf: ['ARTIST', 'ALBUM ARTIST'], type: 'retrieveSimilarArtists' },
+		{ name: 'Similar artists', tf: ['SIMILAR ARTISTS SEARCHBYDISTANCE', 'LASTFM_SIMILAR_ARTIST', 'SIMILAR ARTISTS LAST.FM'], type: 'getPopularRecordingsBySimilarArtist' },
+		{ name: 'Similar tracks', tf: ['TITLE'], type: 'retrieveSimilarRecordings' },
+		{ name: 'Genre & Style(s)', tf: ['GENRE', 'STYLE', 'ARTIST GENRE LAST.FM', 'ARTIST GENRE ALLMUSIC', 'ALBUM GENRE LAST.FM', 'ALBUM GENRE ALLMUSIC', 'ALBUM GENRE WIKIPEDIA', 'ARTIST GENRE WIKIPEDIA'], type: 'getRecordingsByTag' },
+		{ name: 'Folksonomy & Date(s)', tf: ['FOLKSONOMY', 'OCCASION', 'ALBUMOCCASION', 'LOCALE', 'LOCALE LAST.FM', 'DATE', 'LOCALE WORLD MAP'], type: 'getRecordingsByTag' },
+		{ name: 'Mood & Theme(s)', tf: ['MOOD', 'THEME', 'ALBUMMOOD', 'ALBUM THEME ALLMUSIC', 'ALBUM MOOD ALLMUSIC'], type: 'getRecordingsByTag' }
 	])],
 };
-newButtonsProperties.tags.push({func: isJSON}, newButtonsProperties.tags[1]);
+newButtonsProperties.tags.push({ func: isJSON }, newButtonsProperties.tags[1]);
 setProperties(newButtonsProperties, prefix, 0); //This sets all the panel properties at once
 newButtonsProperties = getPropertiesPairs(newButtonsProperties, prefix, 0);
 buttonsBar.list.push(newButtonsProperties);
 // Create dynamic menus
 if (newButtonsProperties.bDynamicMenus[1]) {
 	bindDynamicMenus({
-		menu: listenBrainzmenu.bind({buttonsProperties: newButtonsProperties, prefix: ''}),
+		menu: listenBrainzmenu.bind({ buttonsProperties: newButtonsProperties, prefix: '' }),
 		parentName: 'ListenBrainz',
 		entryCallback: (entry) => {
-			const prefix = 'ListenBrainz' + (/sitewide.*/i.test(entry.menuName) 
+			const prefix = 'ListenBrainz' + (/sitewide.*/i.test(entry.menuName)
 				? ': Sitewide '
-				: /by user.*/i.test(entry.menuName) 
+				: /by user.*/i.test(entry.menuName)
 					? ': User '
 					: ': '
 			);
@@ -67,55 +86,58 @@ if (newButtonsProperties.bDynamicMenus[1]) {
 }
 
 addButton({
-	'Listen Brainz Tools': new themedButton({x: 0, y: 0, w: 100, h: 22}, 'Listen Brainz', function (mask) {
+	'Listen Brainz Tools': new themedButton({ x: 0, y: 0, w: 100, h: 22 }, 'Listen Brainz', function (mask) {
 		if (mask === MK_SHIFT) {
 			settingsMenu(
 				this, true, ['buttons_listenbrainz_tools.js'],
 				{
-					bAdvTitle: {popup: globRegExp.title.desc},
-					bDynamicMenus: {popup: 'Remember to set different panel names to every buttons toolbar, otherwise menus will not be properly associated to a single panel.\n\nShift + Win + R. Click -> Configure panel... (\'edit\' at top)'}
+					bAdvTitle: { popup: globRegExp.title.desc },
+					bDynamicMenus: { popup: 'Remember to set different panel names to every buttons toolbar, otherwise menus will not be properly associated to a single panel.\n\nShift + Win + R. Click -> Configure panel... (\'edit\' at top)' }
 				},
-				{bDynamicMenus: 
-					(value) => {
-						if (value) {
-							bindDynamicMenus({
-								menu: listenBrainzmenu.bind(this),
-								parentName: 'ListenBrainz',
-								entryCallback: (entry) => {
-									const prefix = 'ListenBrainz' + (/sitewide.*/i.test(entry.menuName) 
-										? ': Sitewide '
-										: ': User '
-									);
-									return prefix + entry.entryText.replace(/\t.*/, '').replace(/&&/g, '&');
-								}
-							});
-						} else {deleteMainMenuDynamic('ListenBrainz');}
-					}
+				{
+					bDynamicMenus:
+						(value) => {
+							if (value) {
+								bindDynamicMenus({
+									menu: listenBrainzmenu.bind(this),
+									parentName: 'ListenBrainz',
+									entryCallback: (entry) => {
+										const prefix = 'ListenBrainz' + (/sitewide.*/i.test(entry.menuName)
+											? ': Sitewide '
+											: ': User '
+										);
+										return prefix + entry.entryText.replace(/\t.*/, '').replace(/&&/g, '&');
+									}
+								});
+							} else { deleteMainMenuDynamic('ListenBrainz'); }
+						}
 				},
 				(menu) => { // Append this menu entries to the config menu
 					const menuName = menu.getMainMenuName();
-					menu.newEntry({menuName: menu.getMainMenuName(), entryText: 'sep'});
+					menu.newEntry({ menuName: menu.getMainMenuName(), entryText: 'sep' });
 					const subMenuName = menu.newMenu('Tag remap...', menuName);
-					menu.newEntry({menuName: subMenuName, entryText: 'Available entries:', flags: MF_GRAYED});
-					menu.newEntry({menuName: subMenuName, entryText: 'sep'});
+					menu.newEntry({ menuName: subMenuName, entryText: 'Available entries:', flags: MF_GRAYED });
+					menu.newEntry({ menuName: subMenuName, entryText: 'sep' });
 					const tags = JSON.parse(this.buttonsProperties.tags[1]);
 					tags.forEach((tag) => {
-						menu.newEntry({menuName: subMenuName, entryText: tag.name + (tag.tf && tag.tf.length ? '' : '\t-disabled-'), func: () => {
-							const input = Input.json('array strings', tag.tf, 'Enter tag(s) or TF expression(s):\n(JSON)\n\nSetting it to [] will disable the menu entry.', 'ListenBrainz Tools', '["ARTIST","ALBUM ARTIST"]', void(0), true);
-							if (input === null) {return;}
-							tag.tf = input;
-							this.buttonsProperties.tags[1] = JSON.stringify(tags);
-							overwriteProperties(this.buttonsProperties);
-						}});
+						menu.newEntry({
+							menuName: subMenuName, entryText: tag.name + (tag.tf && tag.tf.length ? '' : '\t-disabled-'), func: () => {
+								const input = Input.json('array strings', tag.tf, 'Enter tag(s) or TF expression(s):\n(JSON)\n\nSetting it to [] will disable the menu entry.', 'ListenBrainz Tools', '["ARTIST","ALBUM ARTIST"]', void (0), true);
+								if (input === null) { return; }
+								tag.tf = input;
+								this.buttonsProperties.tags[1] = JSON.stringify(tags);
+								overwriteProperties(this.buttonsProperties);
+							}
+						});
 					});
 				}
 			).btn_up(this.currX, this.currY + this.currH);
 		} else {
 			this.retrieveUserRecommendedPlaylists(false);
-			if (!listenBrainz.isFollowing(listenBrainz.decryptToken({lBrainzToken: this.buttonsProperties.lBrainzToken[1], bEncrypted: this.buttonsProperties.lBrainzEncrypt[1]}), 'troi-bot')) {this.retrieveFollowing();}
+			if (!listenBrainz.isFollowing(listenBrainz.decryptToken({ lBrainzToken: this.buttonsProperties.lBrainzToken[1], bEncrypted: this.buttonsProperties.lBrainzEncrypt[1] }), 'troi-bot')) { this.retrieveFollowing(); }
 			listenBrainzmenu.bind(this)().btn_up(this.currX, this.currY + this.currH);
 		}
-	}, null, void(0), (parent) => {
+	}, null, void (0), (parent) => {
 		const token = parent.buttonsProperties.lBrainzToken[1];
 		const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
 		const bListenBrainz = token.length;
@@ -124,7 +146,7 @@ addButton({
 		const bShift = utils.IsKeyPressed(VK_SHIFT);
 		const bInfo = typeof menu_panelProperties === 'undefined' || menu_panelProperties.bTooltipInfo[1];
 		const selMul = plman.ActivePlaylist !== -1 ? plman.GetPlaylistSelectedItems(plman.ActivePlaylist) : null;
-		const data = (listenBrainz.cache.feedback ? [...listenBrainz.cache.feedback] : [['',{}]]).filter((userData) => userData[0] === user);
+		const data = (listenBrainz.cache.feedback ? [...listenBrainz.cache.feedback] : [['', {}]]).filter((userData) => userData[0] === user);
 		let infoMul = '';
 		if (selMul && selMul.Count > 1) {
 			infoMul = ' (multiple tracks selected: ' + selMul.Count + ')';
@@ -134,9 +156,9 @@ addButton({
 		if (sel) {
 			const feedbackTag = parent.buttonsProperties.feedbackTag[1];
 			let tfo = fb.TitleFormat(
-					'Current track:	' + globTags.artist + ' / %TRACK% - %TITLE%' +
-					'[$and(%' + feedbackTag + '%)$crlf()Feedback:	$select($add(%' + feedbackTag+ '%,2),' + sanitizeTagTfo(chars.sadEmoji) +' Hated...,-,' + sanitizeTagTfo(chars.loveEmojiCycle(2000)) + ' Loved!)]' // Only show if tag is present
-				);
+				'Current track:	' + globTags.artist + ' / %TRACK% - %TITLE%' +
+				'[$and(%' + feedbackTag + '%)$crlf()Feedback:	$select($add(%' + feedbackTag + '%,2),' + sanitizeTagTfo(chars.sadEmoji) + ' Hated...,-,' + sanitizeTagTfo(chars.loveEmojiCycle(2000)) + ' Loved!)]' // Only show if tag is present
+			);
 			info = 'Playlist:		' + (plman.ActivePlaylist !== -1 ? plman.GetPlaylistName(plman.ActivePlaylist) : '-none-') + infoMul + '\n';
 			info += tfo.EvalWithMetadb(sel);
 		}
@@ -152,16 +174,16 @@ addButton({
 	{
 		lBrainzTokenListener: false, userPlaylists: [], bioSelectionMode: 'Prefer nowplaying', bioTags: {},
 		retrieveUser: debounce((parent, token, bEncrypted) => {
-			listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}), false)
+			listenBrainz.retrieveUser(listenBrainz.decryptToken({ lBrainzToken: token, bEncrypted }), false);
 		}, 2500, true)
-	}, 
+	},
 	{
 		on_notify_data: (parent, name, info) => {
 			lastfmListeners.on_notify_data(parent, name, info);
-			if (name === 'bio_imgChange' || name === 'biographyTags' || name === 'bio_chkTrackRev' || name === 'xxx-scripts: panel name reply' || name === 'precacheLibraryPaths') {return;}
+			if (name === 'bio_imgChange' || name === 'biographyTags' || name === 'bio_chkTrackRev' || name === 'xxx-scripts: panel name reply' || name === 'precacheLibraryPaths') { return; }
 			switch (name) {
 				case 'xxx-scripts: lb token': {
-					if (parent.buttonsProperties.lBrainzToken[1].length) {window.NotifyOthers('xxx-scripts: lb token reply', {lBrainzToken: parent.buttonsProperties.lBrainzToken[1], lBrainzEncrypt: parent.buttonsProperties.lBrainzEncrypt[1], name: window.Name + ' - ' + parent.name});}
+					if (parent.buttonsProperties.lBrainzToken[1].length) { window.NotifyOthers('xxx-scripts: lb token reply', { lBrainzToken: parent.buttonsProperties.lBrainzToken[1], lBrainzEncrypt: parent.buttonsProperties.lBrainzEncrypt[1], name: window.Name + ' - ' + parent.name }); }
 					break;
 				}
 				case 'xxx-scripts: lb token reply': {
@@ -170,9 +192,9 @@ addButton({
 						parent.buttonsProperties.lBrainzToken[1] = info.lBrainzToken;
 						parent.buttonsProperties.lBrainzEncrypt[1] = info.lBrainzEncrypt;
 						overwriteProperties(parent.buttonsProperties);
-						lb.cache.key = null;
+						listenBrainz.cache.key = null;
 						parent.lBrainzTokenListener = false;
-						if (!parent.buttonsProperties.lBrainzEncrypt[1]) {listenBrainz.followUser('troi-bot', parent.buttonsProperties.lBrainzToken[1])}
+						if (!parent.buttonsProperties.lBrainzEncrypt[1]) { listenBrainz.followUser('troi-bot', parent.buttonsProperties.lBrainzToken[1]); }
 					}
 					break;
 				}
@@ -184,7 +206,7 @@ addButton({
 		if (!parent.buttonsProperties.firstPopup[1] && !parent.buttonsProperties.lBrainzToken[1].length) {
 			parent.lBrainzTokenListener = true;
 			setTimeout(() => window.NotifyOthers('xxx-scripts: lb token', null), 3000);
-			setTimeout(() => {parent.lBrainzTokenListener = false;}, 6000);
+			setTimeout(() => { parent.lBrainzTokenListener = false; }, 6000);
 			parent.buttonsProperties.firstPopup[1] = true;
 			overwriteProperties(parent.buttonsProperties);
 		}
@@ -196,12 +218,12 @@ addButton({
 			const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
 			if (!bListenBrainz || (bEncrypted && !lb.cache.key)) {
 				parent.userPlaylists.length = 0;
-				if (bLoop) {setTimeout(parent.retrieveUserRecommendedPlaylists, 1800000, true);}
+				if (bLoop) { setTimeout(parent.retrieveUserRecommendedPlaylists, 1800000, true); }
 				return Promise.resolve(false);
 			}
-			parent.switchAnimation('ListeBrainz retrieve user playlists', true)
-			return lb.retrieveUser(lb.decryptToken({lBrainzToken: token, bEncrypted}), false).then((user) => {
-				return lb.retrieveUserRecommendedPlaylistsNames(user, {count: lb.MAX_ITEMS_PER_GET}, lb.decryptToken({lBrainzToken: token, bEncrypted}));
+			parent.switchAnimation('ListeBrainz retrieve user playlists', true);
+			return lb.retrieveUser(lb.decryptToken({ lBrainzToken: token, bEncrypted }), false).then((user) => {
+				return lb.retrieveUserRecommendedPlaylistsNames(user, { count: lb.MAX_ITEMS_PER_GET }, lb.decryptToken({ lBrainzToken: token, bEncrypted }));
 			}).then((playlists) => {
 				parent.userPlaylists.length = 0;
 				if (playlists.length) {
@@ -209,8 +231,8 @@ addButton({
 				}
 				return;
 			}).finally(() => {
-				parent.switchAnimation('ListeBrainz retrieve user playlists', false)
-				if (bLoop) {setTimeout(parent.retrieveUserRecommendedPlaylists, 1800000, true);}
+				parent.switchAnimation('ListeBrainz retrieve user playlists', false);
+				if (bLoop) { setTimeout(parent.retrieveUserRecommendedPlaylists, 1800000, true); }
 			});
 		};
 		setTimeout(parent.retrieveUserRecommendedPlaylists, 20000, true);
@@ -229,8 +251,8 @@ addButton({
 			const newData = [];
 			const data = [...listenBrainz.cache.feedback]
 				.filter((userData) => userData[0] === user)
-				.map((userData) => {return {name: userData[0], cache: userData[1]};});
-			if (!data.length) {return;}
+				.map((userData) => { return { name: userData[0], cache: userData[1] }; });
+			if (!data.length) { return; }
 			if (_isFile(parent.buttonsProperties.feedbackCache[1])) {
 				const oldData = _jsonParseFile(parent.buttonsProperties.feedbackCache[1], utf8);
 				_recycleFile(parent.buttonsProperties.feedbackCache[1]);
@@ -249,16 +271,15 @@ addButton({
 		// Send feedback cache every 10 min
 		parent.sendFeedbackCache = async () => {
 			const token = parent.buttonsProperties.lBrainzToken[1];
-			const bListenBrainz = token.length;
 			const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
-			const user = await listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}), false);
+			const user = await listenBrainz.retrieveUser(listenBrainz.decryptToken({ lBrainzToken: token, bEncrypted }), false);
 			const promises = [];
 			let count = 0;
 			listenBrainz.cache.feedback.forEach((data, dataUser) => {
-				if (dataUser !== user) {return;}
+				if (dataUser !== user) { return; }
 				const sendMBIDs = Object.keys(data);
 				if (sendMBIDs.length) {
-					const queue = {love: [], hate: [], remove: []};
+					const queue = { love: [], hate: [], remove: [] };
 					sendMBIDs.forEach((mbid) => {
 						queue[data[mbid].feedback].push(mbid);
 					});
@@ -267,7 +288,7 @@ addButton({
 						if (queue[key].length) {
 							const mbids = queue[key].slice(0, 25);
 							promises.push(
-								listenBrainz.sendFeedback(mbids, key, listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}), false, true, false)
+								listenBrainz.sendFeedback(mbids, key, listenBrainz.decryptToken({ lBrainzToken: token, bEncrypted }), false, true, false)
 									.then((response) => {
 										if (response) {
 											let bDone = false;
@@ -301,12 +322,12 @@ addButton({
 			const token = parent.buttonsProperties.lBrainzToken[1];
 			const bListenBrainz = token.length;
 			const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
-			if (!bListenBrainz || (bEncrypted && !listenBrainz.cache.key)) {return;}
-			listenBrainz.retrieveUser(listenBrainz.decryptToken({lBrainzToken: token, bEncrypted}), false).then((user) => {
-				if (user) {listenBrainz.retrieveFollowing(user, token);}
+			if (!bListenBrainz || (bEncrypted && !listenBrainz.cache.key)) { return; }
+			listenBrainz.retrieveUser(listenBrainz.decryptToken({ lBrainzToken: token, bEncrypted }), false).then((user) => {
+				if (user) { listenBrainz.retrieveFollowing(user, token); }
 			});
 		};
 		setTimeout(parent.retrieveFollowing, 3000);
 	},
-	{scriptName: 'ListenBrainz-SMP', version}),
+	{ scriptName: 'ListenBrainz-SMP', version }),
 });
