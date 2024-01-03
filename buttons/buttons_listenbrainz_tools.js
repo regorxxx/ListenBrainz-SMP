@@ -1,5 +1,5 @@
 ﻿'use strict';
-//30/12/23
+//03/01/24
 
 /*
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -9,7 +9,7 @@
 include('..\\helpers\\helpers_xxx.js');
 /* global globTags:readable, MK_SHIFT:readable, VK_SHIFT:readable, folders:readable, isYouTube:readable, globQuery:readable, debounce:readable, MF_GRAYED:readable, globRegExp:readable */
 include('..\\helpers\\buttons_xxx.js');
-/* global getUniquePrefix:readable, buttonsBar:readable, addButton:readable, themedButton:readable */
+/* global getUniquePrefix:readable, buttonsBar:readable, addButton:readable, ThemedButton:readable */
 include('..\\helpers\\buttons_xxx_menu.js');
 /* global settingsMenu:readable  */
 include('..\\helpers\\helpers_xxx_prototypes.js');
@@ -54,14 +54,14 @@ var newButtonsProperties = { // NOSONAR[global]
 	bPlsMatchMBID: ['Match only by MBID?', false, { func: isBoolean }, false],
 	forcedQuery: ['Forced query to pre-filter database', globQuery.filter, { func: (query) => { return checkQuery(query, true); } }, globQuery.filter],
 	tags: ['Tags remap for lookups', JSON.stringify([
-		{ name: 'Artist top tracks', tf: ['ARTIST', 'ALBUM ARTIST'], type: 'getPopularRecordingsByArtist' },
-		// {name: 'Artist shuffle', tf: ['ARTIST', 'ALBUM ARTIST'], type: '??'}, TODO
-		{ name: 'Similar artists to', tf: ['ARTIST', 'ALBUM ARTIST'], type: 'retrieveSimilarArtists' },
-		{ name: 'Similar artists', tf: ['SIMILAR ARTISTS SEARCHBYDISTANCE', 'LASTFM_SIMILAR_ARTIST', 'SIMILAR ARTISTS LAST.FM'], type: 'getPopularRecordingsBySimilarArtist' },
-		{ name: 'Similar tracks', tf: ['TITLE'], type: 'retrieveSimilarRecordings' },
-		{ name: 'Genre & Style(s)', tf: ['GENRE', 'STYLE', 'ARTIST GENRE LAST.FM', 'ARTIST GENRE ALLMUSIC', 'ALBUM GENRE LAST.FM', 'ALBUM GENRE ALLMUSIC', 'ALBUM GENRE WIKIPEDIA', 'ARTIST GENRE WIKIPEDIA'], type: 'getRecordingsByTag' },
-		{ name: 'Folksonomy & Date(s)', tf: ['FOLKSONOMY', 'OCCASION', 'ALBUMOCCASION', 'LOCALE', 'LOCALE LAST.FM', 'DATE', 'LOCALE WORLD MAP'], type: 'getRecordingsByTag' },
-		{ name: 'Mood & Theme(s)', tf: ['MOOD', 'THEME', 'ALBUMMOOD', 'ALBUM THEME ALLMUSIC', 'ALBUM MOOD ALLMUSIC'], type: 'getRecordingsByTag' }
+		{ name: 'Artist top tracks', tf: [...new Set([globTags.artistRaw, 'ARTIST', 'ALBUM ARTIST'])], type: 'getPopularRecordingsByArtist' },
+		// {name: 'Artist shuffle', tf: [...new Set([globTags.artistRaw, 'ARTIST', 'ALBUM ARTIST'], type: '??'}, TODO
+		{ name: 'Similar artists to', tf: [...new Set([globTags.artistRaw, 'ARTIST', 'ALBUM ARTIST'])], type: 'retrieveSimilarArtists' },
+		{ name: 'Similar artists', tf: [...new Set(['SIMILAR ARTISTS SEARCHBYDISTANCE', 'LASTFM_SIMILAR_ARTIST', 'SIMILAR ARTISTS LAST.FM'])], type: 'getPopularRecordingsBySimilarArtist' },
+		{ name: 'Similar tracks', tf: [globTags.titleRaw], type: 'retrieveSimilarRecordings' },
+		{ name: 'Genre & Style(s)', tf: [...new Set([globTags.genre, globTags.style, 'GENRE', 'STYLE', 'ARTIST GENRE LAST.FM', 'ARTIST GENRE ALLMUSIC', 'ALBUM GENRE LAST.FM', 'ALBUM GENRE ALLMUSIC', 'ALBUM GENRE WIKIPEDIA', 'ARTIST GENRE WIKIPEDIA'])], type: 'getRecordingsByTag' },
+		{ name: 'Folksonomy & Date(s)', tf: [...new Set([globTags.folksonomy, 'FOLKSONOMY', 'OCCASION', 'ALBUMOCCASION', globTags.locale, 'LOCALE', 'LOCALE LAST.FM', 'DATE', 'LOCALE WORLD MAP'])], type: 'getRecordingsByTag' },
+		{ name: 'Mood & Theme(s)', tf: [...new Set([globTags.mood, 'MOOD', 'THEME', 'ALBUMMOOD', 'ALBUM THEME ALLMUSIC', 'ALBUM MOOD ALLMUSIC'])], type: 'getRecordingsByTag' }
 	])],
 };
 newButtonsProperties.tags.push({ func: isJSON }, newButtonsProperties.tags[1]);
@@ -86,7 +86,7 @@ if (newButtonsProperties.bDynamicMenus[1]) {
 }
 
 addButton({
-	'Listen Brainz Tools': new themedButton({ x: 0, y: 0, w: 100, h: 22 }, 'Listen Brainz', function (mask) {
+	'Listen Brainz Tools': new ThemedButton({ x: 0, y: 0, w: 100, h: 22 }, 'Listen Brainz', function (mask) {
 		if (mask === MK_SHIFT) {
 			settingsMenu(
 				this, true, ['buttons_listenbrainz_tools.js'],
@@ -229,7 +229,6 @@ addButton({
 				if (playlists.length) {
 					playlists.forEach((obj) => parent.userPlaylists.push(obj.playlist));
 				}
-				return;
 			}).finally(() => {
 				parent.switchAnimation('ListeBrainz retrieve user playlists', false);
 				if (bLoop) { setTimeout(parent.retrieveUserRecommendedPlaylists, 1800000, true); }
