@@ -39,6 +39,7 @@
 ### Removed
 ### Fixed
 - Toolbar: buttons' size not restored back to normal height after disabling 'Full size buttons' without reloading the panel.
+- Helpers: added missing helper.
 - Minor fixes.
 
 ## [1.5.0] - 2023-12-08
