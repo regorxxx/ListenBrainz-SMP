@@ -1,5 +1,5 @@
 'use strict';
-//27/12/23
+//07/01/23
 
 /* exported listenBrainzmenu */
 
@@ -16,7 +16,7 @@ include('..\\..\\helpers\\helpers_xxx_properties.js');
 include('..\\..\\helpers\\buttons_xxx_menu.js');
 /* global _menu:readable */
 include('..\\..\\helpers\\helpers_xxx_tags.js');
-/* global sanitizeQueryVal:readable, sanitizeTagValIds:readable, sanitizeTagIds:readable, sanitizeQueryVal:readable,query_join:readable */
+/* global sanitizeQueryVal:readable, sanitizeTagValIds:readable, sanitizeTagIds:readable, sanitizeQueryVal:readable,queryJoin:readable */
 include('..\\..\\helpers\\helpers_xxx_playlists.js');
 /* global sendToPlaylist:readable */
 include('..\\..\\main\\playlist_manager\\playlist_manager_listenbrainz.js');
@@ -356,7 +356,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 					const bMeta = title.length && artist.length;
 					return 'MUSICBRAINZ_TRACKID IS ' + mbid + (bMeta ? ' OR (' + _q(sanitizeTagIds(_t(globTags.titleRaw))) + ' IS ' + title + ' AND ' + _q(sanitizeTagIds(globTags.artist)) + ' IS ' + artist + ')' : '');
 				}).filter(Boolean);
-				let query = query_join(queryArr, 'OR');
+				let query = queryJoin(queryArr, 'OR');
 				let handleList;
 				try {handleList = fb.GetQueryItems(fb.GetLibraryItems(), query);} // Sanity check
 				catch (e) {fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return;}
@@ -447,7 +447,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								const bMBID = mbid.length > 0;
 								const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
 								if (!bMeta && !bMBID) {return;}
-								const query = query_join(
+								const query = queryJoin(
 									[
 										bMeta ?  tagArr.map((tag) => {return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val;}).join(' AND ') : '',
 										bMeta ?  tagArr.slice(0, 2).map((tag) => {return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
@@ -717,7 +717,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
 								if (!tagArr[0].val.length > 0) {return;}
 								if (mbidAlt) { // Get specific recordings
-									const query = query_join(
+									const query = queryJoin(
 										[
 											(bMeta
 												? tagArr.map((tag) => {return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val;}).join(' AND ')
@@ -729,9 +729,9 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 									);
 									return query;
 								} else { // Or any track by such artist
-									const query = query_join(
+									const query = queryJoin(
 										[
-											query_join(
+											queryJoin(
 												[
 													tagArr.slice(0, 1).map((tag) => {return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live',
 													'MUSICBRAINZ_ARTISTID IS ' + mbid + ' OR MUSICBRAINZ_ALBUMARTISTID IS ' + mbid
@@ -772,7 +772,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								const tagArr = ['TITLE', 'ARTIST']
 									.map((key) => {return {key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g,'')).toLowerCase()};});
 								const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
-								const query = query_join(
+								const query = queryJoin(
 									[
 										bMeta ?  tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
 										'MUSICBRAINZ_TRACKID IS ' + mbid
@@ -800,7 +800,7 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 								const tagArr = ['TITLE', 'ARTIST']
 									.map((key) => {return {key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g,'')).toLowerCase()};});
 								const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
-								const query = query_join(
+								const query = queryJoin(
 									[
 										bMeta ?  tagArr.map((tag) => {return tag.key + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
 										'MUSICBRAINZ_TRACKID IS ' + mbid
