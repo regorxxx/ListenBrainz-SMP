@@ -1,5 +1,5 @@
 ﻿'use strict';
-//27/12/23
+//05/01/24
 
 /* global list:readable, delayAutoUpdate:readable, checkLBToken:readable,  */
 include('..\\..\\helpers\\helpers_xxx.js');
@@ -103,7 +103,10 @@ listenBrainz.lookupArtistMBIDsByName = async function lookupArtistMBIDsByName(na
 		const nError = total - passed;
 		console.log('lookupArtistMBIDsByName: ' + total + ' artists' + (nError ? ' (' + nError + ' failed)' : ''));
 		return results;
-	}, (error) => { console.log(error.message); return null; });
+	}, (error) => {
+		console.log(error.message); // DEBUG
+		return null;
+	});
 };
 
 listenBrainz.getArtistMBIDs = async function getArtistMBIDs(handleList, token, bLookupMBIDs = true, bAlbumArtist = true, bRetry = true) {
@@ -204,7 +207,9 @@ listenBrainz.exportPlaylist = async function exportPlaylist(pls /*{name, nameId,
 	if (!pls.path && !pls.extension || pls.extension && !pls.nameId || !pls.name) { console.log('exportPlaylist: no valid pls provided'); return Promise.resolve(''); }
 	const bUI = pls.extension === '.ui';
 	// Create new playlist and check paths
-	const handleList = !bUI ? getHandlesFromPlaylist(pls.path, root, true) : getHandlesFromUIPlaylists([pls.nameId], false); // Omit not found
+	const handleList = !bUI
+		? getHandlesFromPlaylist({playlistPath: pls.path, relPath: root, bOmitNotFound: true})
+		: getHandlesFromUIPlaylists([pls.nameId], false); // Omit not found
 	const mbid = (await this.getMBIDs(handleList, token, bLookupMBIDs)).filter(Boolean);
 	const missingCount = handleList.Count - mbid.length;
 	if (missingCount) { console.log('Warning: some tracks don\'t have MUSICBRAINZ_TRACKID tag. Omitted ' + missingCount + ' tracks on exporting'); }
@@ -255,7 +260,9 @@ listenBrainz.syncPlaylist = function syncPlaylist(pls /*{name, nameId, path, pla
 	};
 	const bUI = pls.extension === '.ui';
 	// Create new playlist and check paths
-	const handleList = !bUI ? getHandlesFromPlaylist(pls.path, root, true) : getHandlesFromUIPlaylists([pls.nameId], false); // Omit not found
+	const handleList = !bUI
+		? getHandlesFromPlaylist({playlistPath: pls.path, relPath: root, bOmitNotFound: true})
+		: getHandlesFromUIPlaylists([pls.nameId], false); // Omit not found
 	return send({
 		method: 'POST',
 		URL: 'https://api.listenbrainz.org/1/playlist/' + pls.playlist_mbid + '/item/delete',
@@ -496,11 +503,14 @@ listenBrainz.sendFeedback = async function sendFeedback(handleList, feedback = '
 					results.forEach((result, i) => {
 						if (!result) { report.push(handleList[i].RawPath); }
 					});
-					console.log(report.join('\n\t'));
+					console.log(report.join('\n\t')); // DEBUG
 				}
 				return results;
 			}
-		}, (error) => { console.log(error.message); return false; });
+		}, (error) => {
+			console.log(error.message); // DEBUG
+			return false;
+		});
 };
 
 listenBrainz.getFeedback = async function getFeedback(handleList, user, token, bLookupMBIDs = true, method = 'GET') {
