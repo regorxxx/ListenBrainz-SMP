@@ -1,5 +1,5 @@
 ﻿'use strict';
-//27/07/23
+//07/01/24
 
 /* global youTube:readable */
 include('..\\..\\helpers\\helpers_xxx.js');
@@ -9,7 +9,7 @@ include('playlist_manager_listenbrainz.js');
 include('..\\..\\helpers\\helpers_xxx_prototypes.js');
 /* global _p:readable, _q:readable, _t:readable, _q:readable, _q:readable, _q:readable, module:readable,  */
 include('..\\..\\helpers\\helpers_xxx_tags.js');
-/* global query_join:readable, sanitizeTagValIds:readable, sanitizeTagIds:readable, sanitizeQueryVal:readable */
+/* global queryJoin:readable, sanitizeTagValIds:readable, sanitizeTagIds:readable, sanitizeQueryVal:readable */
 include('..\\filter_and_query\\remove_duplicates.js');
 /* global removeDuplicatesV2:readable */
 include('..\\..\\helpers-external\\easy-table-1.2.0\\table.js'); const Table = module.exports;
@@ -54,7 +54,7 @@ listenBrainz.getRecommendedTracks = function getRecommendedTracks(user, params /
 					.map((key) => {return {key, val: sanitizeQueryVal(sanitizeTagValIds(tags[key][i]))};});
 				const bMeta = tagArr.every((tag) => {return tag.val.length > 0;});
 				if (!bMeta) {return;}
-				const query = query_join(
+				const query = queryJoin(
 					[
 						bMeta ? tagArr.map((tag) => {return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val;}).join(' AND ') : '',
 						bMeta ? tagArr.slice(0, 2).map((tag) => {return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val;}).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
