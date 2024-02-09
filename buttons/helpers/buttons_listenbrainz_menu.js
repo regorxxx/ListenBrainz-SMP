@@ -1,5 +1,5 @@
 'use strict';
-//07/01/23
+//09/02/23
 
 /* exported listenBrainzmenu */
 
@@ -10,7 +10,7 @@ include('..\\..\\helpers\\helpers_xxx_input.js');
 include('..\\..\\helpers\\helpers_xxx_file.js');
 /* global WshShell:readable, _isFile:readable, _jsonParseFileCheck:readable, utf8:readable, _jsonParseFileCheck:readable, _jsonParseFileCheck:readable, _runCmd:readable */
 include('..\\..\\helpers\\helpers_xxx_prototypes.js');
-/* global _b:readable, _t:readable, _q:readable, _p:readable, _asciify:readable */
+/* global _b:readable, _t:readable, _q:readable, _p:readable, _asciify:readable, isArrayEqual:readable */
 include('..\\..\\helpers\\helpers_xxx_properties.js');
 /* global overwriteProperties:readable */
 include('..\\..\\helpers\\buttons_xxx_menu.js');
@@ -536,11 +536,11 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 						menu.newEntry({menuName: subMenu, entryText: bSingle ? tag.name + '\t[' + (val.cut(20) || (sel ? 'no tag' : 'no sel')) + ']' : val.cut(20), func: () => {
 							switch (tag.type) {
 								case 'getPopularRecordingsByArtist':
-									runSimilar(tag.type, 'By artist top tracks', 'v1', val); break;
+									runSimilar(tag.type, 'By artist top tracks', 50, val); break;
 								case 'getPopularRecordingsBySimilarArtist':
-									runSimilar(tag.type, 'By similar artists', 'v1', val); break;
+									runSimilar(tag.type, 'By similar artists', void(0), val); break;
 								case 'getRecordingsByTag':
-									runSimilar(tag.type, 'By tag', false, val); break;
+									runSimilar(tag.type, 'By tag', 50, val); break;
 								case 'retrieveSimilarArtists':
 									runSimilar(tag.type, 'By similar artists', 'v1', val); break;
 								case 'retrieveSimilarRecordings':
@@ -607,21 +607,21 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 							});
 							count = mbids.length;
 							// Retrieve some recordings from given artists
-							return lb.getPopularRecordingsByArtist(mbids.filter(Boolean), token)
-								.then((artistRecommendations) => { // [{artist_mbid, count, recording_mbid}, ...]
+							return lb.getPopularRecordingsByArtist(mbids.filter(Boolean), token, 5)
+								.then((artistRecommendations) => { // [{artist_mbids, count, recording_mbid}, ...]
 									let cache = '';
 									const selection = [];
 									artistRecommendations.forEach((recording) => {
-										if (cache !== recording.artist_mbid) {
+										if (!isArrayEqual(cache, recording.artist_mbids)) {
 											selection.push(recording);
-											cache = recording.artist_mbid;
+											cache = recording.artist_mbids;
 										} else {return;}
 									});
 									mbids.forEach((artist_mbid, i) => {
 										const selLen = selection.length;
 										mbidsAlt.push('');
 										for (let j = 0;j < selLen; j++) {
-											if (selection[j].artist_mbid === artist_mbid) {
+											if (selection[j].artist_mbids.includes(artist_mbid)) {
 												mbidsAlt[i] = selection.splice(j, 1)[0].recording_mbid;
 												break;
 											}
@@ -653,7 +653,6 @@ function listenBrainzmenu({bSimulate = false} = {}) {
 							return true;
 						}
 						case 'getPopularRecordingsByArtist': { // [{artist_mbid, count, recording_mbid}, ...]
-							recommendations.length = 50;
 							recommendations.forEach((recording) => {
 								mbids.push(recording.recording_mbid || '');
 								mbidsAlt.push(recording.artist_mbid || '');
