@@ -34,10 +34,12 @@
 - Toolbar: new settings for text scale (now independent of button and icon scale).
 - Toolbar: new settings for icon scale (now independent of button and text scale).
 ### Changed
+- Configuration: changed the remove duplicates bias to prefer tracks with higher play-counts and positive feedback tag (love/hate).
 - Helpers: updated helpers.
 - Code cleanup.
 ### Removed
 ### Fixed
+- Track Recommendations: not retrieving any result due to API changes.
 - Toolbar: buttons' size not restored back to normal height after disabling 'Full size buttons' without reloading the panel.
 - Helpers: added missing helper.
 - Minor fixes.
