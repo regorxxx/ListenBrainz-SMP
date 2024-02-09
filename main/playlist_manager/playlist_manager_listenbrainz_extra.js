@@ -1,5 +1,5 @@
 ﻿'use strict';
-//07/01/24
+//09/01/24
 
 /* global youTube:readable */
 include('..\\..\\helpers\\helpers_xxx.js');
@@ -14,7 +14,24 @@ include('..\\filter_and_query\\remove_duplicates.js');
 /* global removeDuplicatesV2:readable */
 include('..\\..\\helpers-external\\easy-table-1.2.0\\table.js'); const Table = module.exports;
 
-listenBrainz.getRecommendedTracks = function getRecommendedTracks(user, params /* {artist_type, count, offset} */, name, token, bYoutube = true, bRandomize = false, parent = null) {
+/**
+ * Retrieves recommended tracks for user and creates a playlist with matches or YouTube Links
+ *
+ * @property
+ * @name getRecommendedTracks
+ * @kind method
+ * @memberof listenBrainz
+ * @type {function}
+ * @param {string} user - User name
+ * @param {{artist_type:string count:number offset:number}} params - artist_type: 'top'
+ * @param {string} name - Title for the report
+ * @param {string} token - ListenBrainz user token (does not need to match the user)
+ * @param {Boolean} bYoutube - Retrieve YouTube links
+ * @param {Boolean} bRandomize - Shuffle items at output
+ * @param {?Object} parent - Button parent to switch animations
+ * @returns {void}
+ */
+listenBrainz.getRecommendedTracks = function getRecommendedTracks(user, params, name, token, bYoutube = true, bRandomize = false, parent = null) {
 	const mbids = [];
 	const tags = {TITLE: [], ARTIST: []};
 	let count = 0;
