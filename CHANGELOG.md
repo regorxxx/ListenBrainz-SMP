@@ -44,6 +44,7 @@
 - Track Recommendations: not retrieving any result due to API changes.
 - Toolbar: buttons' size not restored back to normal height after disabling 'Full size buttons' without reloading the panel.
 - Helpers: added missing helper.
+- UI: wrong parsing of png masks on unix systems (currently, it only affected the ListenBrainz icon when changing the font color).
 - Minor fixes.
 
 ## [1.5.0] - 2023-12-08
