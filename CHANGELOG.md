@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [1.6.0](#160---2024-02-28)
 - [1.5.0](#150---2023-12-08)
 - [1.4.0](#140---2023-11-28)
 - [1.3.0](#130---2023-11-24)
@@ -26,6 +27,12 @@
 - [1.0.0-beta.1](#100-beta1---2023-02-15)
 
 ## [Unreleased][]
+### Added
+### Changed
+### Removed
+### Fixed
+
+## [1.6.0] - 2023-02-28
 ### Added
 - Playlists: playlists created by the user (in addition to recommendations) can now be imported. They are listed by name and can be sorted by name, creation or last modified date.
 - Playlists: playlist exporting to user profile. Note this exporting option is different to the one found at [Playlist-Manager-SMP](https://github.com/regorxxx/Playlist-Manager-SMP) in one thing, the MBID is not saved anywhere (contrary to saving it on a playlist file), so there is no playlist tracking at all and exporting the same playlists multiple times will only update the playlist on the server (instead of creating a new one) as long as the playlist names are strictly equal.
@@ -289,7 +296,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.2.1...v1.3.0
