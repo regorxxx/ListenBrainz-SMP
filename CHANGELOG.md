@@ -27,6 +27,9 @@
 
 ## [Unreleased][]
 ### Added
+- Playlists: playlists created by the user (in addition to recommendations) can now be imported. They are listed by name and can be sorted by name, creation or last modified date.
+- Playlists: playlist exporting to user profile. Note this exporting option is different to the one found at [Playlist-Manager-SMP](https://github.com/regorxxx/Playlist-Manager-SMP) in one thing, the MBID is not saved anywhere (contrary to saving it on a playlist file), so there is no playlist tracking at all and exporting the same playlists multiple times will only update the playlist on the server (instead of creating a new one) as long as the playlist names are strictly equal.
+- Playlists: playlist importing by MBID. This allows to import any playlist from any user, not just your own. Input allows the MBID or the link (which also contains the MBID).
 - Configuration: added COMPOSER to the list of global tags.
 - Configuration: added LOCALE LAST.FM to the list of global tags.
 - Configuration: added integrity checks to global user settings files, found at '[FOOBAR PROFILE FOLDER]\js_data\presets\global\[...].json'. In particular queries are now check to ensure they are valid and will throw a popup at init otherwise. Other settings are check to ensure they contain valid values too.

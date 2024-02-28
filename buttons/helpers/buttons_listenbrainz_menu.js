@@ -1,5 +1,5 @@
 'use strict';
-//20/02/23
+//28/02/24
 
 /* exported listenBrainzmenu */
 
@@ -10,7 +10,7 @@ include('..\\..\\helpers\\helpers_xxx_input.js');
 include('..\\..\\helpers\\helpers_xxx_file.js');
 /* global WshShell:readable, _isFile:readable, _jsonParseFileCheck:readable, utf8:readable, _jsonParseFileCheck:readable, _jsonParseFileCheck:readable, _runCmd:readable */
 include('..\\..\\helpers\\helpers_xxx_prototypes.js');
-/* global _b:readable, _t:readable, _q:readable, _p:readable, _asciify:readable, isArrayEqual:readable */
+/* global _b:readable, _t:readable, _q:readable, _p:readable, _asciify:readable, isArrayEqual:readable, isUUID:readable */
 include('..\\..\\helpers\\helpers_xxx_properties.js');
 /* global overwriteProperties:readable */
 include('..\\..\\helpers\\buttons_xxx_menu.js');
@@ -180,6 +180,71 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			}
 		}
 	}
+	const importPlaylist = async (playlist, name) => {
+		const bShift = utils.IsKeyPressed(VK_SHIFT);
+		if (!await checkLBToken()) { return false; }
+		const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+		if (!token) { return; }
+		this.switchAnimation('ListeBrainz data retrieval', true);
+		lb.importPlaylist({ playlist_mbid: playlist.identifier.replace(lb.regEx, '') }, token)
+			.then((jspf) => {
+				if (jspf) {
+					['extension', 'title'].forEach((key) => {
+						if (!playlist[key]) { playlist[key] = jspf.playlist[key];}
+					});
+					const data = lb.contentResolver(jspf, properties.forcedQuery[1], void (0), properties.bPlsMatchMBID[1]);
+					const items = data.handleArr;
+					const notFound = data.notFound;
+					// Find missing tracks on YouTube
+					if (notFound.length && properties.bYouTube[1] && isYouTube) {
+						this.switchAnimation('YouTube Scrapping', true);
+						// Add MBIDs to youTube track metadata
+						notFound.forEach((track) => track.tags = {
+							musicbrainz_trackid: track.identifier,
+							musicbrainz_albumartistid: track.artistIndentifier[0],
+							musicbrainz_artistid: track.artistIndentifier,
+						});
+						// Send request in parallel every x ms and process when all are done
+						return Promise.parallel(notFound, youTube.searchForYoutubeTrack, 5).then((results) => {
+							let j = 0;
+							const itemsLen = items.length;
+							results.forEach((result) => {
+								for (void (0); j <= itemsLen; j++) {
+									if (result.status !== 'fulfilled') { // Only code errors are output
+										console.log('YouTube:', result.status, result.reason.message);
+										break;
+									}
+									const link = result.value;
+									if (!link || !link.length) { break; }
+									if (!items[j]) {
+										items[j] = link.url;
+										break;
+									}
+								}
+							});
+							return items;
+						})
+							.finally(() => {
+								this.switchAnimation('YouTube Scrapping', false);
+							});
+					} else {
+						return items;
+					}
+				}
+			}).then((items) => {
+				const user = playlist.extension && playlist.extension[lb.jspfExt]
+					? playlist.extension[lb.jspfExt].created_for
+					: '';
+				if (bShift) { items.shuffle(); }
+				const idx = plman.FindOrCreatePlaylist('ListenBrainz: ' + (name || playlist.title) +  (user ? ' ' + _p(user) : ''), true);
+				plman.ClearPlaylist(idx);
+				plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
+				plman.ActivePlaylist = idx;
+			})
+			.finally(() => {
+				if (this.isAnimationActive('ListeBrainz data retrieval')) { this.switchAnimation('ListeBrainz data retrieval', false); }
+			});
+	};
 	// Menu
 	const menu = new _menu();
 	const selectedFlagsCount = (maxCount) => {
@@ -960,75 +1025,21 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			});
 		});
 	}
-	{	// Playlists
+	menu.newEntry({ entryText: 'sep' });
+	{	// Playlists Recommendations
 		const menuName = menu.newMenu('Playlists recommendations...');
 		menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
 		menu.newEntry({ menuName, entryText: 'sep' });
-		if (this.userPlaylists.length) {
-			this.userPlaylists.forEach((playlist) => {
+		const count = this.userPlaylists.recommendations.length;
+		if (count) {
+			const padding = count.toString().length;
+			this.userPlaylists.recommendations.sort((a, b) => a.date - b.date).forEach((playlist, i) => {
+				const idx = Math.floor(i / 10);
+				const subMenu = count <= 10
+					? menuName
+					: menu.findOrNewMenu((idx * 10).toString().padStart(padding, '0') + ' - ' + ((idx + 1) * 10).toString().padStart(padding, '0'), menuName);
 				const entryText = playlist.title.replace(/ for \S+\b/, '');
-				menu.newEntry({
-					menuName, entryText, func: async () => {
-						const bShift = utils.IsKeyPressed(VK_SHIFT);
-						if (!await checkLBToken()) { return false; }
-						const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
-						if (!token) { return; }
-						this.switchAnimation('ListeBrainz data retrieval', true);
-						lb.importPlaylist({ playlist_mbid: playlist.identifier.replace(lb.regEx, '') }, token)
-							.then((jspf) => {
-								if (jspf) {
-									const data = lb.contentResolver(jspf, properties.forcedQuery[1], void (0), properties.bPlsMatchMBID[1]);
-									const items = data.handleArr;
-									const notFound = data.notFound;
-									// Find missing tracks on YouTube
-									if (notFound.length && properties.bYouTube[1] && isYouTube) {
-										this.switchAnimation('YouTube Scrapping', true);
-										// Add MBIDs to youTube track metadata
-										notFound.forEach((track) => track.tags = {
-											musicbrainz_trackid: track.identifier,
-											musicbrainz_albumartistid: track.artistIndentifier[0],
-											musicbrainz_artistid: track.artistIndentifier,
-										});
-										// Send request in parallel every x ms and process when all are done
-										return Promise.parallel(notFound, youTube.searchForYoutubeTrack, 5).then((results) => {
-											let j = 0;
-											const itemsLen = items.length;
-											results.forEach((result) => {
-												for (void (0); j <= itemsLen; j++) {
-													if (result.status !== 'fulfilled') { // Only code errors are output
-														console.log('YouTube:', result.status, result.reason.message);
-														break;
-													}
-													const link = result.value;
-													if (!link || !link.length) { break; }
-													if (!items[j]) {
-														items[j] = link.url;
-														break;
-													}
-												}
-											});
-											return items;
-										})
-											.finally(() => {
-												this.switchAnimation('YouTube Scrapping', false);
-											});
-									} else {
-										return items;
-									}
-								}
-							}).then((items) => {
-								const user = playlist.extension['https://musicbrainz.org/doc/jspf#playlist'].created_for;
-								if (bShift) { items.shuffle(); }
-								const idx = plman.FindOrCreatePlaylist('ListenBrainz: ' + entryText + ' ' + _p(user), true);
-								plman.ClearPlaylist(idx);
-								plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
-								plman.ActivePlaylist = idx;
-							})
-							.finally(() => {
-								if (this.isAnimationActive('ListeBrainz data retrieval')) { this.switchAnimation('ListeBrainz data retrieval', false); }
-							});
-					}
-				});
+				menu.newEntry({ menuName: subMenu, entryText, func: async () => importPlaylist(playlist, entryText) });
 			});
 		} else {
 			menu.newEntry({ menuName, entryText: '- None -', flags: MF_GRAYED });
@@ -1047,8 +1058,70 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				}).finally(() => this.switchAnimation('ListeBrainz following user', false));
 			}
 		});
-		menu.newCheckMenu(menuName, 'Enable daily jams', void (0), () => { return bListenBrainz && lb.isFollowing(lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }), 'troi-bot'); });
+		menu.newCheckMenuLast(() => bListenBrainz && lb.isFollowing(lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }), 'troi-bot'));
 	}
+	{	// Import/Export playlists
+		const menuName = menu.newMenu('User playlists...');
+		menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
+		menu.newEntry({ menuName, entryText: 'sep' });
+		const count = this.userPlaylists.user.length;
+		if (count) {
+			const padding = count.toString().length;
+			let sortFunc;
+			switch (properties.userPlaylistSort[1]) {
+				case 'cdate':
+					sortFunc = (a, b) => a.date - b.date;
+					break;
+				case 'mdate':
+					sortFunc = (a, b) => a.extension[lb.jspfExt].last_modified_at - b.extension[lb.jspfExt].last_modified_at;
+					break;
+				default:
+					sortFunc = (a, b) => a.title.localeCompare(b.title);
+			}
+			this.userPlaylists.user.sort(sortFunc).forEach((playlist, i) => {
+				const idx = Math.floor(i / 10);
+				const subMenu = count <= 10
+					? menuName
+					: menu.findOrNewMenu((idx * 10).toString().padStart(padding, '0') + ' - ' + ((idx + 1) * 10).toString().padStart(padding, '0'), menuName);
+				const entryText = playlist.title.replace(/ for \S+\b/, '');
+				menu.newEntry({ menuName: subMenu, entryText, func: async () => importPlaylist(playlist, entryText) });
+			});
+		} else {
+			menu.newEntry({ menuName, entryText: '- None -', flags: MF_GRAYED });
+		}
+	}
+	menu.newEntry({ entryText: 'sep' });
+	menu.newEntry({ entryText: 'Import playlist by MBID...', func: async () => {
+		const identifier = Input.string('string', '', 'Enter Playlist MBID:', 'ListenBrainz Tools', '866b5a46-c474-4fae-8782-0f46240a9507', [(mbid) => isUUID(mbid.replace(lb.regEx, ''))]);
+		if (identifier === null) { return; }
+		importPlaylist({identifier});
+	}});
+	menu.newEntry({	entryText: 'Export active playlist...' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
+		if (!await checkLBToken()) { return false; }
+		let playlist_mbid = '';
+		const bLookupMBIDs = properties.bLookupMBIDs[1];
+		const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted: properties.lBrainzEncrypt[1] }) : null;
+		if (!token) { return false; }
+		const name = plman.GetPlaylistName(plman.ActivePlaylist);
+		const pls = this.userPlaylists.user.find((pls) => pls.title === name);
+		if (pls) {
+			console.log('Syncing playlist with ListenBrainz: ' + name);
+			playlist_mbid = await lb.syncPlaylist({name, nameId: name, extension: '.ui', playlist_mbid: pls.identifier.replace(lb.regEx, '')}, '', token, bLookupMBIDs);
+		} else {
+			console.log('Exporting playlist to ListenBrainz: ' + name);
+			playlist_mbid = await lb.exportPlaylist({name, nameId: name, extension: '.ui'}, '', token, bLookupMBIDs);
+		}
+		if (!playlist_mbid || typeof playlist_mbid !== 'string' || !playlist_mbid.length) { lb.consoleError('Playlist was not exported.'); return; }
+		this.retrievePlaylists(false);
+		if (properties.bSpotify[1]) {
+			lb.retrieveUser(token).then((user) => lb.getUserServices(user, token)).then((services) => {
+				if (services.indexOf('spotify') !== -1) {
+					console.log('Exporting playlist to Spotify: ' + name);
+					lb.exportPlaylistToService({ playlist_mbid }, 'spotify', token);
+				}
+			});
+		}
+	}, flags: bListenBrainz ? MF_STRING : MF_GRAYED});
 	menu.newEntry({ entryText: 'sep' });
 	{	// Configuration
 		const menuName = menu.newMenu('Configuration...');
@@ -1065,7 +1138,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						return bDone;
 					}
 				});
-				menu.newCheckMenu(subMenuName, 'Set token...', void (0), () => { return !!properties.lBrainzToken[1].length; });
+				menu.newCheckMenuLast(() => !!properties.lBrainzToken[1].length);
 				menu.newEntry({
 					menuName: subMenuName, entryText: 'Retrieve token from other panels...', func: () => {
 						this.lBrainzTokenListener = true;
@@ -1092,7 +1165,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			const subMenuName = menu.newMenu('Playlists...', menuName);
 			{
 				menu.newEntry({
-					menuName: subMenuName, entryText: 'Match only by MBID?', func: async () => {
+					menuName: subMenuName, entryText: 'Match only by MBID?', func: () => {
 						properties.bPlsMatchMBID[1] = !properties.bPlsMatchMBID[1];
 						if (properties.bPlsMatchMBID[1]) {
 							fb.ShowPopupMessage('When importing playlists (not applicable to the other lookups), track are matched by MBID, Title + Artist or Title. Enabling this option skips all checks but the MBID one, greatly optimizing the library search and providing faster results.\n\nUse this option if most of your library have been tagged with MBIDs.', 'ListenBrainz');
@@ -1100,7 +1173,24 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						overwriteProperties(properties);
 					}
 				});
-				menu.newCheckMenu(subMenuName, 'Match only by MBID?', void (0), () => { return !!properties.lBrainzToken[1].length; });
+				menu.newCheckMenuLast(() => properties.bPlsMatchMBID[1]);
+			}
+			{
+				const subMenuNameTwo = menu.newMenu('Playlists sorting...', subMenuName);
+				const options = [
+					{entryText: 'By Created date', sort: 'cdate'},
+					{entryText: 'By Modified date', sort: 'mdate'},
+					{entryText: 'By Name', sort: 'name'},
+				];
+				options.forEach((entry) => {
+					menu.newEntry({
+						menuName: subMenuNameTwo, entryText: entry.entryText, func: () => {
+							properties.userPlaylistSort[1] = entry.sort;
+							overwriteProperties(properties);
+						}
+					});
+				});
+				menu.newCheckMenuLast(() => options.findIndex((opt) => opt.sort === properties.userPlaylistSort[1]), options);
 			}
 		}
 		menu.newEntry({ menuName, entryText: 'sep' });
@@ -1152,7 +1242,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					overwriteProperties(properties);
 				}, flags: bListenBrainz ? MF_STRING : MF_GRAYED
 			});
-			menu.newCheckMenu(menuName, 'Lookup for missing track MBIDs?', void (0), () => { return properties.bLookupMBIDs[1]; });
+			menu.newCheckMenuLast(() => properties.bLookupMBIDs[1]);
 		}
 		{
 			menu.newEntry({
@@ -1164,7 +1254,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					overwriteProperties(properties);
 				}, flags: bListenBrainz && isYouTube ? MF_STRING : MF_GRAYED
 			});
-			menu.newCheckMenu(menuName, 'Lookup for missing tracks on YouTube?', void (0), () => { return properties.bYouTube[1]; });
+			menu.newCheckMenuLast(() => properties.bYouTube[1]);
 		}
 	}
 	return menu;
