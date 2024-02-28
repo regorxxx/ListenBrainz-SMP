@@ -44,6 +44,7 @@
 - Code cleanup.
 ### Removed
 ### Fixed
+- Playlist Recommendations: importing playlists did not retrieve all possible Youtube tracks in some cases.
 - Track Recommendations: not retrieving any result due to API changes.
 - Toolbar: buttons' size not restored back to normal height after disabling 'Full size buttons' without reloading the panel.
 - Helpers: added missing helper.
