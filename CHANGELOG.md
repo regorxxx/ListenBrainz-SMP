@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [1.7.0](#170---2024-03-21)
 - [1.6.0](#160---2024-02-28)
 - [1.5.0](#150---2023-12-08)
 - [1.4.0](#140---2023-11-28)
@@ -28,9 +29,18 @@
 
 ## [Unreleased][]
 ### Added
+### Changed
+### Removed
+### Fixed
+
+## [1.7.0] - 2023-03-21
+### Added
+- Feedback: new query filter (independent to the other filter already available) to find matched tracks when looking for loved/hated tracks. It may be used to discard specific releases by tags (like live versions or remasters).
+- Feedback: new setting to switch track matching by MBID only or also use ARTIST/TITLE tags.
 - Configuration: expanded user configurable file at '[FOOBAR PROFILE FOLDER]\js_data\presets\global\globSettings.json' with a new setting for panel repaint debugging purpose. Disabled by default.
 ### Changed
-- UI: Improved panel repaint routines to minimize resources usage.
+- UI: minor menu entries renaming.
+- UI: improved panel repaint routines to minimize resources usage.
 ### Removed
 ### Fixed
 
@@ -298,7 +308,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.3.0...v1.4.0
