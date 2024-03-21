@@ -1,5 +1,5 @@
 ﻿'use strict';
-//01/03/24
+//20/03/24
 
 /* exported loadUserDefFile, addGlobTags, globFonts, globSettings*/
 
@@ -107,7 +107,7 @@ function loadUserDefFile(def) {
 	} else {bSave = true;}
 	if (bSave) {
 		const {_type, _file, ...rest} = def; // eslint-disable-line no-unused-vars
-		_save(_file, JSON.stringify(rest, (key, value) => {return (value instanceof RegExp ? value.toSource() : value);}, '\t'));
+		_save(_file, JSON.stringify(rest, (key, value) => {return (value instanceof RegExp ? value.toSource() : value);}, '\t').replace(/\n/g,'\r\n'));
 	}
 }
 
@@ -166,7 +166,7 @@ const globTags = {
 	acoustidFP: 'ACOUSTID_FINGERPRINT_RAW',
 	fooidFP: 'FINGERPRINT_FOOID',
 	playCount: '$max(%PLAY_COUNT%,%LASTFM_PLAY_COUNT%,%2003_PLAYCOUNT%,0)',
-	skipCount: '%SKIP_COUNT%',
+	skipCount: '$max(%SKIP_COUNT%,%SKIP_TRACK_SKIP_COUNT%,0)',
 	folksonomy: 'FOLKSONOMY',
 	feedback: 'FEEDBACK',
 	related: 'RELATED',
@@ -249,6 +249,7 @@ const globSettings = {
 	bAutoUpdateOpenWeb: true,
 	// bAutoUpdateApply: false,
 	bPopupOnCheckSOFeatures: true,
+	bCheckSoFeatures: true,
 	bProfileInit: false,
 	bDebugPaint: false,
 	bTooltip: true,
