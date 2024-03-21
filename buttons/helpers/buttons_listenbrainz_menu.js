@@ -1,5 +1,5 @@
 'use strict';
-//28/02/24
+//21/03/24
 
 /* exported listenBrainzmenu */
 
@@ -286,7 +286,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		menu.newEntry({ entryText: 'sep' });
 	}
 	{	// Feedback
-		const menuName = menu.newMenu('Set feedback... (on selection)');
+		const menuName = menu.newMenu('Set feedback (on selection)');
 		menu.newEntry({ menuName, entryText: 'Set track status on ListenBrainz:', flags: MF_GRAYED });
 		menu.newEntry({ menuName, entryText: 'sep' });
 		[
@@ -389,7 +389,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		});
 	}
 	{	// Feedback report
-		const menuName = menu.newMenu('Retrieve user tracks...');
+		const menuName = menu.newMenu('Retrieve user tracks');
 		menu.newEntry({ menuName, entryText: 'By feedback: (Shift + Click to randomize)', flags: MF_GRAYED });
 		menu.newEntry({ menuName, entryText: 'sep' });
 		[
@@ -425,10 +425,10 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						if (!mbid.length) { return; }
 						const title = sanitizeQueryVal(sanitizeTagValIds(titles[i]));
 						const artist = sanitizeQueryVal(sanitizeTagValIds(artists[i]));
-						const bMeta = title.length && artist.length;
+						const bMeta = properties.bFeedbackLookup[1] && title.length && artist.length;
 						return 'MUSICBRAINZ_TRACKID IS ' + mbid + (bMeta ? ' OR (' + _q(sanitizeTagIds(_t(globTags.titleRaw))) + ' IS ' + title + ' AND ' + _q(sanitizeTagIds(globTags.artist)) + ' IS ' + artist + ')' : '');
 					}).filter(Boolean);
-					let query = queryJoin(queryArr, 'OR');
+					let query = queryJoin([queryJoin(queryArr, 'OR'), properties.feedbackQuery[1]], 'AND');
 					let handleList;
 					try { handleList = fb.GetQueryItems(fb.GetLibraryItems(), query); } // Sanity check
 					catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; }
@@ -472,7 +472,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	}
 	menu.newEntry({ entryText: 'sep' });
 	{	// Site statistics
-		const menuName = menu.newMenu('Statistics...');
+		const menuName = menu.newMenu('Statistics');
 		menu.newEntry({ menuName, entryText: 'By Top Listens: (Shift + Click to randomize)', flags: MF_GRAYED });
 		menu.newEntry({ menuName, entryText: 'sep' });
 		['Sitewide', 'By user'].forEach((name, i) => {
@@ -598,7 +598,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	}
 	menu.newEntry({ entryText: 'sep' });
 	{	// Selection
-		const menuName = menu.newMenu('Track recommendations...');
+		const menuName = menu.newMenu('Track recommendations');
 		menu.newEntry({ menuName, entryText: 'By selection:\t(Shift + Click to randomize)', flags: MF_GRAYED });
 		menu.newEntry({ menuName, entryText: 'sep' });
 		{
@@ -977,7 +977,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		};
 	}
 	{	// Similar Users
-		const menuName = menu.newMenu('Similar Users...');
+		const menuName = menu.newMenu('Similar Users');
 		menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
 		menu.newEntry({ menuName, entryText: 'sep' });
 		[
@@ -1003,7 +1003,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		});
 	}
 	{	// User
-		const menuName = menu.newMenu('User recommendations...');
+		const menuName = menu.newMenu('User recommendations');
 		menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
 		menu.newEntry({ menuName, entryText: 'sep' });
 		[
@@ -1027,7 +1027,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	}
 	menu.newEntry({ entryText: 'sep' });
 	{	// Playlists Recommendations
-		const menuName = menu.newMenu('Playlists recommendations...');
+		const menuName = menu.newMenu('Playlists recommendations');
 		menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
 		menu.newEntry({ menuName, entryText: 'sep' });
 		const count = this.userPlaylists.recommendations.length;
@@ -1061,7 +1061,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		menu.newCheckMenuLast(() => bListenBrainz && lb.isFollowing(lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }), 'troi-bot'));
 	}
 	{	// Import/Export playlists
-		const menuName = menu.newMenu('User playlists...');
+		const menuName = menu.newMenu('User playlists');
 		menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
 		menu.newEntry({ menuName, entryText: 'sep' });
 		const count = this.userPlaylists.user.length;
@@ -1124,9 +1124,9 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	}, flags: bListenBrainz ? MF_STRING : MF_GRAYED});
 	menu.newEntry({ entryText: 'sep' });
 	{	// Configuration
-		const menuName = menu.newMenu('Configuration...');
+		const menuName = menu.newMenu('Configuration');
 		{
-			const subMenuName = menu.newMenu('User...', menuName);
+			const subMenuName = menu.newMenu('User', menuName);
 			{
 				menu.newEntry({
 					menuName: subMenuName, entryText: 'Set token...', func: async () => {
@@ -1165,7 +1165,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			const subMenuName = menu.newMenu('Playlists...', menuName);
 			{
 				menu.newEntry({
-					menuName: subMenuName, entryText: 'Match only by MBID?', func: () => {
+					menuName: subMenuName, entryText: 'Match only by MBID', func: () => {
 						properties.bPlsMatchMBID[1] = !properties.bPlsMatchMBID[1];
 						if (properties.bPlsMatchMBID[1]) {
 							fb.ShowPopupMessage('When importing playlists (not applicable to the other lookups), track are matched by MBID, Title + Artist or Title. Enabling this option skips all checks but the MBID one, greatly optimizing the library search and providing faster results.\n\nUse this option if most of your library have been tagged with MBIDs.', 'ListenBrainz');
@@ -1176,7 +1176,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				menu.newCheckMenuLast(() => properties.bPlsMatchMBID[1]);
 			}
 			{
-				const subMenuNameTwo = menu.newMenu('Playlists sorting...', subMenuName);
+				const subMenuNameTwo = menu.newMenu('Playlists sorting', subMenuName);
 				const options = [
 					{entryText: 'By Created date', sort: 'cdate'},
 					{entryText: 'By Modified date', sort: 'mdate'},
@@ -1193,9 +1193,46 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				menu.newCheckMenuLast(() => options.findIndex((opt) => opt.sort === properties.userPlaylistSort[1]), options);
 			}
 		}
+		{
+			const subMenuName = menu.newMenu('Feedback', menuName);
+			{
+				menu.newEntry({
+					menuName: subMenuName, entryText: 'Match using tags', func: () => {
+						properties.bFeedbackLookup[1] = !properties.bFeedbackLookup[1];
+						if (properties.bFeedbackLookup[1]) {
+							fb.ShowPopupMessage('When looking for loved/hated tracks on library, MUSICBRAINZ_TRACKID is used by default. Since some libraries may not be fully tagged, enabling this option will also try to find matches by TITLE and ARTIST. Note, however, this may output more tracks than desired, live versions, etc.', 'ListenBrainz');
+						}
+						overwriteProperties(properties);
+					}
+				});
+				menu.newCheckMenuLast(() => properties.bFeedbackLookup[1]);
+			}
+			{
+				menu.newEntry({
+					menuName: subMenuName, entryText: 'Query filter for matches...', func: (cache) => {
+						let input = '';
+						try { input = utils.InputBox(window.ID, 'Enter query used to pre-filter library when retrieving tracks:\n\n(note files with a feedback tag will always be shown, even if the filter would discard them)', 'ListenBrainz Tools', cache || properties.feedbackQuery[1], true); }
+						catch (e) { return; }
+						if ((!cache || cache !== input) && properties.feedbackQuery[1] === input) { return; }
+						try { if (input.length && fb.GetQueryItems(fb.GetLibraryItems(), input).Count === 0) { throw new Error('No items'); } } // Sanity check
+						catch (e) {
+							if (e.message === 'No items') {
+								fb.ShowPopupMessage('Query returns zero items on current library. Check it and add it again:\n' + input, 'Search by distance');
+							} else {
+								fb.ShowPopupMessage('Query not valid. Check it and add it again:\n' + input, 'Search by distance');
+							}
+							menu.retry({ pos: -1, args: input || properties.feedbackQuery[1] });
+							return;
+						}
+						properties.feedbackQuery[1] = input;
+						overwriteProperties(properties); // Updates panel
+					}
+				});
+			}
+		}
 		menu.newEntry({ menuName, entryText: 'sep' });
 		{
-			const subMenuName = menu.newMenu('Track recommendations...', menuName);
+			const subMenuName = menu.newMenu('Track recommendations', menuName);
 			menu.newEntry({ menuName: subMenuName, entryText: 'Tag remap:', flags: MF_GRAYED });
 			menu.newEntry({ menuName: subMenuName, entryText: 'sep' });
 			const tags = JSON.parse(properties.tags[1]);
@@ -1213,7 +1250,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		}
 		menu.newEntry({ menuName, entryText: 'sep' });
 		menu.newEntry({
-			menuName, entryText: 'Set Global Forced Query...', func: (cache) => {
+			menuName, entryText: 'Global query filter...', func: (cache) => {
 				let input = '';
 				try { input = utils.InputBox(window.ID, 'Enter global query used to pre-filter library:', 'ListenBrainz Tools', cache || properties.forcedQuery[1], true); }
 				catch (e) { return; }
@@ -1234,7 +1271,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		});
 		{
 			menu.newEntry({
-				menuName, entryText: 'Lookup for missing track MBIDs?', func: () => {
+				menuName, entryText: 'Lookup for missing track\'s MBIDs', func: () => {
 					properties.bLookupMBIDs[1] = !properties.bLookupMBIDs[1];
 					if (properties.bLookupMBIDs[1]) {
 						fb.ShowPopupMessage('Exporting a playlist requires tracks to have \'MUSICBRAINZ_TRACKID\' tags on files.\n\nWhenever such tag is missing, the file can not be sent to ListenBrainz\'s online playlist. As workaround, the script may try to lookup missing MBIDs before exporting.\n\nNote results depend on the success of MusicBrainz api, so it\'s not guaranteed to find the proper match in all cases. Tag properly your files with Picard or foo_musicbrainz in such case.\n\nApi used:\nhttps://labs.api.listenbrainz.org/mbid-mapping', 'ListenBrainz');
@@ -1246,7 +1283,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		}
 		{
 			menu.newEntry({
-				menuName, entryText: 'Lookup for missing tracks on YouTube?', func: () => {
+				menuName, entryText: 'Lookup for missing tracks on YouTube', func: () => {
 					properties.bYouTube[1] = !properties.bYouTube[1];
 					if (properties.bYouTube[1]) {
 						fb.ShowPopupMessage('By default, tracks retrieved from ListenBrainz (to create playlists) are matched against the library.\n\nWhen this option is enabled, not found items will be replaced by YouTube links.\n\nUsing this option takes some seconds while scrapping YouTube, the button will be animated during the process.', 'ListenBrainz');

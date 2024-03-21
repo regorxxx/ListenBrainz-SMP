@@ -1,5 +1,5 @@
 ﻿'use strict';
-//28/02/24
+//21/03/24
 
 /*
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -50,6 +50,8 @@ var newButtonsProperties = { // NOSONAR[global]
 	bTagFeedback: ['Tag files with feedback', false, { func: isBoolean }, false],
 	feedbackTag: ['Feedback tag', globTags.feedback, { func: isString }, globTags.feedback],
 	feedbackCache: ['Feedback cache file', folders.data + 'listenbrainz_feedback.json', { func: isString }, folders.data + 'listenbrainz_feedback.json'],
+	feedbackQuery: ['Query to pre-filter feedback matches', globQuery.filter, { func: (query) => { return checkQuery(query, true); } }, globQuery.filter],
+	bFeedbackLookup: ['Lookup feedback tracks using tags', true, { func: isBoolean }, true],
 	userCache: ['User name cache', '', { func: isStringWeak }, ''],
 	bPlsMatchMBID: ['Match only by MBID?', false, { func: isBoolean }, false],
 	forcedQuery: ['Forced query to pre-filter database', globQuery.filter, { func: (query) => { return checkQuery(query, true); } }, globQuery.filter],
