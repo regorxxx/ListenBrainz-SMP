@@ -225,7 +225,7 @@ addButton({
 				if (bLoop) { setTimeout(parent.retrievePlaylists, 1800000, true); }
 				return Promise.resolve(false);
 			}
-			parent.switchAnimation('ListeBrainz retrieve user playlists', true);
+			parent.switchAnimation('ListenBrainz retrieve user playlists', true);
 			return lb.retrieveUser(lb.decryptToken({ lBrainzToken: token, bEncrypted }), false).then((user) => {
 				return Promise.allSettled([
 					lb.retrieveUserRecommendedPlaylistsNames(user, { offset: 0, count: lb.MAX_ITEMS_PER_GET }, lb.decryptToken({ lBrainzToken: token, bEncrypted }))
@@ -244,7 +244,7 @@ addButton({
 						})
 				]);
 			}).finally(() => {
-				parent.switchAnimation('ListeBrainz retrieve user playlists', false);
+				parent.switchAnimation('ListenBrainz retrieve user playlists', false);
 				if (bLoop) { setTimeout(parent.retrievePlaylists, 1800000, true); }
 			});
 		};
@@ -296,7 +296,7 @@ addButton({
 					sendMBIDs.forEach((mbid) => {
 						queue[data[mbid].feedback].push(mbid);
 					});
-					parent.switchAnimation('ListeBrainz feedback cache uploading', true);
+					parent.switchAnimation('ListenBrainz feedback cache uploading', true);
 					Object.keys(queue).forEach((key) => {
 						if (queue[key].length) {
 							const mbids = queue[key].slice(0, 25);
@@ -318,13 +318,13 @@ addButton({
 							);
 						}
 					});
-					parent.switchAnimation('ListeBrainz feedback cache uploading', false);
+					parent.switchAnimation('ListenBrainz feedback cache uploading', false);
 				}
 			});
 			Promise.allSettled(promises).then((results) => {
 				if (results.some((p) => p.status === 'fulfilled' && p.result)) {
 					parent.saveCache(user);
-					console.log('ListeBrainz: submitted ' + count + ' item(s) from the feedback cache.');
+					console.log('ListenBrainz: submitted ' + count + ' item(s) from the feedback cache.');
 				}
 			});
 		};
