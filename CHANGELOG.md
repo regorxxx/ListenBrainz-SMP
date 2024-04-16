@@ -30,6 +30,7 @@
 ## [Unreleased][]
 ### Added
 - Pano Scrobbler: new importing options for [Pano Scrobbler](https://github.com/kawaiiDango/pano-scrobbler) local .jsonl files, which allows to save listens to a local file on the media device and upload them on demand. It also works for feedback (loved tracks). This may be used to track listens on DAPs and other media devices without internet connection or network problems (ListenBrainz syncing does not work on Android 7 and lower).
+- Readmes: added readme for global settings found at 'foobar2000\js_data\presets\global' .json files.
 ### Changed
 - Helpers: json button files are now saved with Windows EOL for compatibility improvements with Windows text editors.
 - Helpers: updated helpers.
