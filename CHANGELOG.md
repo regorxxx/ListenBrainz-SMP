@@ -31,6 +31,7 @@
 ### Added
 - Pano Scrobbler: new importing options for [Pano Scrobbler](https://github.com/kawaiiDango/pano-scrobbler) local .jsonl files, which allows to save listens to a local file on the media device and upload them on demand. It also works for feedback (loved tracks). This may be used to track listens on DAPs and other media devices without internet connection or network problems (ListenBrainz syncing does not work on Android 7 and lower).
 - Readmes: added readme for global settings found at 'foobar2000\js_data\presets\global' .json files.
+- Configuration: expanded user configurable file at '[FOOBAR PROFILE FOLDER]\js_data\presets\global\globSettings.json' with a new setting for console logging to file. Disabled by default. Now this is a change from the previous behavior, where console was always logged to 'console.log' file at the [FOOBAR PROFILE FOLDER]. It can now be switched, but since it's probably not useful for most users is disabled by default.
 ### Changed
 - Helpers: json button files are now saved with Windows EOL for compatibility improvements with Windows text editors.
 - Helpers: updated helpers.
