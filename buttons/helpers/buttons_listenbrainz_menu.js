@@ -258,33 +258,6 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			: ' (< ' + maxCount + ' tracks)';
 	};
 	// Menu
-	{	// MBIDs
-		menu.newEntry({
-			entryText: 'Retrieve MBIDs from selection' + (bListenBrainz ? selectedCountTitle(70) : '\t(token not set)'), func: async () => {
-				if (!await checkLBToken()) { return false; }
-				const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
-				if (!token) { return; }
-				const tfo = fb.TitleFormat('%TITLE%');
-				const handleList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
-				this.switchAnimation('ListenBrainz data retrieval', true);
-				const response = await lb.lookupRecordingInfo(handleList, ['recording_name', 'recording_mbid'], token);
-				this.switchAnimation('ListenBrainz data retrieval', false);
-				if (!response) { return; }
-				const table = new Table;
-				response.recording_mbid.forEach((id, i) => {
-					const bFound = !!id.length;
-					const title = bFound ? response.recording_name[i] : tfo.EvalWithMetadb(handleList[i]);
-					const mbid = bFound ? id : '-not found-';
-					table.cell('Title', title);
-					table.cell('MBID', mbid);
-					table.newRow();
-				});
-				const report = table.toString();
-				fb.ShowPopupMessage(report, 'ListenBrainz');
-			}, flags: bListenBrainz ? selectedFlagsCount(70) : MF_GRAYED, data: { bDynamicMenu: true }
-		});
-		menu.newEntry({ entryText: 'sep' });
-	}
 	{	// Feedback
 		const menuName = menu.newMenu('Set feedback (on selection)');
 		menu.newEntry({ menuName, entryText: 'Set track status on ListenBrainz:', flags: MF_GRAYED });
@@ -389,7 +362,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		});
 	}
 	{	// Feedback report
-		const menuName = menu.newMenu('Retrieve user tracks');
+		const menuName = menu.newMenu('Get user tracks feedback');
 		menu.newEntry({ menuName, entryText: 'By feedback: (Shift + Click to randomize)', flags: MF_GRAYED });
 		menu.newEntry({ menuName, entryText: 'sep' });
 		[
@@ -1026,180 +999,202 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		});
 	}
 	menu.newEntry({ entryText: 'sep' });
-	{	// Playlists Recommendations
-		const menuName = menu.newMenu('Playlists recommendations');
-		menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
-		menu.newEntry({ menuName, entryText: 'sep' });
-		const count = this.userPlaylists.recommendations.length;
-		if (count) {
-			const padding = count.toString().length;
-			this.userPlaylists.recommendations.sort((a, b) => a.date - b.date).forEach((playlist, i) => {
-				const idx = Math.floor(i / 10);
-				const subMenu = count <= 10
-					? menuName
-					: menu.findOrNewMenu((idx * 10).toString().padStart(padding, '0') + ' - ' + ((idx + 1) * 10).toString().padStart(padding, '0'), menuName);
-				const entryText = playlist.title.replace(/ for \S+\b/, '');
-				menu.newEntry({ menuName: subMenu, entryText, func: async () => importPlaylist(playlist, entryText) });
-			});
-		} else {
-			menu.newEntry({ menuName, entryText: '- None -', flags: MF_GRAYED });
-		}
-		menu.newEntry({ menuName, entryText: 'sep' });
-		menu.newEntry({
-			menuName, entryText: 'Enable daily jams', func: async () => {
-				if (!await checkLBToken()) { return; }
-				const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
-				this.switchAnimation('ListenBrainz following user', true);
-				lb.followUser('troi-bot', token).then((result) => {
-					fb.ShowPopupMessage('Daily jams are ' + (result
-						? 'enabled.\n\nDaily jams are playlists created by a ListenBrainz bot named \'troi-bot\', which sends new playlists to users every day when they follow it (already done).\n\nLook for new playlists in a day or two.'
-						: 'disabled. Try again later.'
-					), 'ListenBrainz');
-				}).finally(() => this.switchAnimation('ListenBrainz following user', false));
-			}
-		});
-		menu.newCheckMenuLast(() => bListenBrainz && lb.isFollowing(lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }), 'troi-bot'));
-	}
-	{	// Import/Export playlists
-		const menuName = menu.newMenu('User playlists');
-		menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
-		menu.newEntry({ menuName, entryText: 'sep' });
-		const count = this.userPlaylists.user.length;
-		if (count) {
-			const padding = count.toString().length;
-			let sortFunc;
-			switch (properties.userPlaylistSort[1]) {
-				case 'cdate':
-					sortFunc = (a, b) => a.date - b.date;
-					break;
-				case 'mdate':
-					sortFunc = (a, b) => a.extension[lb.jspfExt].last_modified_at - b.extension[lb.jspfExt].last_modified_at;
-					break;
-				default:
-					sortFunc = (a, b) => a.title.localeCompare(b.title);
-			}
-			this.userPlaylists.user.sort(sortFunc).forEach((playlist, i) => {
-				const idx = Math.floor(i / 10);
-				const subMenu = count <= 10
-					? menuName
-					: menu.findOrNewMenu((idx * 10).toString().padStart(padding, '0') + ' - ' + ((idx + 1) * 10).toString().padStart(padding, '0'), menuName);
-				const entryText = playlist.title.replace(/ for \S+\b/, '');
-				menu.newEntry({ menuName: subMenu, entryText, func: async () => importPlaylist(playlist, entryText) });
-			});
-		} else {
-			menu.newEntry({ menuName, entryText: '- None -', flags: MF_GRAYED });
-		}
-	}
-	menu.newEntry({ entryText: 'sep' });
-	menu.newEntry({
-		entryText: 'Import playlist by MBID...', func: async () => {
-			const identifier = Input.string('string', '', 'Enter Playlist MBID:', 'ListenBrainz Tools', '866b5a46-c474-4fae-8782-0f46240a9507', [(mbid) => isUUID(mbid.replace(lb.regEx, ''))]);
-			if (identifier === null) { return; }
-			importPlaylist({ identifier });
-		}
-	});
-	menu.newEntry({
-		entryText: 'Export active playlist...' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
-			if (!await checkLBToken()) { return false; }
-			let playlist_mbid = '';
-			const bLookupMBIDs = properties.bLookupMBIDs[1];
-			const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted: properties.lBrainzEncrypt[1] }) : null;
-			if (!token) { return false; }
-			const name = plman.GetPlaylistName(plman.ActivePlaylist);
-			const pls = this.userPlaylists.user.find((pls) => pls.title === name);
-			if (pls) {
-				console.log('Syncing playlist with ListenBrainz: ' + name);
-				playlist_mbid = await lb.syncPlaylist({ name, nameId: name, extension: '.ui', playlist_mbid: pls.identifier.replace(lb.regEx, '') }, '', token, bLookupMBIDs);
-			} else {
-				console.log('Exporting playlist to ListenBrainz: ' + name);
-				playlist_mbid = await lb.exportPlaylist({ name, nameId: name, extension: '.ui' }, '', token, bLookupMBIDs);
-			}
-			if (!playlist_mbid || typeof playlist_mbid !== 'string' || !playlist_mbid.length) { lb.consoleError('Playlist was not exported.'); return; }
-			this.retrievePlaylists(false);
-			if (properties.bSpotify[1]) {
-				lb.retrieveUser(token).then((user) => lb.getUserServices(user, token)).then((services) => {
-					if (services.indexOf('spotify') !== -1) {
-						console.log('Exporting playlist to Spotify: ' + name);
-						lb.exportPlaylistToService({ playlist_mbid }, 'spotify', token);
-					}
+	{	// Playlists
+		const menuNameMain = menu.newMenu('Playlists');
+		{	// Playlists Recommendations
+			const menuName = menu.newMenu('Playlists recommendations', menuNameMain);
+			menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
+			menu.newEntry({ menuName, entryText: 'sep' });
+			const count = this.userPlaylists.recommendations.length;
+			if (count) {
+				const padding = count.toString().length;
+				this.userPlaylists.recommendations.sort((a, b) => a.date - b.date).forEach((playlist, i) => {
+					const idx = Math.floor(i / 10);
+					const subMenu = count <= 10
+						? menuName
+						: menu.findOrNewMenu((idx * 10).toString().padStart(padding, '0') + ' - ' + ((idx + 1) * 10).toString().padStart(padding, '0'), menuName);
+					const entryText = playlist.title.replace(/ for \S+\b/, '');
+					menu.newEntry({ menuName: subMenu, entryText, func: async () => importPlaylist(playlist, entryText) });
 				});
+			} else {
+				menu.newEntry({ menuName, entryText: '- None -', flags: MF_GRAYED });
 			}
-		}, flags: bListenBrainz ? MF_STRING : MF_GRAYED
-	});
+		}
+		{	// User Playlists
+			const menuName = menu.newMenu('User playlists', menuNameMain);
+			menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
+			menu.newEntry({ menuName, entryText: 'sep' });
+			const count = this.userPlaylists.user.length;
+			if (count) {
+				const padding = count.toString().length;
+				let sortFunc;
+				switch (properties.userPlaylistSort[1]) {
+					case 'cdate':
+						sortFunc = (a, b) => a.date - b.date;
+						break;
+					case 'mdate':
+						sortFunc = (a, b) => a.extension[lb.jspfExt].last_modified_at - b.extension[lb.jspfExt].last_modified_at;
+						break;
+					default:
+						sortFunc = (a, b) => a.title.localeCompare(b.title);
+				}
+				this.userPlaylists.user.sort(sortFunc).forEach((playlist, i) => {
+					const idx = Math.floor(i / 10);
+					const subMenu = count <= 10
+						? menuName
+						: menu.findOrNewMenu((idx * 10).toString().padStart(padding, '0') + ' - ' + ((idx + 1) * 10).toString().padStart(padding, '0'), menuName);
+					const entryText = playlist.title.replace(/ for \S+\b/, '');
+					menu.newEntry({ menuName: subMenu, entryText, func: async () => importPlaylist(playlist, entryText) });
+				});
+			} else {
+				menu.newEntry({ menuName, entryText: '- None -', flags: MF_GRAYED });
+			}
+		}
+		menu.newEntry({ menuName: menuNameMain, entryText: 'sep' });
+		{	// Import/Export
+			menu.newEntry({
+				menuName: menuNameMain,
+				entryText: 'Import playlist by MBID...', func: async () => {
+					const identifier = Input.string('string', '', 'Enter Playlist MBID:', 'ListenBrainz Tools', '866b5a46-c474-4fae-8782-0f46240a9507', [(mbid) => isUUID(mbid.replace(lb.regEx, ''))]);
+					if (identifier === null) { return; }
+					importPlaylist({ identifier });
+				}
+			});
+			menu.newEntry({
+				menuName: menuNameMain,
+				entryText: 'Export active playlist...' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
+					if (!await checkLBToken()) { return false; }
+					let playlist_mbid = '';
+					const bLookupMBIDs = properties.bLookupMBIDs[1];
+					const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted: properties.lBrainzEncrypt[1] }) : null;
+					if (!token) { return false; }
+					const name = plman.GetPlaylistName(plman.ActivePlaylist);
+					const pls = this.userPlaylists.user.find((pls) => pls.title === name);
+					if (pls) {
+						console.log('Syncing playlist with ListenBrainz: ' + name);
+						playlist_mbid = await lb.syncPlaylist({ name, nameId: name, extension: '.ui', playlist_mbid: pls.identifier.replace(lb.regEx, '') }, '', token, bLookupMBIDs);
+					} else {
+						console.log('Exporting playlist to ListenBrainz: ' + name);
+						playlist_mbid = await lb.exportPlaylist({ name, nameId: name, extension: '.ui' }, '', token, bLookupMBIDs);
+					}
+					if (!playlist_mbid || typeof playlist_mbid !== 'string' || !playlist_mbid.length) { lb.consoleError('Playlist was not exported.'); return; }
+					this.retrievePlaylists(false);
+					if (properties.bSpotify[1]) {
+						lb.retrieveUser(token).then((user) => lb.getUserServices(user, token)).then((services) => {
+							if (services.indexOf('spotify') !== -1) {
+								console.log('Exporting playlist to Spotify: ' + name);
+								lb.exportPlaylistToService({ playlist_mbid }, 'spotify', token);
+							}
+						});
+					}
+				}, flags: bListenBrainz ? MF_STRING : MF_GRAYED
+			});
+		}
+	}
 	menu.newEntry({ entryText: 'sep' });
 	{	// Other tools
 		const menuName = menu.newMenu('Other tools');
-		menu.newEntry({
-			menuName, entryText: 'Import Pano Scrobbler\'s listens' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
-				if (!await checkLBToken()) { return false; }
-				const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted: properties.lBrainzEncrypt[1] }) : null;
-				if (!token) { return false; }
-				const file = Input.string('string','', 'Enter .jsonl file path:\n\nImporting of duplicated listens is automatically handled by ListenBrainz servers, adding them only once. You can process the same file multiple times and only new listens will be added.', 'ListenBrainz Tools', folders.xxx + 'examples\\scrobbles_log.jsonl', [(file) => _isFile(file)]);
-				if (file === null) { console.log('ListenBrainz tools:', Input.lastInput, 'not found.'); return false; }
-				const event = 'scrobble';
-				const payload = lb.parsePanoScrobblerJson(file, { client: this.scriptName, version: this.version }, event);
-				lb.findPayloadMBIDs(payload);
-				const data = await lb.processPayload(payload, token, event);
-				lb.submitListens(data, token).then(
-					() => WshShell.Popup('Listens imported sucessfully.', 0, 'ListenBrainz Tools', popup.info + popup.ok),
-					() => WshShell.Popup('Error importing. Check console.', 0, 'ListenBrainz Tools', popup.info + popup.ok),
-				);
-			}, flags: bListenBrainz ? MF_STRING : MF_GRAYED
-		});
-		menu.newEntry({
-			menuName, entryText: 'Import Pano Scrobbler\'s feedback' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
-				if (!await checkLBToken()) { return false; }
-				const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted: properties.lBrainzEncrypt[1] }) : null;
-				if (!token) { return false; }
-				const file = Input.string('string', '', 'Enter .jsonl file path:\n\nImporting of duplicated feedback is automatically handled by the script, adding it only once.', 'ListenBrainz Tools', folders.xxx + 'examples\\scrobbles_log.jsonl', [(file) => _isFile(file)]);
-				if (file === null) { console.log('ListenBrainz tools:', Input.lastInput, 'not found.'); return false; }
-				const user = await lb.retrieveUser(token);
-				const event = 'love';
-				const payload = lb.parsePanoScrobblerJson(file, { client: this.scriptName, version: this.version }, event);
-				lb.findPayloadMBIDs(payload);
-				const mbids = (await lb.processPayload(payload, token, event)).map((e) => e.recording_mbid);
-				// Check actual feedback
-				this.switchAnimation('ListenBrainz data retrieval', true);
-				const response = await lb.getFeedback(mbids, user, token, false);
-				const sendMBIDs = [];
-				if (response && response.length) {
-					response.forEach((obj) => {
-						if (!obj.recording_mbid) { return; } // Omit not found items
-						if (obj.score !== 1) { sendMBIDs.push(obj.recording_mbid); }
+		{	// MBIDs
+			menu.newEntry({
+				menuName,
+				entryText: 'Retrieve MBIDs from selection' + (bListenBrainz ? selectedCountTitle(70) : '\t(token not set)'), func: async () => {
+					if (!await checkLBToken()) { return false; }
+					const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+					if (!token) { return; }
+					const tfo = fb.TitleFormat('%TITLE%');
+					const handleList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
+					this.switchAnimation('ListenBrainz data retrieval', true);
+					const response = await lb.lookupRecordingInfo(handleList, ['recording_name', 'recording_mbid'], token);
+					this.switchAnimation('ListenBrainz data retrieval', false);
+					if (!response) { return; }
+					const table = new Table;
+					response.recording_mbid.forEach((id, i) => {
+						const bFound = !!id.length;
+						const title = bFound ? response.recording_name[i] : tfo.EvalWithMetadb(handleList[i]);
+						const mbid = bFound ? id : '-not found-';
+						table.cell('Title', title);
+						table.cell('MBID', mbid);
+						table.newRow();
 					});
-				} else {
-					mbids.forEach((mbid) => sendMBIDs.push(mbid));
-				}
-				this.switchAnimation('ListenBrainz data retrieval', false);
-				// Only update required tracks
-				if (sendMBIDs.length) {
-					this.switchAnimation('ListenBrainz data uploading', true);
-					const response = await lb.sendFeedback(sendMBIDs, 'love', token, false, true);
-					this.switchAnimation('ListenBrainz data uploading', false);
-					if (!response || !response.every(Boolean)) {
-						if (user || properties.userCache[1].length) {
-							WshShell.Popup('Feedback imported sucessfully.', 0, 'ListenBrainz Tools', popup.info + popup.ok);
-							console.log('ListenBrainz: Error connecting to server. Data has been cached and will be sent later...');
-							const date = Date.now();
-							const data = listenBrainz.cache.feedback.get(user || properties.userCache[1]) || {};
-							if (!response) {
-								sendMBIDs.forEach((mbid) => data[mbid] = { feedback: 'love', date });
-							} else {
-								response.forEach((bUpdate, i) => {
-									if (!bUpdate) { data[sendMBIDs[i]] = { feedback: 'love', date }; }
-								});
-							}
-							listenBrainz.cache.feedback.set(user || properties.userCache[1], data);
-							setTimeout(this.saveCache, 0, user || properties.userCache[1]);
-						} else {
-							fb.ShowPopupMessage('Error connecting to server. Check console.\nUser has not been retrieved and feedback can not be saved to cache.', 'ListenBrainz');
-						}
+					const report = table.toString();
+					fb.ShowPopupMessage(report, 'ListenBrainz');
+				}, flags: bListenBrainz ? selectedFlagsCount(70) : MF_GRAYED, data: { bDynamicMenu: true }
+			});
+		}
+		menu.newEntry({ menuName, entryText: 'sep' });
+		{	// Import listens
+			menu.newEntry({
+				menuName, entryText: 'Import Pano Scrobbler\'s listens...' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
+					if (!await checkLBToken()) { return false; }
+					const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted: properties.lBrainzEncrypt[1] }) : null;
+					if (!token) { return false; }
+					const file = Input.string('string','', 'Enter .jsonl file path:\n\nImporting of duplicated listens is automatically handled by ListenBrainz servers, adding them only once. You can process the same file multiple times and only new listens will be added.', 'ListenBrainz Tools', folders.xxx + 'examples\\scrobbles_log.jsonl', [(file) => _isFile(file)]);
+					if (file === null) { console.log('ListenBrainz tools:', Input.lastInput, 'not found.'); return false; }
+					const event = 'scrobble';
+					const payload = lb.parsePanoScrobblerJson(file, { client: this.scriptName, version: this.version }, event);
+					lb.findPayloadMBIDs(payload);
+					const data = await lb.processPayload(payload, token, event);
+					lb.submitListens(data, token).then(
+						() => WshShell.Popup('Listens imported sucessfully.', 0, 'ListenBrainz Tools', popup.info + popup.ok),
+						() => WshShell.Popup('Error importing. Check console.', 0, 'ListenBrainz Tools', popup.info + popup.ok),
+					);
+				}, flags: bListenBrainz ? MF_STRING : MF_GRAYED
+			});
+			menu.newEntry({
+				menuName, entryText: 'Import Pano Scrobbler\'s feedback...' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
+					if (!await checkLBToken()) { return false; }
+					const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted: properties.lBrainzEncrypt[1] }) : null;
+					if (!token) { return false; }
+					const file = Input.string('string', '', 'Enter .jsonl file path:\n\nImporting of duplicated feedback is automatically handled by the script, adding it only once.', 'ListenBrainz Tools', folders.xxx + 'examples\\scrobbles_log.jsonl', [(file) => _isFile(file)]);
+					if (file === null) { console.log('ListenBrainz tools:', Input.lastInput, 'not found.'); return false; }
+					const user = await lb.retrieveUser(token);
+					const event = 'love';
+					const payload = lb.parsePanoScrobblerJson(file, { client: this.scriptName, version: this.version }, event);
+					lb.findPayloadMBIDs(payload);
+					const mbids = (await lb.processPayload(payload, token, event)).map((e) => e.recording_mbid);
+					// Check actual feedback
+					this.switchAnimation('ListenBrainz data retrieval', true);
+					const response = await lb.getFeedback(mbids, user, token, false);
+					const sendMBIDs = [];
+					if (response && response.length) {
+						response.forEach((obj) => {
+							if (!obj.recording_mbid) { return; } // Omit not found items
+							if (obj.score !== 1) { sendMBIDs.push(obj.recording_mbid); }
+						});
+					} else {
+						mbids.forEach((mbid) => sendMBIDs.push(mbid));
 					}
-				} else {
-					WshShell.Popup('Feedback imported sucessfully, but no tracks needed updating.', 0, 'ListenBrainz Tools', popup.info + popup.ok);
-				}
-			}, flags: bListenBrainz ? MF_STRING : MF_GRAYED
-		});
+					this.switchAnimation('ListenBrainz data retrieval', false);
+					// Only update required tracks
+					if (sendMBIDs.length) {
+						this.switchAnimation('ListenBrainz data uploading', true);
+						const response = await lb.sendFeedback(sendMBIDs, 'love', token, false, true);
+						this.switchAnimation('ListenBrainz data uploading', false);
+						if (!response || !response.every(Boolean)) {
+							if (user || properties.userCache[1].length) {
+								WshShell.Popup('Feedback imported sucessfully.', 0, 'ListenBrainz Tools', popup.info + popup.ok);
+								console.log('ListenBrainz: Error connecting to server. Data has been cached and will be sent later...');
+								const date = Date.now();
+								const data = listenBrainz.cache.feedback.get(user || properties.userCache[1]) || {};
+								if (!response) {
+									sendMBIDs.forEach((mbid) => data[mbid] = { feedback: 'love', date });
+								} else {
+									response.forEach((bUpdate, i) => {
+										if (!bUpdate) { data[sendMBIDs[i]] = { feedback: 'love', date }; }
+									});
+								}
+								listenBrainz.cache.feedback.set(user || properties.userCache[1], data);
+								setTimeout(this.saveCache, 0, user || properties.userCache[1]);
+							} else {
+								fb.ShowPopupMessage('Error connecting to server. Check console.\nUser has not been retrieved and feedback can not be saved to cache.', 'ListenBrainz');
+							}
+						}
+					} else {
+						WshShell.Popup('Feedback imported sucessfully, but no tracks needed updating.', 0, 'ListenBrainz Tools', popup.info + popup.ok);
+					}
+				}, flags: bListenBrainz ? MF_STRING : MF_GRAYED
+			});
+		}
 		menu.newEntry({ entryText: 'sep' });
 	}
 	{	// Configuration
