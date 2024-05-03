@@ -1,5 +1,5 @@
 'use strict';
-//24/03/24
+//03/05/24
 
 /* exported listenBrainzmenu */
 
@@ -1134,7 +1134,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				if (!await checkLBToken()) { return false; }
 				const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted: properties.lBrainzEncrypt[1] }) : null;
 				if (!token) { return false; }
-				const file = Input.string('string','', 'Enter .jsonl file path:\n\nImporting multiple times the same listens, or dupliclates, is automatically handled by ListenBrainz servers, adding them only once.', 'ListenBrainz Tools', folders.xxx + 'examples\\scrobbles_log.jsonl', [(file) => _isFile(file)]);
+				const file = Input.string('string','', 'Enter .jsonl file path:\n\nImporting of duplicated listens is automatically handled by ListenBrainz servers, adding them only once. You can process the same file multiple times and only new listens will be added.', 'ListenBrainz Tools', folders.xxx + 'examples\\scrobbles_log.jsonl', [(file) => _isFile(file)]);
 				if (file === null) { console.log('ListenBrainz tools:', Input.lastInput, 'not found.'); return false; }
 				const event = 'scrobble';
 				const payload = lb.parsePanoScrobblerJson(file, { client: this.scriptName, version: this.version }, event);
@@ -1151,7 +1151,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				if (!await checkLBToken()) { return false; }
 				const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted: properties.lBrainzEncrypt[1] }) : null;
 				if (!token) { return false; }
-				const file = Input.string('string', '', 'Enter .jsonl file path:\n\nImporting multiple times the same listens, or dupliclates, is automatically handled by ListenBrainz servers, adding them only once.', 'ListenBrainz Tools', folders.xxx + 'examples\\scrobbles_log.jsonl', [(file) => _isFile(file)]);
+				const file = Input.string('string', '', 'Enter .jsonl file path:\n\nImporting of duplicated feedback is automatically handled by the script, adding it only once.', 'ListenBrainz Tools', folders.xxx + 'examples\\scrobbles_log.jsonl', [(file) => _isFile(file)]);
 				if (file === null) { console.log('ListenBrainz tools:', Input.lastInput, 'not found.'); return false; }
 				const user = await lb.retrieveUser(token);
 				const event = 'love';
