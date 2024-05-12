@@ -1,5 +1,5 @@
 'use strict';
-//03/05/24
+//07/05/24
 
 /* exported listenBrainzmenu */
 
@@ -26,7 +26,7 @@ include('..\\..\\main\\playlist_manager\\playlist_manager_listenbrainz_extra.js'
 include('..\\..\\main\\playlist_manager\\playlist_manager_youtube.js');
 /* global youTube:readable */
 include('..\\..\\main\\filter_and_query\\remove_duplicates.js');
-/* global removeDuplicatesV2:readable */
+/* global removeDuplicates:readable */
 include('..\\..\\main\\main_menu\\main_menu_custom.js');
 
 // listenBrainzmenu.bind(this)().btn_up(x, y)
@@ -420,7 +420,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					// Insert in global list
 					const byTagCount = byTagHandleList.Count;
 					if (byTagCount) {
-						byTagHandleList = removeDuplicatesV2({ handleList: byTagHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false });
+						byTagHandleList = removeDuplicates({ handleList: byTagHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false });
 						handleList.InsertRange(handleList.Count, byTagHandleList);
 						// Add to report
 						const bRemovedDup = byTagHandleList.Count !== byTagCount;
@@ -515,8 +515,8 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 									catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; }
 									// Filter
 									if (itemHandleList.Count) {
-										itemHandleList = removeDuplicatesV2({ handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false });
-										itemHandleList = removeDuplicatesV2({ handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle: properties.bAdvTitle[1] });
+										itemHandleList = removeDuplicates({ handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false });
+										itemHandleList = removeDuplicates({ handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle: properties.bAdvTitle[1] });
 										return itemHandleList[0];
 									}
 									notFound.push({ creator: tags.ARTIST[i], title: tags.TITLE[i], tags: { ALBUM: tags.ALBUM[i], MUSICBRAINZ_TRACKID: mbids[i], MUSICBRAINZ_ALBUMARTISTID: mbidsAlt[i][0], MUSICBRAINZ_ARTISTID: mbidsAlt[i] } });
@@ -799,8 +799,8 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 								catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; }
 								// Filter
 								if (itemHandleList.Count) {
-									itemHandleList = removeDuplicatesV2({ handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false });
-									itemHandleList = removeDuplicatesV2({ handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle: properties.bAdvTitle[1] });
+									itemHandleList = removeDuplicates({ handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false });
+									itemHandleList = removeDuplicates({ handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle: properties.bAdvTitle[1] });
 									return itemHandleList[0];
 								}
 								if (tags.TITLE[i].length) {
@@ -835,8 +835,8 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 								catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; }
 								// Filter
 								if (itemHandleList.Count) {
-									itemHandleList = removeDuplicatesV2({ handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false });
-									itemHandleList = removeDuplicatesV2({ handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle: properties.bAdvTitle[1] });
+									itemHandleList = removeDuplicates({ handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false });
+									itemHandleList = removeDuplicates({ handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle: properties.bAdvTitle[1] });
 									return itemHandleList[0];
 								}
 								notFound.push({ creator: tags.ARTIST[i], title: tags.TITLE[i], tags: { MUSICBRAINZ_TRACKID: mbids[i], MUSICBRAINZ_ALBUMARTISTID: mbidsAlt[i][0], MUSICBRAINZ_ARTISTID: mbidsAlt[i] } });
@@ -864,8 +864,8 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 								catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; }
 								// Filter
 								if (itemHandleList.Count) {
-									itemHandleList = removeDuplicatesV2({ handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false });
-									itemHandleList = removeDuplicatesV2({ handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle: properties.bAdvTitle[1] });
+									itemHandleList = removeDuplicates({ handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false });
+									itemHandleList = removeDuplicates({ handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle: properties.bAdvTitle[1] });
 									return itemHandleList[0];
 								}
 								notFound.push({ creator: tags.ARTIST[i], title: tags.TITLE[i], tags: { MUSICBRAINZ_TRACKID: mbids[i], MUSICBRAINZ_ALBUMARTISTID: mbidsAlt[i], MUSICBRAINZ_ARTISTID: mbidsAlt[i] } });
