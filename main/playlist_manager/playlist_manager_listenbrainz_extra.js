@@ -1,5 +1,5 @@
 ﻿'use strict';
-//07/05/24
+//16/05/24
 
 /* global youTube:readable */
 include('..\\..\\helpers\\helpers_xxx.js');
@@ -281,7 +281,7 @@ listenBrainz.findPayloadMBIDs = function findPayloadMBIDs(payload) {
  * @param {{ listened_at: number; track_metadata: { additional_info: { submission_client: string; submission_client_version: string; release_mbid: string; artist_mbids: string[]; recording_mbid:string; duration_ms: number; media_player?: string; }; artist_name: string; track_name: string; release_name: string; }; }[]} payload - Listenbrainz submit listen payload
  * @param {string} token
  * @param {('listen'|'scrobble'|'love')} event
- * @returns {{ listened_at: number; track_metadata: { additional_info: { submission_client: string; submission_client_version: string; release_mbid: string; artist_mbids: string[]; recording_mbid:string; duration_ms: number; media_player?: string; }; artist_name: string; track_name: string; release_name: string; }; }[]}
+ * @returns {Promise.<{ listened_at: number; track_metadata: { additional_info: { submission_client: string; submission_client_version: string; release_mbid: string; artist_mbids: string[]; recording_mbid:string; duration_ms: number; media_player?: string; }; artist_name: string; track_name: string; release_name: string; }; }[]>}
  */
 listenBrainz.processPayload = async function processPayload(payload, token, event = 'listen') {
 	let processed;
@@ -302,7 +302,7 @@ listenBrainz.processPayload = async function processPayload(payload, token, even
 			break;
 		}
 	}
-	return processed;
+	return Promise.resolve(processed);
 };
 
 listenBrainz.submitListens = async function submitListens(payload, token) {

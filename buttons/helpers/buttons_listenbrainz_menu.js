@@ -1,5 +1,5 @@
 'use strict';
-//07/05/24
+//16/05/24
 
 /* exported listenBrainzmenu */
 
@@ -99,7 +99,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					}
 				} else {
 					// foo_uie_biography
-					if (tf === 'LASTFM_SIMILAR_ARTIST') {
+					if (tf === 'LASTFM_SIMILAR_ARTIST') { // NOSONAR
 						fb.TitleFormat('[%' + tf + '%]')
 							.EvalWithMetadb(sel)
 							.split('; ')
@@ -1205,10 +1205,6 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				menu.newEntry({
 					menuName: subMenuName, entryText: 'Set token...', func: async () => {
 						const bDone = await checkLBToken('');
-						if (bDone) {
-							// Force following troi-bot user to create daily jams
-							listenBrainz.followUser('troi-bot', lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted: properties.lBrainzEncrypt[1] }));
-						}
 						return bDone;
 					}
 				});
