@@ -1,5 +1,5 @@
 ﻿'use strict';
-//21/03/24
+//16/05/24
 
 /*
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -138,7 +138,6 @@ addButton({
 			).btn_up(this.currX, this.currY + this.currH);
 		} else {
 			this.retrievePlaylists(false);
-			if (!listenBrainz.isFollowing(listenBrainz.decryptToken({ lBrainzToken: this.buttonsProperties.lBrainzToken[1], bEncrypted: this.buttonsProperties.lBrainzEncrypt[1] }), 'troi-bot')) { this.retrieveFollowing(); }
 			listenBrainzmenu.bind(this)().btn_up(this.currX, this.currY + this.currH);
 		}
 	}, null, void (0), (parent) => {
@@ -198,7 +197,6 @@ addButton({
 						overwriteProperties(parent.buttonsProperties);
 						listenBrainz.cache.key = null;
 						parent.lBrainzTokenListener = false;
-						if (!parent.buttonsProperties.lBrainzEncrypt[1]) { listenBrainz.followUser('troi-bot', parent.buttonsProperties.lBrainzToken[1]); }
 					}
 					break;
 				}
