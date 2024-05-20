@@ -40,6 +40,7 @@
 ### Removed
 - Playlists: daily jams setting, since now it's always active in ListenBrainz. There is no need anymore to manually enable it.
 ### Fixed
+- Fixed possible crash handling web request while closing foobar2000. See [this](https://hydrogenaud.io/index.php/topic,121047.msg1044579.html#msg1044579), although current methods don't use 'WinHttp.WinHttpRequest.5.1' but 'Microsoft.XMLHTTP' which hasn't given any problems yet.
 
 ## [1.7.0] - 2023-03-21
 ### Added
