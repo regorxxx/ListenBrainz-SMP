@@ -38,6 +38,7 @@
 - UI: menu entries renaming and reorganization.
 - Helpers: json button files are now saved with Windows EOL for compatibility improvements with Windows text editors.
 - Helpers: updated helpers.
+- Improved compatibility when running foobar2000 on drives without recycle bin.
 ### Removed
 - Playlists: daily jams setting, since now it's always active in ListenBrainz. There is no need anymore to manually enable it.
 ### Fixed

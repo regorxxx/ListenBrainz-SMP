@@ -1,5 +1,5 @@
 ﻿'use strict';
-//16/05/24
+//03/06/24
 
 /*
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -266,7 +266,7 @@ addButton({
 			if (!data.length) { return; }
 			if (_isFile(parent.buttonsProperties.feedbackCache[1])) {
 				const oldData = _jsonParseFile(parent.buttonsProperties.feedbackCache[1], utf8);
-				_recycleFile(parent.buttonsProperties.feedbackCache[1]);
+				_recycleFile(parent.buttonsProperties.feedbackCache[1], true);
 				const idx = oldData.findIndex((userData) => userData.name === user);
 				if (idx !== -1) {
 					oldData[idx] = data[0];
