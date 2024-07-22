@@ -645,7 +645,7 @@ listenBrainz.lookupTracks = function lookupTracks(handleList, token) {
 		(resolve) => {
 			if (resolve) { // Ensure it matches the ID
 				const response = JSON.parse(resolve);
-				console.log('lookupTracks: ' + response.length + '/' + count + ' found items');
+				console.log('lookupTracks: found ' + response.length + '/' + count + ' items');
 				return response; // Response may contain fewer items than original list
 			}
 			return [];
@@ -739,7 +739,7 @@ listenBrainz.lookupTracksByMBIDs = function lookupTracksByMBIDs(MBIds, token) {
 		(resolve) => {
 			if (resolve) { // Ensure it matches the ID
 				const response = JSON.parse(resolve);
-				console.log('lookupTracksByMBIDs: ' + response.length + '/' + count + ' found items');
+				console.log('lookupTracksByMBIDs: found ' + response.length + '/' + count + ' items');
 				return response; // Response should contain same items than original list
 			}
 			return [];
@@ -803,7 +803,7 @@ listenBrainz.getEntitiesByTag = function getEntitiesByTag(tagsArr, token, type =
 				if (response) {
 					if (type) {
 						if (Object.hasOwn(response, type)) {
-							console.log('getEntitiesByTag: ' + response[type].length + ' found items');
+							console.log('getEntitiesByTag: found ' + response[type].length + ' items');
 							return response[type]; // [{recording_mbid}, ...]
 						}
 						console.log('getEntitiesByTag: type not found - ' + type);
@@ -958,7 +958,7 @@ listenBrainz.getPopularRecordingsByArtist = function getPopularRecordingsByArtis
 			return JSON.parse(response.value).slice(0, count);
 		}).filter(Boolean).flat(Infinity);
 	}).then((response) => {
-		console.log('getPopularRecordingsByArtist: ' + response.length + ' found items');
+		console.log('getPopularRecordingsByArtist: found ' + response.length + ' items');
 		return response; // [{artist_mbids, count, recording_mbid}, ...]
 	}).catch((reason) => {
 		console.log('getPopularRecordingsByArtist: error ' + reason);
@@ -988,7 +988,7 @@ listenBrainz.retrieveSimilarArtists = function retrieveSimilarArtists(artistMbid
 			if (resolve) {
 				const response = JSON.parse(resolve) || [];
 				if (response && response.length) {
-					console.log('retrieveSimilarArtists: ' + response.length + ' found items');
+					console.log('retrieveSimilarArtists: found ' + response.length + ' items');
 					return response; // [{artist_mbid, comment, gender, name, reference_mbid, score, type}, ...]
 				}
 			}
@@ -1020,7 +1020,7 @@ listenBrainz.retrieveSimilarRecordings = function retrieveSimilarRecordings(reco
 			if (resolve) {
 				const response = JSON.parse(resolve) || [];
 				if (response.length) {
-					console.log('retrieveSimilarRecordings: ' + response.length + ' found items');
+					console.log('retrieveSimilarRecordings: found ' + response.length + ' items');
 					return response; // [{recording_mbid, recording_name, artist_credit_name, [artist_credit_mbids], caa_id, caa_release_mbid, canonical_recording_mbid, score, reference_mbid}, ...]
 				} else {
 					console.log('retrieveSimilarRecordings: No similar recordings found');
