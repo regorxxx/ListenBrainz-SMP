@@ -1,5 +1,5 @@
 ﻿'use strict';
-//04/01/24
+//22/07/24
 
 /* exported _menu, _attachedMenu */
 
@@ -138,18 +138,20 @@ function _menu({ bInit = true, bSupressDefaultMenu = true, properties = null, iM
 		if (smType === 'string' && subMenuFrom.indexOf('&') !== - 1) { subMenuFrom = subMenuFrom.replace(/&&/g, '&').replace(/&/g, '&&'); }
 		if (mType === 'string' && menuName.indexOf('&') !== - 1) { menuName = menuName.replace(/&&/g, '&').replace(/&/g, '&&'); }
 		if (context && main) {
-			menuError({ 'function': 'newMenu\n', menuName, subMenuFrom, flags, context, main, mesage: 'A menu can not be a contextual menu and main menu at the same time' });
+			menuError({ 'function': 'newMenu\n', menuName, subMenuFrom, flags, context, main, message: 'A menu can not be a contextual menu and main menu at the same time' });
 			throw new Error('A menu can not be a contextual menu and main menu at the same time');
 		}
 		if (bAddInvisibleIds) {
 			if (this.hasMenu(menuName, subMenuFrom)) {
-				menuError({ 'function': 'newMenu\n', menuName, subMenuFrom, flags, mesage: 'There is already another menu with same name and same root' });
-				throw new Error('There is already another menu with same name and same root');
+				menuError({ 'function': 'newMenu\n', menuName, subMenuFrom, flags, message: 'There is already another menu with same name and same root' });
+				menuName = '[ERROR]' + invsId(true);
+				// TODO: This may crash foobar2000. Why?
+				// throw new Error('There is already another menu with same name and same root');
 			} else if (this.hasMenu(menuName)) {
 				menuName += invsId(true); // At this point don't use other name than this!
 			}
 		} else if (this.hasMenu(menuName)) {
-			menuError({ 'function': 'newMenu\n', menuName, subMenuFrom, flags, mesage: 'There is already another menu with same name' });
+			menuError({ 'function': 'newMenu\n', menuName, subMenuFrom, flags, message: 'There is already another menu with same name' });
 			throw new Error('There is already another menu with same name');
 		}
 		menuArr.push({ menuName, subMenuFrom });
