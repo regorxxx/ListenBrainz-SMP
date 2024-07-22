@@ -578,7 +578,11 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			if (tags.length) {
 				tags.forEach((tag) => {
 					const bSingle = tag.valSet.size <= 1;
-					const subMenu = bSingle ? menuName : menu.newMenu(tag.name + '...', menuName);
+					const subMenu = bSingle ? menuName : menu.newMenu(tag.name, menuName);
+					if (tag.type === 'getPopularRecordingsBySimilarArtist' && !bSingle) {
+						menu.newEntry({menuName: subMenu, entryText: 'Top tracks by:', flags: MF_GRAYED});
+						menu.newEntry({menuName: subMenu, entryText: 'sep', flags: MF_GRAYED});
+					}
 					if (tag.valSet.size === 0) { tag.valSet.add(''); }
 					[...tag.valSet].sort((a, b) => a.localeCompare(b, 'en', { 'sensitivity': 'base' })).forEach((val, i) => {
 						menu.newEntry({
@@ -595,7 +599,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 									case 'retrieveSimilarRecordings':
 										runSimilar(tag.type, 'By similar tracks', 'v1', val); break;
 								}
-							}, flags: (val ? MF_STRING : MF_GRAYED) | (!bSingle && i % 8 === 0 ? MF_MENUBREAK : MF_STRING)
+							}, flags: (val ? MF_STRING : MF_GRAYED) | (!bSingle && i % 8 === 0 && i ? MF_MENUBREAK : MF_STRING)
 						});
 					});
 				});
