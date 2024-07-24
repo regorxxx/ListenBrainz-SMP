@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [2.0.0](#200---2024-07-24)
 - [1.7.0](#170---2024-03-21)
 - [1.6.0](#160---2024-02-28)
 - [1.5.0](#150---2023-12-08)
@@ -29,6 +30,11 @@
 
 ## [Unreleased][]
 ### Added
+### Changed
+### Fixed
+
+## [2.0.0] - 2024-07-24
+### Added
 - Pano Scrobbler: new importing options for [Pano Scrobbler](https://github.com/kawaiiDango/pano-scrobbler) local .jsonl files, which allows to save listens to a local file on the media device and upload them on demand. It also works for feedback (loved tracks). This may be used to track listens on DAPs and other media devices without internet connection or network problems (ListenBrainz syncing does not work on Android 7 and lower).
 - Readmes: added readme for global settings found at 'foobar2000\js_data\presets\global' .json files.
 - Configuration: expanded user configurable file at '[FOOBAR PROFILE FOLDER]\js_data\presets\global\globSettings.json' with a new setting for console logging to file. Disabled by default. Now this is a change from the previous behavior, where console was always logged to 'console.log' file at the [FOOBAR PROFILE FOLDER]. It can now be switched, but since it's probably not useful for most users is disabled by default.
@@ -47,7 +53,7 @@
 - Configuration: .json files at 'foobar2000\js_data\presets\global' not being saved with the calculated properties based on user values from other files.
 - Fixed possible crash handling web request while closing foobar2000. See [this](https://hydrogenaud.io/index.php/topic,121047.msg1044579.html#msg1044579), although current methods don't use 'WinHttp.WinHttpRequest.5.1' but 'Microsoft.XMLHTTP' which hasn't given any problems yet.
 
-## [1.7.0] - 2023-03-21
+## [1.7.0] - 2024-03-21
 ### Added
 - Feedback: new query filter (independent to the other filter already available) to find matched tracks when looking for loved/hated tracks. It may be used to discard specific releases by tags (like live versions or remasters).
 - Feedback: new setting to switch track matching by MBID only or also use ARTIST/TITLE tags.
@@ -58,7 +64,7 @@
 ### Removed
 ### Fixed
 
-## [1.6.0] - 2023-02-28
+## [1.6.0] - 2024-02-28
 ### Added
 - Playlists: playlists created by the user (in addition to recommendations) can now be imported. They are listed by name and can be sorted by name, creation or last modified date.
 - Playlists: playlist exporting to user profile. Note this exporting option is different to the one found at [Playlist-Manager-SMP](https://github.com/regorxxx/Playlist-Manager-SMP) in one thing, the MBID is not saved anywhere (contrary to saving it on a playlist file), so there is no playlist tracking at all and exporting the same playlists multiple times will only update the playlist on the server (instead of creating a new one) as long as the playlist names are strictly equal.
@@ -322,7 +328,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.7.0...v2.0.0
 [1.7.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.4.0...v1.5.0
