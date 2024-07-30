@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [2.1.0](#210---2024-07-30)
 - [2.0.0](#200---2024-07-24)
 - [1.7.0](#170---2024-03-21)
 - [1.6.0](#160---2024-02-28)
@@ -31,6 +32,12 @@
 ## [Unreleased][]
 ### Added
 ### Changed
+### Fixed
+
+## [2.1.0] - 2024-07-30
+### Added
+### Changed
+- Helpers: updated helpers.
 ### Fixed
 
 ## [2.0.0] - 2024-07-24
@@ -328,7 +335,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.7.0...v2.0.0
 [1.7.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.5.0...v1.6.0
