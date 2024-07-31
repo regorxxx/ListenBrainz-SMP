@@ -31,13 +31,19 @@
 
 ## [Unreleased][]
 ### Added
+- YouTube: added support for 'MUSICBRAINZ_ALBUMARTISTID' and 'MUSICBRAINZ_ARTISTID' tags if available for user recommendations.
 ### Changed
+- User recommendations: changed the logic to just retrieve and use one of the 10 most similar users, instead of relying on an specific similarity threshold.
+### Removed
+- User recommendations: there is only a single option now (since ListenBrainz API dropped the other algorithms).
+- Similar users: there is only a single option now (since ListenBrainz API dropped the other algorithms).
 ### Fixed
 
 ## [2.1.0] - 2024-07-30
 ### Added
 ### Changed
 - Helpers: updated helpers.
+### Removed
 ### Fixed
 
 ## [2.0.0] - 2024-07-24

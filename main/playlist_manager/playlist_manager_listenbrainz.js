@@ -1,5 +1,5 @@
 ﻿'use strict';
-//22/07/24
+//31/07/24
 
 /* global list:readable, delayAutoUpdate:readable, checkLBToken:readable,  */
 include('..\\..\\helpers\\helpers_xxx.js');
@@ -758,7 +758,7 @@ listenBrainz.lookupRecordingInfoByMBIDs = function lookupRecordingInfoByMBIDs(MB
 	if (!count) { console.log('lookupRecordingInfoByMBIDs: no MBIds provided'); return Promise.resolve({}); }
 	const allInfo = [
 		'recording_mbid', 'recording_name', 'length', 'artist_credit_id',
-		'artist_credit_name', '[artist_credit_mbids]',
+		'artist_credit_name', 'artist_credit_mbids',
 		'canonical_recording_mbid', 'original_recording_mbid'
 	];
 	if (!infoNames || !infoNames.length) { infoNames = allInfo; }

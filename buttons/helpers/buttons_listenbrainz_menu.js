@@ -1,5 +1,5 @@
 'use strict';
-//16/05/24
+//31/07/24
 
 /* exported listenBrainzmenu */
 
@@ -519,7 +519,16 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 										itemHandleList = removeDuplicates({ handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle: properties.bAdvTitle[1] });
 										return itemHandleList[0];
 									}
-									notFound.push({ creator: tags.ARTIST[i], title: tags.TITLE[i], tags: { ALBUM: tags.ALBUM[i], MUSICBRAINZ_TRACKID: mbids[i], MUSICBRAINZ_ALBUMARTISTID: mbidsAlt[i][0], MUSICBRAINZ_ARTISTID: mbidsAlt[i] } });
+									notFound.push({
+										creator: tags.ARTIST[i],
+										title: tags.TITLE[i],
+										tags: {
+											ALBUM: tags.ALBUM[i],
+											MUSICBRAINZ_TRACKID: mbids[i],
+											MUSICBRAINZ_ALBUMARTISTID: mbidsAlt[i][0],
+											MUSICBRAINZ_ARTISTID: mbidsAlt[i]
+										}
+									});
 									return null;
 								});
 								return { notFound, items };
@@ -808,7 +817,15 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 									return itemHandleList[0];
 								}
 								if (tags.TITLE[i].length) {
-									notFound.push({ creator: tags.ARTIST[i], title: tags.TITLE[i], tags: { MUSICBRAINZ_TRACKID: mbidsAlt[i], MUSICBRAINZ_ALBUMARTISTID: mbids[i], MUSICBRAINZ_ARTISTID: mbids[i] } });
+									notFound.push({
+										creator: tags.ARTIST[i],
+										title: tags.TITLE[i],
+										tags: {
+											MUSICBRAINZ_TRACKID: mbidsAlt[i],
+											MUSICBRAINZ_ALBUMARTISTID: mbids[i],
+											MUSICBRAINZ_ARTISTID: mbids[i]
+										}
+									});
 								}
 								return null;
 							});
@@ -953,53 +970,42 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				});
 		};
 	}
-	{	// Similar Users
-		const menuName = menu.newMenu('Similar Users');
-		menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
-		menu.newEntry({ menuName, entryText: 'sep' });
-		[
-			{ params: { artist_type: 'top', count: lb.MAX_ITEMS_PER_GET }, title: 'Top artists listened' },
-			{ params: { artist_type: 'similar', count: lb.MAX_ITEMS_PER_GET }, title: 'Similar to artists listened' },
-			{ params: { artist_type: 'raw', count: lb.MAX_ITEMS_PER_GET }, title: 'Raw recommendations' },
-		].forEach((entry) => {
-			menu.newEntry({
-				menuName, entryText: entry.title + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
-					const bShift = utils.IsKeyPressed(VK_SHIFT);
-					if (!await checkLBToken()) { return false; }
-					const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
-					if (!token) { return; }
-					this.switchAnimation('ListenBrainz user retrieval', true);
-					const user = await lb.retrieveUser(token);
-					const similUsers = await lb.retrieveSimilarUsers(user, token);
-					if (!similUsers.length) { return; }
-					const similUser = similUsers.shuffle()[0].user_name;
-					this.switchAnimation('ListenBrainz user retrieval', false);
-					lb.getRecommendedTracks(similUser, entry.params, entry.title, token, properties.bYouTube[1] && isYouTube, bShift, this);
-				}, flags: bListenBrainz ? MF_STRING : MF_GRAYED, data: { bDynamicMenu: true }
-			});
-		});
-	}
 	{	// User
 		const menuName = menu.newMenu('User recommendations');
+		const cachedUser = (bListenBrainz
+			? listenBrainz.cache.user.get(lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }))
+			: ''
+		) || 'User';
 		menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
 		menu.newEntry({ menuName, entryText: 'sep' });
-		[
-			{ params: { artist_type: 'top', count: lb.MAX_ITEMS_PER_GET }, title: 'Top artists listened' },
-			{ params: { artist_type: 'similar', count: lb.MAX_ITEMS_PER_GET }, title: 'Similar to artists listened' },
-			{ params: { artist_type: 'raw', count: lb.MAX_ITEMS_PER_GET }, title: 'Raw recommendations' },
-		].forEach((entry) => {
-			menu.newEntry({
-				menuName, entryText: entry.title + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
-					const bShift = utils.IsKeyPressed(VK_SHIFT);
-					if (!await checkLBToken()) { return false; }
-					const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
-					if (!token) { return; }
-					this.switchAnimation('ListenBrainz user retrieval', true);
-					const user = await lb.retrieveUser(token);
-					this.switchAnimation('ListenBrainz user retrieval', false);
-					lb.getRecommendedTracks(user, entry.params, entry.title, token, properties.bYouTube[1] && isYouTube, bShift, this);
-				}, flags: bListenBrainz ? MF_STRING : MF_GRAYED, data: { bDynamicMenu: true }
-			});
+		menu.newEntry({
+			menuName, entryText: cachedUser + '\'s recommended tracks' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
+				const bShift = utils.IsKeyPressed(VK_SHIFT);
+				if (!await checkLBToken()) { return false; }
+				const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+				if (!token) { return; }
+				this.switchAnimation('ListenBrainz user retrieval', true);
+				const user = await lb.retrieveUser(token);
+				this.switchAnimation('ListenBrainz user retrieval', false);
+				lb.getRecommendedTracks(user, { count: lb.MAX_ITEMS_PER_GET }, 'Recommended tracks', token, properties.bYouTube[1] && isYouTube, bShift, this);
+			}, flags: bListenBrainz ? MF_STRING : MF_GRAYED, data: { bDynamicMenu: true }
+		});
+		menu.newEntry({
+			menuName, entryText: 'Recommended tracks from similar users' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
+				const bShift = utils.IsKeyPressed(VK_SHIFT);
+				if (!await checkLBToken()) { return false; }
+				const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+				if (!token) { return; }
+				this.switchAnimation('ListenBrainz user retrieval', true);
+				const user = await lb.retrieveUser(token);
+				// Retrieve all and get first 10
+				const similUsers = (await lb.retrieveSimilarUsers(user, token, 0)).slice(0, 9);
+				this.switchAnimation('ListenBrainz user retrieval', false);
+				if (!similUsers.length) { return; }
+				const similUser = similUsers.shuffle()[0].user_name;
+				this.switchAnimation('ListenBrainz user retrieval', false);
+				lb.getRecommendedTracks(similUser, {count: lb.MAX_ITEMS_PER_GET}, 'Recommended tracks', token, properties.bYouTube[1] && isYouTube, bShift, this);
+			}, flags: bListenBrainz ? MF_STRING : MF_GRAYED, data: { bDynamicMenu: true }
 		});
 	}
 	menu.newEntry({ entryText: 'sep' });

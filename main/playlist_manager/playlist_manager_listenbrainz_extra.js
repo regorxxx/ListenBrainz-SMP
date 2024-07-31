@@ -1,5 +1,5 @@
 ﻿'use strict';
-//16/05/24
+//31/07/24
 
 /* global youTube:readable */
 include('..\\..\\helpers\\helpers_xxx.js');
@@ -36,6 +36,7 @@ include('..\\..\\helpers-external\\easy-table-1.2.0\\table.js'); const Table = m
  */
 listenBrainz.getRecommendedTracks = function getRecommendedTracks(user, params, name, token, bYoutube = true, bRandomize = false, parent = null) {
 	const mbids = [];
+	const artistMBIDs = [];
 	const tags = { TITLE: [], ARTIST: [] };
 	let count = 0;
 	parent && parent.switchAnimation('ListenBrainz data retrieval', true);
@@ -47,7 +48,7 @@ listenBrainz.getRecommendedTracks = function getRecommendedTracks(user, params, 
 				tags.ARTIST.push('');
 			});
 			count = mbids.length;
-			const infoNames = ['recording_mbid', 'recording_name', 'artist_credit_name'];
+			const infoNames = ['recording_mbid', 'recording_name', 'artist_credit_name', 'artist_credit_mbids'];
 			return this.lookupRecordingInfoByMBIDs(mbids, infoNames, token);
 		})
 		.then((info) => {
@@ -57,6 +58,7 @@ listenBrainz.getRecommendedTracks = function getRecommendedTracks(user, params, 
 					if (mbids[i] === info.recording_mbid[i]) {
 						if (info.recording_name[i]) { tags.TITLE[i] = info.recording_name[i]; }
 						if (info.artist_credit_name[i]) { tags.ARTIST[i] = info.artist_credit_name[i]; }
+						if (info.artist_credit_mbids[i] && info.artist_credit_mbids[i].length) { artistMBIDs[i] = info.artist_credit_mbids[i]; }
 					}
 				}
 			}
@@ -98,7 +100,15 @@ listenBrainz.getRecommendedTracks = function getRecommendedTracks(user, params, 
 					itemHandleList = removeDuplicates({ handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle: true });
 					return itemHandleList[0];
 				}
-				notFound.push({ creator: tags.ARTIST[i], title: tags.TITLE[i], tags: { MUSICBRAINZ_TRACKID: mbids[i] } });
+				notFound.push({
+					creator: tags.ARTIST[i],
+					title: tags.TITLE[i],
+					tags: {
+						MUSICBRAINZ_TRACKID: mbids[i],
+						MUSICBRAINZ_ALBUMARTISTID: (artistMBIDs[i] || [])[0],
+						MUSICBRAINZ_ARTISTID: artistMBIDs[i] || []
+					}
+				});
 				return null;
 			});
 			return { notFound, items };
