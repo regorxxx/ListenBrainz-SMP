@@ -1,5 +1,5 @@
 ﻿'use strict';
-//02/08/24
+//04/08/24
 
 /* global youTube:readable */
 include('..\\..\\helpers\\helpers_xxx.js');
@@ -9,7 +9,7 @@ include('playlist_manager_listenbrainz.js');
 include('..\\..\\helpers\\helpers_xxx_file.js');
 /* global _isFile:readable, _open:readable, utf8:readable */
 include('..\\..\\helpers\\helpers_xxx_prototypes.js');
-/* global _p:readable, _q:readable, _t:readable, module:readable, _b:readable, WshShell:readable, popup:readable */
+/* global _p:readable, _q:readable, _t:readable, module:readable, _b:readable, WshShell:readable, popup:readable, round:readable */
 include('..\\..\\helpers\\helpers_xxx_tags.js');
 /* global queryJoin:readable, sanitizeTagValIds:readable, sanitizeTagIds:readable, sanitizeQueryVal:readable, queryCombinations:readable, sanitizeTagTfo:readable, getHandleListTagsV2:readable */
 include('..\\..\\helpers\\helpers_xxx_tags_extra.js');
@@ -380,6 +380,7 @@ listenBrainz.calculateSimilarArtistsFromPls = async function calculateSimilarArt
 	const selMbids = await this.getArtistMBIDs(handleList, token, bLookupMBIDs, true);
 	const selArtists = getHandleListTagsV2(handleList, ['ALBUM ARTIST'], { bMerged: true }).flat();
 	const artistDic = await this.joinArtistMBIDs(selArtists, selMbids, token, true);
+	let maxCount = 0;
 	artistDic.forEach((ref) => {
 		ref.mbid = ref.mbids[0];
 		delete ref.mbids;
@@ -391,17 +392,26 @@ listenBrainz.calculateSimilarArtistsFromPls = async function calculateSimilarArt
 		if (output.length) {
 			output.forEach((artistData) => {
 				const ref = artistDic.find((ref) => ref.mbid === artistData.reference_mbid);
-				if (ref) { ref.val.push({ artist: artistData.name, mbid: artistData.artist_mbid, score: artistData.score }); }
+				if (ref) {
+					ref.val.push({ artist: artistData.name, mbid: artistData.artist_mbid, score: artistData.score });
+					maxCount = Math.max(maxCount, artistData.score);
+				}
 			});
 		}
 		artistDic.filter((ref) => ref.val.length).forEach((ref) => newData.push(ref));
 	}
 	if (!newData.length) { console.log('Nothing found.'); return []; }
+	newData.forEach((obj) => {
+		obj.val.forEach((val) => {
+			val.count = val.score;
+			val.score = round(val.score / maxCount * 100, 1);
+		});
+	});
 	this.updateSimilarDataFile(file, newData, iNum);
 	profiler.Print();
 	const report = newData.map((obj) => // List of artists with tabbed similar artists + score
 		obj.artist + ':\n\t' + (obj.val.map((sim) =>
-			_b(sim.score) + '\t' + sim.artist
+			_b(sim.score + '%') + '\t' + _p(sim.count + ' listens') + '\t' + sim.artist
 		).join('\n\t') || '-NONE-')
 	).join('\n\n');
 	fb.ShowPopupMessage(report, 'ListenBrainz');

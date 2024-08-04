@@ -36,6 +36,7 @@
 ### Changed
 - User recommendations: changed the logic to just retrieve and use one of the 10 most similar users, instead of relying on an specific similarity threshold.
 - Similar artists: in case less than 5 artists are retrieved, it will retry the lookup with a different algorithm which usually retrieves more results.
+- UI: added a restore defaults option to every track recommendations entry.
 ### Removed
 - User recommendations: there is only a single option now (since ListenBrainz API dropped the other algorithms).
 - Similar users: there is only a single option now (since ListenBrainz API dropped the other algorithms).

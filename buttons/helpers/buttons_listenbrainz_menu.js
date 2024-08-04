@@ -4,7 +4,7 @@
 /* exported listenBrainzmenu */
 
 include('..\\..\\helpers\\helpers_xxx.js');
-/* global popup:readable, folders:readable, globTags:readable, MF_STRING:readable, MF_GRAYED:readable, VK_SHIFT:readable, globQuery:readable, isYouTube:readable, MF_MENUBREAK:readable */
+/* global popup:readable, folders:readable, globTags:readable, MF_STRING:readable, MF_GRAYED:readable, VK_SHIFT:readable, globQuery:readable, isYouTube:readable, MF_MENUBREAK:readable, VK_CONTROL:readable */
 include('..\\..\\helpers\\helpers_xxx_input.js');
 /* global Input:readable */
 include('..\\..\\helpers\\helpers_xxx_file.js');
@@ -106,6 +106,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 							.EvalWithMetadb(sel)
 							.split('; ')
 							.filter(Boolean)
+							.slice(0, 10)
 							.forEach((val) => {
 								val = val.trim();
 								tag.val[i].push(val);
@@ -127,32 +128,38 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				}
 			});
 		});
-		// Search by Distance tags
-		const sbdPath = (_isFile(fb.FoobarPath + 'portable_mode_enabled') ? '.\\profile\\' + folders.dataName : folders.data) + 'searchByDistance_artists.json';
-		if (_isFile(sbdPath)) {
-			const dataId = 'artist';
-			const tagId = globTags.artistRaw.toLowerCase();
-			const selIds = [...(tags.find((tag) => tag.tf.some((tf) => tf.toLowerCase() === tagId)) || { valSet: [] }).valSet];
-			if (selIds.length) {
-				const data = getSimilarDataFromFile(sbdPath);
-				const sdbData = new Set();
-				if (data) {
-					data.forEach((item) => {
-						if (selIds.some((id) => item[dataId] === id)) {
-							item.val.forEach((val) => sdbData.add(val.artist));
+		// Similar artists tags
+		[
+			{file: 'listenbrainz_artists.json', dataId: 'artist', tag: 'SIMILAR ARTISTS LISTENBRAINZ'},
+			{file: 'searchByDistance_artists.json', dataId: 'artist', tag: 'SIMILAR ARTISTS SEARCHBYDISTANCE'}
+		].forEach((option) => {
+			const path = (_isFile(fb.FoobarPath + 'portable_mode_enabled') ? '.\\profile\\' + folders.dataName : folders.data) + option.file;
+			if (_isFile(path)) {
+				const dataId = option.dataId;
+				const dataTag = option.tag;
+				const tagId = globTags.artistRaw.toLowerCase();
+				const selIds = [...(tags.find((tag) => tag.tf.some((tf) => tf.toLowerCase() === tagId)) || { valSet: [] }).valSet];
+				if (selIds.length) {
+					const data = getSimilarDataFromFile(path);
+					const lbData = new Set();
+					if (data) {
+						data.forEach((item) => {
+							if (selIds.some((id) => item[dataId] === id)) {
+								item.val.slice(0, 10).forEach((val) => lbData.add(val.artist));
+							}
+						});
+					}
+					if (lbData.size) {
+						const lbTag = tags.find((tag) => tag.tf.some((tf) => tf === dataTag));
+						const idx = lbTag ? lbTag.tf.findIndex((tf) => tf === dataTag) : -1;
+						if (idx !== -1) {
+							lbTag.val[idx].push(...lbData);
+							lbTag.valSet = lbTag.valSet.union(lbData);
 						}
-					});
-				}
-				if (sdbData.size) {
-					const sbdTag = tags.find((tag) => tag.tf.some((tf) => tf === 'SIMILAR ARTISTS SEARCHBYDISTANCE'));
-					const idx = sbdTag ? sbdTag.tf.findIndex((tf) => tf === 'SIMILAR ARTISTS SEARCHBYDISTANCE') : -1;
-					if (idx !== -1) {
-						sbdTag.val[idx].push(...sdbData);
-						sbdTag.valSet = sbdTag.valSet.union(sdbData);
 					}
 				}
 			}
-		}
+		});
 		// World map tags
 		const worldMapPath = (_isFile(fb.FoobarPath + 'portable_mode_enabled') ? '.\\profile\\' + folders.dataName : folders.data) + 'worldMap.json';
 		if (_isFile(worldMapPath)) {
@@ -1344,19 +1351,33 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		menu.newEntry({ menuName, entryText: 'sep' });
 		{
 			const subMenuName = menu.newMenu('Track recommendations', menuName);
-			menu.newEntry({ menuName: subMenuName, entryText: 'Tag remap:', flags: MF_GRAYED });
+			menu.newEntry({ menuName: subMenuName, entryText: 'Tag remap: (Ctrl + Click to reset)', flags: MF_GRAYED });
 			menu.newEntry({ menuName: subMenuName, entryText: 'sep' });
 			const tags = JSON.parse(properties.tags[1]);
 			tags.forEach((tag) => {
 				menu.newEntry({
 					menuName: subMenuName, entryText: tag.name + (tag.tf && tag.tf.length ? '' : '\t-disabled-'), func: () => {
-						const input = Input.json('array strings', tag.tf, 'Enter tag(s) or TF expression(s):\n(JSON)\n\nSetting it to [] will disable the menu entry.', 'ListenBrainz Tools', '["ARTIST","ALBUM ARTIST"]', void (0), true);
-						if (input === null) { return; }
+						let input;
+						if (utils.IsKeyPressed(VK_CONTROL)) {
+							const defTag = JSON.parse(properties.tags[3])
+								.find((defTag) => tag.name === defTag.name);
+							if (defTag) {input = defTag.tf;}
+						} else {
+							input = Input.json('array strings', tag.tf, 'Enter tag(s) or TF expression(s):\n(JSON)\n\nSetting it to [] will disable the menu entry.', 'ListenBrainz Tools', '["ARTIST","ALBUM ARTIST"]', void (0), true);
+							if (input === null) { return; }
+						}
 						tag.tf = input;
 						properties.tags[1] = JSON.stringify(tags);
 						overwriteProperties(properties);
 					}
 				});
+			});
+			menu.newEntry({ menuName: subMenuName, entryText: 'sep' });
+			menu.newEntry({
+				menuName: subMenuName, entryText: 'Restore defaults...', func: () => {
+					properties.tags[1] = properties.tags[3];
+					overwriteProperties(properties);
+				}
 			});
 		}
 		menu.newEntry({ menuName, entryText: 'sep' });
