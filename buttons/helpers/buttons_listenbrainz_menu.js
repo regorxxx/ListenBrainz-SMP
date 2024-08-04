@@ -1,5 +1,5 @@
 'use strict';
-//31/07/24
+//04/08/24
 
 /* exported listenBrainzmenu */
 
@@ -17,6 +17,8 @@ include('..\\..\\helpers\\buttons_xxx_menu.js');
 /* global _menu:readable */
 include('..\\..\\helpers\\helpers_xxx_tags.js');
 /* global sanitizeQueryVal:readable, sanitizeTagValIds:readable, sanitizeTagIds:readable, sanitizeQueryVal:readable,queryJoin:readable */
+include('..\\..\\helpers\\helpers_xxx_tags_extra.js');
+/* global getSimilarDataFromFile:readable */
 include('..\\..\\helpers\\helpers_xxx_playlists.js');
 /* global sendToPlaylist:readable */
 include('..\\..\\main\\playlist_manager\\playlist_manager_listenbrainz.js');
@@ -132,14 +134,12 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			const tagId = globTags.artistRaw.toLowerCase();
 			const selIds = [...(tags.find((tag) => tag.tf.some((tf) => tf.toLowerCase() === tagId)) || { valSet: [] }).valSet];
 			if (selIds.length) {
-				const data = _jsonParseFileCheck(sbdPath, 'Tags json', window.Name, utf8);
+				const data = getSimilarDataFromFile(sbdPath);
 				const sdbData = new Set();
 				if (data) {
 					data.forEach((item) => {
 						if (selIds.some((id) => item[dataId] === id)) {
-							item.val.forEach((val) => {
-								if (val.scoreW >= 70) { sdbData.add(val.artist); }
-							});
+							item.val.forEach((val) => sdbData.add(val.artist));
 						}
 					});
 				}
@@ -248,14 +248,25 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	// Menu
 	const menu = new _menu();
 	const selectedFlagsCount = (maxCount) => {
-		return (idx = plman.ActivePlaylist) => this.selItems && this.selItems.Count <= maxCount || idx !== -1 && plman.GetPlaylistSelectedItems(idx).Count <= maxCount
-			? MF_STRING
-			: MF_GRAYED;
+		return (idx = plman.ActivePlaylist) => {
+			const count = this.selItems
+				? (this.selItems.Count || 0)
+				: idx !== -1
+					? plman.GetPlaylistSelectedItems(idx).Count
+					: 0;
+			return (count && count <= maxCount ? MF_STRING : MF_GRAYED);
+		};
 	};
 	const selectedCountTitle = (maxCount, idx = plman.ActivePlaylist) => {
-		return this.selItems && this.selItems.Count <= maxCount || idx !== -1 && plman.GetPlaylistSelectedItems(idx).Count <= maxCount
-			? ''
-			: ' (< ' + maxCount + ' tracks)';
+		const count = this.selItems
+			? (this.selItems.Count || 0)
+			: idx !== -1
+				? plman.GetPlaylistSelectedItems(idx).Count
+				: 0;
+		return (count
+			? count <= maxCount ? '' : ' (< ' + maxCount + ' tracks)'
+			: ''
+		);
 	};
 	// Menu
 	{	// Feedback
@@ -1129,6 +1140,26 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					const report = table.toString();
 					fb.ShowPopupMessage(report, 'ListenBrainz');
 				}, flags: bListenBrainz ? selectedFlagsCount(70) : MF_GRAYED, data: { bDynamicMenu: true }
+			});
+		}
+		menu.newEntry({ menuName, entryText: 'sep' });
+		{	// Similar artists
+			menu.newEntry({
+				menuName,
+				entryText: 'Calculate similar artists tags' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
+					if (!await checkLBToken()) { return false; }
+					const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+					if (!token) { return; }
+					this.switchAnimation('ListenBrainz data retrieval', true);
+					const response = await lb.calculateSimilarArtistsFromPls({token});
+					this.switchAnimation('ListenBrainz data retrieval', false);
+					if (!response) { return; }
+				}, flags: bListenBrainz ? selectedFlagsCount(70) : MF_GRAYED, data: { bDynamicMenu: true }
+			});
+			menu.newEntry({
+				menuName, entryText: 'Write similar artists tags', func: () => {
+					lb.writeSimilarArtistsTags();
+				}, flags: _isFile(folders.data + 'listenbrainz_artists.json') ? MF_STRING : MF_GRAYED
 			});
 		}
 		menu.newEntry({ menuName, entryText: 'sep' });
