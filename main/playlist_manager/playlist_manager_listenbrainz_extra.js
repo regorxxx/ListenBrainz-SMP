@@ -1,17 +1,19 @@
 ﻿'use strict';
-//31/07/24
+//02/08/24
 
 /* global youTube:readable */
 include('..\\..\\helpers\\helpers_xxx.js');
-/* global globQuery:readable, globTags:readable, memoize:readable */
+/* global globQuery:readable, globTags:readable, memoize:readable, folders:readable */
 include('playlist_manager_listenbrainz.js');
 /* global listenBrainz:readable */
 include('..\\..\\helpers\\helpers_xxx_file.js');
 /* global _isFile:readable, _open:readable, utf8:readable */
 include('..\\..\\helpers\\helpers_xxx_prototypes.js');
-/* global _p:readable, _q:readable, _t:readable, _q:readable, _q:readable, _q:readable, module:readable */
+/* global _p:readable, _q:readable, _t:readable, module:readable, _b:readable, WshShell:readable, popup:readable */
 include('..\\..\\helpers\\helpers_xxx_tags.js');
-/* global queryJoin:readable, sanitizeTagValIds:readable, sanitizeTagIds:readable, sanitizeQueryVal:readable, queryCombinations:readable, sanitizeTagTfo:readable */
+/* global queryJoin:readable, sanitizeTagValIds:readable, sanitizeTagIds:readable, sanitizeQueryVal:readable, queryCombinations:readable, sanitizeTagTfo:readable, getHandleListTagsV2:readable */
+include('..\\..\\helpers\\helpers_xxx_tags_extra.js');
+/* global writeSimilarArtistsTags:readable, updateTrackSimilarTags:readable, updateSimilarDataFile:readable */
 include('..\\..\\helpers\\helpers_xxx_web.js');
 /* global send:readable */
 include('..\\filter_and_query\\remove_duplicates.js');
@@ -285,6 +287,7 @@ listenBrainz.findPayloadMBIDs = function findPayloadMBIDs(payload) {
  * Parses aListenBrainz listens payload and adds MBIDs to listens if missing (modifies original array). MBIDs are retrieved from library, using user's tracks.
  *
  * @property
+ * @async
  * @name findPayloadMBIDs
  * @kind method
  * @memberof listenBrainz
@@ -330,16 +333,16 @@ listenBrainz.submitListens = async function submitListens(payload, token) {
 			body: JSON.stringify(data)
 		}).then(
 			(resolve) => {
-				console.log('submitListens: (chunk '+ i + ') ' + resolve);
+				console.log('submitListens: (chunk ' + i + ') ' + resolve);
 				if (resolve) {
 					const response = JSON.parse(resolve);
 					if (response.status === 'ok') { return true; }
-					console.log('submitListens: (chunk '+ i + ') ' + response.status + ' ' + response.responseText);
+					console.log('submitListens: (chunk ' + i + ') ' + response.status + ' ' + response.responseText);
 				}
 				return false;
 			},
 			(reject) => {
-				console.log('submitListens: (chunk '+ i + ') ' + reject.status + ' ' + reject.responseText);
+				console.log('submitListens: (chunk ' + i + ') ' + reject.status + ' ' + reject.responseText);
 				return false;
 			}
 		);
@@ -350,3 +353,71 @@ listenBrainz.submitListens = async function submitListens(payload, token) {
 			return false;
 		});
 };
+
+/**
+ * Output similar artists to the one from input FbMetadbHandle using (@see searchByDistance)
+ *
+ * @property
+ * @async
+ * @function
+ * @name calculateSimilarArtistsFromPls
+ * @kind method
+ * @memberof listenBrainz
+ * @param {Object} [o] - arguments
+ * @param {FbMetadbHandleList} o.items - [=plman.GetPlaylistSelectedItems(plman.ActivePlaylist)] Input FbMetadbHandle
+ * @param {string} o.file - [=folders.data + 'listenbrainz_artists.json'] Output file for database
+ * @param {string} o.iNum - [=10] Num of artists to save on database
+ * @param {string} o.tagName - [='SIMILAR ARTISTS LISTENBRAINZ'] Tag name for saving on tracks
+ * @param {boolean} o.bLookupMBIDs - [=true] Lookup MBIDs online if missing on tags
+ * @param {string} o.token
+ * @returns {Promise<{ artist: string; mbid: string; similar: { artist: string; mbid: string; score: number; }[]; }>}
+ */
+listenBrainz.calculateSimilarArtistsFromPls = async function calculateSimilarArtistsFromPls({ items = plman.GetPlaylistSelectedItems(plman.ActivePlaylist), file = folders.data + 'listenbrainz_artists.json', iNum = 10, tagName = 'SIMILAR ARTISTS LISTENBRAINZ', bLookupMBIDs = true, token } = {}) {
+	const handleList = removeDuplicates({ handleList: items, sortOutput: globTags.artist, checkKeys: [globTags.artist] });
+	if (WshShell.Popup('Process [diferent] artists from currently selected items and retrieve their most similar artists?\nResults are output to console and saved to JSON:\n' + file, 0, 'ListenBrainz', popup.question + popup.yes_no) === popup.no) { return; }
+	let profiler = new FbProfiler('Retrieve similar artists');
+	const newData = [];
+	const selMbids = await this.getArtistMBIDs(handleList, token, bLookupMBIDs, true);
+	const selArtists = getHandleListTagsV2(handleList, ['ALBUM ARTIST'], { bMerged: true }).flat();
+	const artistDic = await this.joinArtistMBIDs(selArtists, selMbids, token, true);
+	artistDic.forEach((ref) => {
+		ref.mbid = ref.mbids[0];
+		delete ref.mbids;
+		ref.val = [];
+	});
+	if (selMbids.length) {
+		// {artist_mbid, comment, gender, name, reference_mbid, score, type}
+		const output = await this.retrieveSimilarArtists(selMbids, token);
+		if (output.length) {
+			output.forEach((artistData) => {
+				const ref = artistDic.find((ref) => ref.mbid === artistData.reference_mbid);
+				if (ref) { ref.val.push({ artist: artistData.name, mbid: artistData.artist_mbid, score: artistData.score }); }
+			});
+		}
+		artistDic.filter((ref) => ref.val.length).forEach((ref) => newData.push(ref));
+	}
+	if (!newData.length) { console.log('Nothing found.'); return []; }
+	this.updateSimilarDataFile(file, newData, iNum);
+	profiler.Print();
+	const report = newData.map((obj) => // List of artists with tabbed similar artists + score
+		obj.artist + ':\n\t' + (obj.val.map((sim) =>
+			_b(sim.score) + '\t' + sim.artist
+		).join('\n\t') || '-NONE-')
+	).join('\n\n');
+	fb.ShowPopupMessage(report, 'ListenBrainz');
+	if (WshShell.Popup('Write similar artist tags to all tracks by selected artists?\n(It will also rewrite previously added similar artist tags)\nOnly first ' + iNum + ' artists with highest score will be used.', 0, 'Similar artists', popup.question + popup.yes_no) === popup.yes) {
+		this.updateTrackSimilarTags({ data: newData, iNum, tagName });
+	}
+	return newData;
+};
+
+listenBrainz.writeSimilarArtistsTags = function ({ file = folders.data + 'listenbrainz_artists.json', iNum = 10, tagName = 'SIMILAR ARTISTS LISTENBRAINZ' } = {}) {
+	return writeSimilarArtistsTags({ file, iNum, tagName, windowName: 'ListenBrainz' });
+};
+
+listenBrainz.updateTrackSimilarTags = function ({ data, iNum = 10, tagName = 'SIMILAR ARTISTS LISTENBRAINZ'} = {}) {
+	return updateTrackSimilarTags({ data, iNum, tagName, windowName: 'ListenBrainz', bPopup: false });
+};
+
+listenBrainz.updateSimilarDataFile = updateSimilarDataFile.bind(listenBrainz);
+
