@@ -1,5 +1,5 @@
 ﻿'use strict';
-//04/08/24
+//06/08/24
 
 /* global youTube:readable */
 include('..\\..\\helpers\\helpers_xxx.js');
@@ -292,7 +292,7 @@ listenBrainz.findPayloadMBIDs = function findPayloadMBIDs(payload) {
  * @kind method
  * @memberof listenBrainz
  * @param {{ listened_at: number; track_metadata: { additional_info: { submission_client: string; submission_client_version: string; release_mbid: string; artist_mbids: string[]; recording_mbid:string; duration_ms: number; media_player?: string; }; artist_name: string; track_name: string; release_name: string; }; }[]} payload - Listenbrainz submit listen payload
- * @param {string} token
+ * @param {string} token - ListenBrainz user token
  * @param {('listen'|'scrobble'|'love')} event
  * @returns {Promise.<{ listened_at: number; track_metadata: { additional_info: { submission_client: string; submission_client_version: string; release_mbid: string; artist_mbids: string[]; recording_mbid:string; duration_ms: number; media_player?: string; }; artist_name: string; track_name: string; release_name: string; }; }[]>}
  */
@@ -355,7 +355,7 @@ listenBrainz.submitListens = async function submitListens(payload, token) {
 };
 
 /**
- * Output similar artists to the one from input FbMetadbHandle using (@see searchByDistance)
+ * Output similar artists to the one from input FbMetadbHandle
  *
  * @property
  * @async
@@ -372,7 +372,7 @@ listenBrainz.submitListens = async function submitListens(payload, token) {
  * @param {string} o.token
  * @returns {Promise<{ artist: string; mbid: string; similar: { artist: string; mbid: string; score: number; }[]; }>}
  */
-listenBrainz.calculateSimilarArtistsFromPls = async function calculateSimilarArtistsFromPls({ items = plman.GetPlaylistSelectedItems(plman.ActivePlaylist), file = folders.data + 'listenbrainz_artists.json', iNum = 10, tagName = 'SIMILAR ARTISTS LISTENBRAINZ', bLookupMBIDs = true, token } = {}) {
+listenBrainz.calculateSimilarArtistsFromPls = async function calculateSimilarArtistsFromPls({ items = plman.GetPlaylistSelectedItems(plman.ActivePlaylist), file = folders.data + 'listenbrainz_artists.json', iNum = 10, tagName = globTags.lbSimilarArtist, bLookupMBIDs = true, token } = {}) {
 	const handleList = removeDuplicates({ handleList: items, sortOutput: globTags.artist, checkKeys: [globTags.artist] });
 	if (WshShell.Popup('Process [diferent] artists from currently selected items and retrieve their most similar artists?\nResults are output to console and saved to JSON:\n' + file, 0, 'ListenBrainz', popup.question + popup.yes_no) === popup.no) { return; }
 	let profiler = new FbProfiler('Retrieve similar artists');
@@ -387,7 +387,7 @@ listenBrainz.calculateSimilarArtistsFromPls = async function calculateSimilarArt
 		ref.val = [];
 	});
 	if (selMbids.length) {
-		// {artist_mbid, comment, gender, name, reference_mbid, score, type}
+		/** @type {{artist_mbid:string, comment:string, gender:string, name:string, reference_mbid:string, score:number, type:strings}[] */
 		const output = await this.retrieveSimilarArtists(selMbids, token);
 		if (output.length) {
 			output.forEach((artistData) => {
@@ -421,11 +421,11 @@ listenBrainz.calculateSimilarArtistsFromPls = async function calculateSimilarArt
 	return newData;
 };
 
-listenBrainz.writeSimilarArtistsTags = function ({ file = folders.data + 'listenbrainz_artists.json', iNum = 10, tagName = 'SIMILAR ARTISTS LISTENBRAINZ' } = {}) {
+listenBrainz.writeSimilarArtistsTags = function ({ file = folders.data + 'listenbrainz_artists.json', iNum = 10, tagName = globTags.lbSimilarArtist } = {}) {
 	return writeSimilarArtistsTags({ file, iNum, tagName, windowName: 'ListenBrainz' });
 };
 
-listenBrainz.updateTrackSimilarTags = function ({ data, iNum = 10, tagName = 'SIMILAR ARTISTS LISTENBRAINZ'} = {}) {
+listenBrainz.updateTrackSimilarTags = function ({ data, iNum = 10, tagName = globTags.lbSimilarArtist} = {}) {
 	return updateTrackSimilarTags({ data, iNum, tagName, windowName: 'ListenBrainz', bPopup: false });
 };
 

@@ -1,5 +1,5 @@
 'use strict';
-//04/08/24
+//06/08/24
 
 /* exported listenBrainzmenu */
 
@@ -130,8 +130,8 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		});
 		// Similar artists tags
 		[
-			{file: 'listenbrainz_artists.json', dataId: 'artist', tag: 'SIMILAR ARTISTS LISTENBRAINZ'},
-			{file: 'searchByDistance_artists.json', dataId: 'artist', tag: 'SIMILAR ARTISTS SEARCHBYDISTANCE'}
+			{file: 'listenbrainz_artists.json', dataId: 'artist', tag: globTags.lbSimilarArtist},
+			{file: 'searchByDistance_artists.json', dataId: 'artist', tag: globTags.sbdSimilarArtist}
 		].forEach((option) => {
 			const path = (_isFile(fb.FoobarPath + 'portable_mode_enabled') ? '.\\profile\\' + folders.dataName : folders.data) + option.file;
 			if (_isFile(path)) {
