@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [2.2.0](#220---2024-08-13)
 - [2.1.0](#210---2024-07-30)
 - [2.0.0](#200---2024-07-24)
 - [1.7.0](#170---2024-03-21)
@@ -31,6 +32,12 @@
 
 ## [Unreleased][]
 ### Added
+### Changed
+### Removed
+### Fixed
+
+## [2.2.0] - 2024-08-13
+### Added
 - Similar artists: new entries to create a similar artists database in JSON equal to the one found at [Search by Distance-SMP](https://github.com/regorxxx/Search-by-Distance-SMP) and tag files with the 10 most similar artists into 'SIMILAR ARTISTS LISTENBRAINZ' tag.
 - YouTube: added support for 'MUSICBRAINZ_ALBUMARTISTID' and 'MUSICBRAINZ_ARTISTID' tags if available for user recommendations.
 - Tags: similar artist tags may now be remapped (globally) at '[FOOBAR_PROFILE]\js_data\presets\global\globTags.json'.
@@ -38,6 +45,7 @@
 - User recommendations: changed the logic to just retrieve and use one of the 10 most similar users, instead of relying on an specific similarity threshold.
 - Similar artists: in case less than 5 artists are retrieved, it will retry the lookup with a different algorithm which usually retrieves more results.
 - UI: added a restore defaults option to every track recommendations entry.
+- Helpers: updated helpers.
 ### Removed
 - User recommendations: there is only a single option now (since ListenBrainz API dropped the other algorithms).
 - Similar users: there is only a single option now (since ListenBrainz API dropped the other algorithms).
@@ -347,7 +355,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.7.0...v2.0.0
 [1.7.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v1.6.0...v1.7.0
