@@ -33,6 +33,7 @@
 ## [Unreleased][]
 ### Added
 ### Changed
+- Configuration: changed the remove duplicates bias to prefer tracks containing 'BEST' within a 'TRACKDSP' tag.
 - Helpers: updated helpers.
 ### Removed
 ### Fixed
