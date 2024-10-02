@@ -37,6 +37,7 @@
 - Helpers: updated helpers.
 ### Removed
 ### Fixed
+- Feedback: fixed cache uploading at startup. Cache file was not updated after a successful upload, thus triggering feedback uploading multiple times (which had no consequence but refreshing the timestamp at server).
 
 ## [2.2.0] - 2024-08-13
 ### Added
