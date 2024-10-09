@@ -34,8 +34,9 @@
 ### Added
 ### Changed
 - Configuration: changed the remove duplicates bias to prefer tracks containing 'BEST' within a 'TRACKDSP' tag.
-- Helpers: updated helpers.
 - [JSplitter (SMP)](https://foobar2000.ru/forum/viewtopic.php?t=6378&start=360) support and ES2021 compatibility.
+- Helpers: in case saving a file throws an error due to long paths (+255 chars) a warning popup will be shown.
+- Helpers: updated helpers.
 ### Removed
 ### Fixed
 - Feedback: fixed cache uploading at startup. Cache file was not updated after a successful upload, thus triggering feedback uploading multiple times (which had no consequence but refreshing the timestamp at server).
