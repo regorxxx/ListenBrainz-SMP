@@ -38,6 +38,7 @@
 - Helpers: updated helpers.
 ### Removed
 ### Fixed
+- UI: '&' being displayed as '_' on tooltips.
 
 ## [2.3.0] - 2024-10-09
 ### Added
