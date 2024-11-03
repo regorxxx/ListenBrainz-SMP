@@ -1,5 +1,5 @@
 'use strict';
-//06/08/24
+//03/08/24
 
 /* exported listenBrainzmenu */
 
@@ -515,7 +515,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 									const query = queryJoin(
 										[
 											bMeta ? tagArr.map((tag) => { return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val; }).join(' AND ') : '',
-											bMeta ? tagArr.slice(0, 2).map((tag) => { return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val; }).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
+											bMeta ? tagArr.slice(0, 2).map((tag) => { return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val; }).join(' AND ') + ' AND ' + globTags.noLiveNone : '',
 											bMBID ? 'MUSICBRAINZ_TRACKID IS ' + mbid : ''
 										].filter(Boolean)
 										, 'OR');
@@ -802,7 +802,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 											(bMeta
 												? tagArr.map((tag) => { return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val; }).join(' AND ')
 												: tagArr.slice(0, 1).map((tag) => { return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val; }).join(' AND ')
-											) + ' AND NOT GENRE IS live AND NOT STYLE IS live',
+											) + ' AND ' + globTags.noLiveNone,
 											'MUSICBRAINZ_TRACKID IS ' + mbidAlt
 										].filter(Boolean)
 										, 'OR'
@@ -813,12 +813,12 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 										[
 											queryJoin(
 												[
-													tagArr.slice(0, 1).map((tag) => { return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val; }).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live',
+													tagArr.slice(0, 1).map((tag) => { return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val; }).join(' AND ') + ' AND ' + globTags.noLiveNone,
 													'MUSICBRAINZ_ARTISTID IS ' + mbid + ' OR MUSICBRAINZ_ALBUMARTISTID IS ' + mbid
 												].filter(Boolean)
 												, 'OR'
 											),
-											'NOT (%RATING% IS 1 OR %RATING% IS 2)'
+											'NOT (' + globTags.rating + ' IS 1 OR ' + globTags.rating + ' IS 2)'
 										]
 										, 'AND');
 									return query;
@@ -862,7 +862,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 								const bMeta = tagArr.every((tag) => { return tag.val.length > 0; });
 								const query = queryJoin(
 									[
-										bMeta ? tagArr.map((tag) => { return tag.key + ' IS ' + tag.val; }).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
+										bMeta ? tagArr.map((tag) => { return tag.key + ' IS ' + tag.val; }).join(' AND ') + ' AND ' + globTags.noLiveNone : '',
 										'MUSICBRAINZ_TRACKID IS ' + mbid
 									].filter(Boolean)
 									, 'OR');
@@ -890,7 +890,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 								const bMeta = tagArr.every((tag) => { return tag.val.length > 0; });
 								const query = queryJoin(
 									[
-										bMeta ? tagArr.map((tag) => { return tag.key + ' IS ' + tag.val; }).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
+										bMeta ? tagArr.map((tag) => { return tag.key + ' IS ' + tag.val; }).join(' AND ') + ' AND ' + globTags.noLiveNone : '',
 										'MUSICBRAINZ_TRACKID IS ' + mbid
 									].filter(Boolean)
 									, 'OR');

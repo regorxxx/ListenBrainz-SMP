@@ -1,5 +1,5 @@
 ﻿'use strict';
-//06/08/24
+//03/11/24
 
 /* global youTube:readable */
 include('..\\..\\helpers\\helpers_xxx.js');
@@ -81,7 +81,7 @@ listenBrainz.getRecommendedTracks = function getRecommendedTracks(user, params, 
 				const query = queryJoin(
 					[
 						bMeta ? tagArr.map((tag) => { return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val; }).join(' AND ') : '',
-						bMeta ? tagArr.slice(0, 2).map((tag) => { return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val; }).join(' AND ') + ' AND NOT GENRE IS live AND NOT STYLE IS live' : '',
+						bMeta ? tagArr.slice(0, 2).map((tag) => { return _q(sanitizeTagIds(_t(tag.key))) + ' IS ' + tag.val; }).join(' AND ') + ' AND ' + globTags.noLiveNone : '',
 						'MUSICBRAINZ_TRACKID IS ' + mbid
 					].filter(Boolean)
 					, 'OR'
