@@ -1,5 +1,5 @@
 ﻿'use strict';
-//09/10/24
+//15/11/24
 
 /*
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -118,10 +118,10 @@ addButton({
 				},
 				(menu) => { // Append this menu entries to the config menu
 					const menuName = menu.getMainMenuName();
-					menu.newEntry({ menuName: menu.getMainMenuName(), entryText: 'sep' });
+					menu.newSeparator(menuName);
 					const subMenuName = menu.newMenu('Tag remap...', menuName);
 					menu.newEntry({ menuName: subMenuName, entryText: 'Available entries:', flags: MF_GRAYED });
-					menu.newEntry({ menuName: subMenuName, entryText: 'sep' });
+					menu.newSeparator(subMenuName);
 					const tags = JSON.parse(this.buttonsProperties.tags[1]);
 					tags.forEach((tag) => {
 						menu.newEntry({

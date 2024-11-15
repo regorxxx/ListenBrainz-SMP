@@ -1,5 +1,5 @@
 'use strict';
-//03/08/24
+//15/11/24
 
 /* exported listenBrainzmenu */
 
@@ -279,16 +279,16 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	{	// Feedback
 		const menuName = menu.newMenu('Set feedback (on selection)');
 		menu.newEntry({ menuName, entryText: 'Set track status on ListenBrainz:', flags: MF_GRAYED });
-		menu.newEntry({ menuName, entryText: 'sep' });
+		menu.newSeparator(menuName);
 		[
-			{ key: 'love', title: 'Love selected tracks' },
-			{ key: 'hate', title: 'Hate selected tracks' },
-			{ title: 'sep' },
-			{ key: 'remove', title: 'Clear selected tracks' }
+			{ key: 'love', name: 'Love selected tracks' },
+			{ key: 'hate', name: 'Hate selected tracks' },
+			{ name: 'sep' },
+			{ key: 'remove', name: 'Clear selected tracks' }
 		].forEach((entry) => {
-			if (entry.title === 'sep') { menu.newEntry({ menuName, entryText: 'sep' }); return; }
+			if (menu.isSeparator(entry)) { menu.newSeparator(menuName); return; }
 			menu.newEntry({
-				menuName, entryText: () => entry.title + (bListenBrainz ? selectedCountTitle(25) : '\t(token not set)'), func: async () => {
+				menuName, entryText: () => entry.name + (bListenBrainz ? selectedCountTitle(25) : '\t(token not set)'), func: async () => {
 					if (!await checkLBToken()) { return false; }
 					const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
 					if (!token) { return; }
@@ -341,7 +341,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				}, flags: bListenBrainz ? selectedFlagsCount(25) : MF_GRAYED, data: { bDynamicMenu: true }
 			});
 		});
-		menu.newEntry({ menuName, entryText: 'sep' });
+		menu.newSeparator(menuName);
 		// 100 track limit is imposed although the API with POST method allows an unlimited number
 		menu.newEntry({
 			menuName, entryText: 'Report for selected tracks' + (bListenBrainz ? selectedCountTitle(Infinity) : '\t(token not set)'), func: async () => {
@@ -382,13 +382,13 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	{	// Feedback report
 		const menuName = menu.newMenu('Get user tracks feedback');
 		menu.newEntry({ menuName, entryText: 'By feedback: (Shift + Click to randomize)', flags: MF_GRAYED });
-		menu.newEntry({ menuName, entryText: 'sep' });
+		menu.newSeparator(menuName);
 		[
-			{ key: 'love', title: 'Loved tracks', score: 1 },
-			{ key: 'hate', title: 'Hated tracks', score: -1 }
+			{ key: 'love', name: 'Loved tracks', score: 1 },
+			{ key: 'hate', name: 'Hated tracks', score: -1 }
 		].forEach((entry) => {
 			menu.newEntry({
-				menuName, entryText: 'Find ' + entry.title + ' in library' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
+				menuName, entryText: 'Find ' + entry.name + ' in library' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 					const bShift = utils.IsKeyPressed(VK_SHIFT);
 					if (!await checkLBToken()) { return false; }
 					const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
@@ -423,7 +423,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					let handleList;
 					try { handleList = fb.GetQueryItems(fb.GetLibraryItems(), query); } // Sanity check
 					catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; }
-					let report = entry.title + ': ' + response.length + '\n\n' + table.toString();
+					let report = entry.name + ': ' + response.length + '\n\n' + table.toString();
 					// Find tracks with feedback tag, and insert them at the end without duplicates
 					let libHandleList;
 					query = feedbackTag + ' IS ' + entry.score;
@@ -454,28 +454,28 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						}
 						report += '\n\nAlso found these tracks tagged on library but not on ListenBrainz' + (bRemovedDup ? ', minus duplicates by MBID,\nTo retrieve the full list, use this query: ' + query : ':') + '\n\n' + table.toString();
 					}
-					fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title + ' ' + _p(user));
+					fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.name + ' ' + _p(user));
 					if (bShift) { handleList = new FbMetadbHandleList(handleList.Convert().shuffle()); }
-					sendToPlaylist(handleList, 'ListenBrainz ' + entry.title);
+					sendToPlaylist(handleList, 'ListenBrainz ' + entry.name);
 				}, flags: bListenBrainz ? MF_STRING : MF_GRAYED, data: { bDynamicMenu: true }
 			});
 		});
 	}
-	menu.newEntry({ entryText: 'sep' });
+	menu.newSeparator();
 	{	// Site statistics
 		const menuName = menu.newMenu('Statistics');
 		menu.newEntry({ menuName, entryText: 'By Top Listens: (Shift + Click to randomize)', flags: MF_GRAYED });
-		menu.newEntry({ menuName, entryText: 'sep' });
+		menu.newSeparator(menuName);
 		['Sitewide', 'By user'].forEach((name, i) => {
 			const subMenuName = menu.newMenu(name, menuName);
 			[
-				{ params: { range: 'this_week', count: lb.MAX_ITEMS_PER_GET }, title: 'Top tracks this week' },
-				{ params: { range: 'this_month', count: lb.MAX_ITEMS_PER_GET }, title: 'Top tracks this month' },
-				{ params: { range: 'this_year', count: lb.MAX_ITEMS_PER_GET }, title: 'Top tracks this year' },
-				{ params: { range: 'all_time', count: lb.MAX_ITEMS_PER_GET }, title: 'Top tracks all time' }
+				{ params: { range: 'this_week', count: lb.MAX_ITEMS_PER_GET }, name: 'Top tracks this week' },
+				{ params: { range: 'this_month', count: lb.MAX_ITEMS_PER_GET }, name: 'Top tracks this month' },
+				{ params: { range: 'this_year', count: lb.MAX_ITEMS_PER_GET }, name: 'Top tracks this year' },
+				{ params: { range: 'all_time', count: lb.MAX_ITEMS_PER_GET }, name: 'Top tracks all time' }
 			].forEach((entry) => {
 				menu.newEntry({
-					menuName: subMenuName, entryText: entry.title + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
+					menuName: subMenuName, entryText: entry.name + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 						const bShift = utils.IsKeyPressed(VK_SHIFT);
 						if (!await checkLBToken()) { return false; }
 						const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
@@ -504,8 +504,8 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 									table.cell('MBID', mbid);
 									table.newRow();
 								});
-								const report = entry.title + ': ' + recordings.length + '\n\n' + table.toString();
-								fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.title + ' ' + _p(user));
+								const report = entry.name + ': ' + recordings.length + '\n\n' + table.toString();
+								fb.ShowPopupMessage(report, 'ListenBrainz ' + entry.name + ' ' + _p(user));
 								const queryArr = mbids.map((mbid, i) => {
 									const tagArr = ['TITLE', 'ARTIST', 'ALBUM']
 										.map((key) => { return { key, val: sanitizeQueryVal(sanitizeTagValIds(tags[key][i])) }; });
@@ -583,7 +583,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 							})
 							.then((items) => {
 								if (bShift) { items.shuffle(); }
-								const idx = plman.FindOrCreatePlaylist('ListenBrainz: ' + entry.title + ' ' + _p(user), true);
+								const idx = plman.FindOrCreatePlaylist('ListenBrainz: ' + entry.name + ' ' + _p(user), true);
 								plman.ClearPlaylist(idx);
 								plman.AddPlaylistItemsOrLocations(idx, items.filter(Boolean), true);
 								plman.ActivePlaylist = idx;
@@ -596,11 +596,11 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			});
 		});
 	}
-	menu.newEntry({ entryText: 'sep' });
+	menu.newSeparator();
 	{	// Selection
 		const menuName = menu.newMenu('Track recommendations');
 		menu.newEntry({ menuName, entryText: 'By selection:\t(Shift + Click to randomize)', flags: MF_GRAYED });
-		menu.newEntry({ menuName, entryText: 'sep' });
+		menu.newSeparator(menuName);
 		{
 			if (tags.length) {
 				tags.forEach((tag) => {
@@ -608,7 +608,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					const subMenu = bSingle ? menuName : menu.newMenu(tag.name, menuName);
 					if (tag.type === 'getPopularRecordingsBySimilarArtist' && !bSingle) {
 						menu.newEntry({menuName: subMenu, entryText: 'Top tracks by:', flags: MF_GRAYED});
-						menu.newEntry({menuName: subMenu, entryText: 'sep', flags: MF_GRAYED});
+						menu.newSeparator(subMenu);
 					}
 					if (tag.valSet.size === 0) { tag.valSet.add(''); }
 					[...tag.valSet].sort((a, b) => a.localeCompare(b, 'en', { 'sensitivity': 'base' })).forEach((val, i) => {
@@ -995,7 +995,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			: ''
 		) || 'User';
 		menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
-		menu.newEntry({ menuName, entryText: 'sep' });
+		menu.newSeparator(menuName);
 		menu.newEntry({
 			menuName, entryText: cachedUser + '\'s recommended tracks' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 				const bShift = utils.IsKeyPressed(VK_SHIFT);
@@ -1026,13 +1026,13 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			}, flags: bListenBrainz ? MF_STRING : MF_GRAYED, data: { bDynamicMenu: true }
 		});
 	}
-	menu.newEntry({ entryText: 'sep' });
+	menu.newSeparator();
 	{	// Playlists
 		const menuNameMain = menu.newMenu('Playlists');
 		{	// Playlists Recommendations
 			const menuName = menu.newMenu('Playlists recommendations', menuNameMain);
 			menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
-			menu.newEntry({ menuName, entryText: 'sep' });
+			menu.newSeparator(menuName);
 			const count = this.userPlaylists.recommendations.length;
 			if (count) {
 				const padding = count.toString().length;
@@ -1051,7 +1051,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		{	// User Playlists
 			const menuName = menu.newMenu('User playlists', menuNameMain);
 			menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
-			menu.newEntry({ menuName, entryText: 'sep' });
+			menu.newSeparator(menuName);
 			const count = this.userPlaylists.user.length;
 			if (count) {
 				const padding = count.toString().length;
@@ -1078,7 +1078,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				menu.newEntry({ menuName, entryText: '- None -', flags: MF_GRAYED });
 			}
 		}
-		menu.newEntry({ menuName: menuNameMain, entryText: 'sep' });
+		menu.newSeparator(menuNameMain);
 		{	// Import/Export
 			menu.newEntry({
 				menuName: menuNameMain,
@@ -1119,7 +1119,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			});
 		}
 	}
-	menu.newEntry({ entryText: 'sep' });
+	menu.newSeparator();
 	{	// Other tools
 		const menuName = menu.newMenu('Other tools');
 		{	// MBIDs
@@ -1149,7 +1149,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				}, flags: bListenBrainz ? selectedFlagsCount(70) : MF_GRAYED, data: { bDynamicMenu: true }
 			});
 		}
-		menu.newEntry({ menuName, entryText: 'sep' });
+		menu.newSeparator(menuName);
 		{	// Similar artists
 			menu.newEntry({
 				menuName,
@@ -1169,7 +1169,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				}, flags: _isFile(folders.data + 'listenbrainz_artists.json') ? MF_STRING : MF_GRAYED
 			});
 		}
-		menu.newEntry({ menuName, entryText: 'sep' });
+		menu.newSeparator(menuName);
 		{	// Import listens
 			menu.newEntry({
 				menuName, entryText: 'Import Pano Scrobbler\'s listens...' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
@@ -1243,7 +1243,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				}, flags: bListenBrainz ? MF_STRING : MF_GRAYED
 			});
 		}
-		menu.newEntry({ entryText: 'sep' });
+		menu.newSeparator();
 	}
 	{	// Configuration
 		const menuName = menu.newMenu('Configuration');
@@ -1348,11 +1348,11 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				});
 			}
 		}
-		menu.newEntry({ menuName, entryText: 'sep' });
+		menu.newSeparator(menuName);
 		{
 			const subMenuName = menu.newMenu('Track recommendations', menuName);
 			menu.newEntry({ menuName: subMenuName, entryText: 'Tag remap: (Ctrl + Click to reset)', flags: MF_GRAYED });
-			menu.newEntry({ menuName: subMenuName, entryText: 'sep' });
+			menu.newSeparator(subMenuName);
 			const tags = JSON.parse(properties.tags[1]);
 			tags.forEach((tag) => {
 				menu.newEntry({
@@ -1372,7 +1372,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					}
 				});
 			});
-			menu.newEntry({ menuName: subMenuName, entryText: 'sep' });
+			menu.newSeparator(subMenuName);
 			menu.newEntry({
 				menuName: subMenuName, entryText: 'Restore defaults...', func: () => {
 					properties.tags[1] = properties.tags[3];
@@ -1380,7 +1380,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				}
 			});
 		}
-		menu.newEntry({ menuName, entryText: 'sep' });
+		menu.newSeparator(menuName);
 		menu.newEntry({
 			menuName, entryText: 'Global query filter...', func: (cache) => {
 				let input = '';
