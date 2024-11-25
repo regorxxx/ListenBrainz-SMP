@@ -1,5 +1,5 @@
 'use strict';
-//15/11/24
+//25/11/24
 
 /* exported listenBrainzmenu */
 
@@ -1109,7 +1109,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					this.retrievePlaylists(false);
 					if (properties.bSpotify[1]) {
 						lb.retrieveUser(token).then((user) => lb.getUserServices(user, token)).then((services) => {
-							if (services.indexOf('spotify') !== -1) {
+							if (services.includes('spotify')) {
 								console.log('Exporting playlist to Spotify: ' + name);
 								lb.exportPlaylistToService({ playlist_mbid }, 'spotify', token);
 							}
