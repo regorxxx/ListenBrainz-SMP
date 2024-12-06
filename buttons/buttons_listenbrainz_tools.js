@@ -1,5 +1,5 @@
 ﻿'use strict';
-//15/11/24
+//06/12/24
 
 /*
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -27,7 +27,7 @@ include('..\\helpers\\helpers_xxx_tags.js');
 include('..\\main\\main_menu\\main_menu_custom.js'); // Dynamic SMP menu
 /* global deleteMainMenuDynamic:readable, bindDynamicMenus:readable */
 include('..\\main\\playlist_manager\\playlist_manager_listenbrainz.js');
-/* global listenBrainz:readable */
+/* global ListenBrainz:readable */
 include('..\\main\\bio\\bio_tags.js');
 /* global lastfmListeners:readable */
 include('helpers\\buttons_listenbrainz_menu.js'); // Button menu
@@ -145,11 +145,11 @@ addButton({
 		const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
 		const bListenBrainz = token.length;
 		parent.retrieveUser(token, bEncrypted);
-		const user = listenBrainz.cache.user.get(token) || '';
+		const user = ListenBrainz.cache.user.get(token) || '';
 		const bShift = utils.IsKeyPressed(VK_SHIFT);
 		const bInfo = typeof menu_panelProperties === 'undefined' || menu_panelProperties.bTooltipInfo[1];
 		const selMul = plman.ActivePlaylist !== -1 ? plman.GetPlaylistSelectedItems(plman.ActivePlaylist) : null;
-		const data = (listenBrainz.cache.feedback ? [...listenBrainz.cache.feedback] : [['', {}]]).filter((userData) => userData[0] === user);
+		const data = (ListenBrainz.cache.feedback ? [...ListenBrainz.cache.feedback] : [['', {}]]).filter((userData) => userData[0] === user);
 		let infoMul = '';
 		if (selMul && selMul.Count > 1) {
 			infoMul = ' (multiple tracks selected: ' + selMul.Count + ')';
@@ -178,7 +178,7 @@ addButton({
 	{
 		lBrainzTokenListener: false, userPlaylists: { recommendations: [], user: [] }, bioSelectionMode: 'Prefer nowplaying', bioTags: {},
 		retrieveUser: debounce((parent, token, bEncrypted) => {
-			listenBrainz.retrieveUser(listenBrainz.decryptToken({ lBrainzToken: token, bEncrypted }), false);
+			ListenBrainz.retrieveUser(ListenBrainz.decryptToken({ lBrainzToken: token, bEncrypted }), false);
 		}, 2500, true)
 	},
 	{
@@ -196,7 +196,7 @@ addButton({
 						parent.buttonsProperties.lBrainzToken[1] = info.lBrainzToken;
 						parent.buttonsProperties.lBrainzEncrypt[1] = info.lBrainzEncrypt;
 						overwriteProperties(parent.buttonsProperties);
-						listenBrainz.cache.key = null;
+						ListenBrainz.cache.key = null;
 						parent.lBrainzTokenListener = false;
 					}
 					break;
@@ -205,6 +205,7 @@ addButton({
 		},
 	},
 	(parent) => {
+		const lb = ListenBrainz;
 		// Retrieve token from other panels
 		if (!parent.buttonsProperties.firstPopup[1] && !parent.buttonsProperties.lBrainzToken[1].length) {
 			parent.lBrainzTokenListener = true;
@@ -215,7 +216,6 @@ addButton({
 		}
 		// Retrieve user playlists at startup and every 30 min, also everytime button is clicked
 		parent.retrievePlaylists = (bLoop) => {
-			const lb = listenBrainz;
 			const token = parent.buttonsProperties.lBrainzToken[1];
 			const bListenBrainz = token.length;
 			const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
@@ -249,19 +249,19 @@ addButton({
 		};
 		setTimeout(parent.retrievePlaylists, 20000, true);
 		// Load feedback cache
-		listenBrainz.cache.feedback = new Map();
+		lb.cache.feedback = new Map();
 		if (_isFile(parent.buttonsProperties.feedbackCache[1])) {
 			const data = _jsonParseFile(parent.buttonsProperties.feedbackCache[1], utf8);
 			if (data) {
 				data.forEach((userData) => {
-					listenBrainz.cache.feedback.set(userData.name, userData.cache);
+					lb.cache.feedback.set(userData.name, userData.cache);
 				});
 			}
 		}
 		// Save cache
 		parent.saveCache = (user) => {
 			const newData = [];
-			const data = [...listenBrainz.cache.feedback]
+			const data = [...lb.cache.feedback]
 				.filter((userData) => userData[0] === user)
 				.map((userData) => { return { name: userData[0], cache: userData[1] }; });
 			if (!data.length) { return; }
@@ -284,10 +284,10 @@ addButton({
 		parent.sendFeedbackCache = async () => {
 			const token = parent.buttonsProperties.lBrainzToken[1];
 			const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
-			const user = await listenBrainz.retrieveUser(listenBrainz.decryptToken({ lBrainzToken: token, bEncrypted }), false);
+			const user = await lb.retrieveUser(lb.decryptToken({ lBrainzToken: token, bEncrypted }), false);
 			const promises = [];
 			let count = 0;
-			listenBrainz.cache.feedback.forEach((data, dataUser) => {
+			lb.cache.feedback.forEach((data, dataUser) => {
 				if (dataUser !== user) { return; }
 				const sendMBIDs = Object.keys(data);
 				if (sendMBIDs.length) {
@@ -300,7 +300,7 @@ addButton({
 						if (queue[key].length) {
 							const mbids = queue[key].slice(0, 25);
 							promises.push(
-								listenBrainz.sendFeedback(mbids, key, listenBrainz.decryptToken({ lBrainzToken: token, bEncrypted }), false, true, false)
+								lb.sendFeedback(mbids, key, lb.decryptToken({ lBrainzToken: token, bEncrypted }), void(0), false)
 									.then((response) => {
 										if (response) {
 											let bDone = false;
@@ -334,9 +334,9 @@ addButton({
 			const token = parent.buttonsProperties.lBrainzToken[1];
 			const bListenBrainz = token.length;
 			const bEncrypted = parent.buttonsProperties.lBrainzEncrypt[1];
-			if (!bListenBrainz || (bEncrypted && !listenBrainz.cache.key)) { return; }
-			listenBrainz.retrieveUser(listenBrainz.decryptToken({ lBrainzToken: token, bEncrypted }), false).then((user) => {
-				if (user) { listenBrainz.retrieveFollowing(user, token); }
+			if (!bListenBrainz || (bEncrypted && !lb.cache.key)) { return; }
+			lb.retrieveUser(lb.decryptToken({ lBrainzToken: token, bEncrypted }), false).then((user) => {
+				if (user) { lb.retrieveFollowing(user, token); }
 			});
 		};
 		setTimeout(parent.retrieveFollowing, 3000);

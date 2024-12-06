@@ -1,11 +1,11 @@
 ﻿'use strict';
-//03/11/24
+//04/12/24
 
 /* global youTube:readable */
 include('..\\..\\helpers\\helpers_xxx.js');
 /* global globQuery:readable, globTags:readable, memoize:readable, folders:readable */
 include('playlist_manager_listenbrainz.js');
-/* global listenBrainz:readable */
+/* global ListenBrainz:readable */
 include('..\\..\\helpers\\helpers_xxx_file.js');
 /* global _isFile:readable, _open:readable, utf8:readable */
 include('..\\..\\helpers\\helpers_xxx_prototypes.js');
@@ -26,7 +26,7 @@ include('..\\..\\helpers-external\\easy-table-1.2.0\\table.js'); const Table = m
  * @property
  * @name getRecommendedTracks
  * @kind method
- * @memberof listenBrainz
+ * @memberof ListenBrainz
  * @param {string} user - User name
  * @param {{artist_type:string count:number offset:number}} params - artist_type: 'top'
  * @param {string} name - Title for the report
@@ -36,7 +36,7 @@ include('..\\..\\helpers-external\\easy-table-1.2.0\\table.js'); const Table = m
  * @param {?Object} parent - Button parent to switch animations
  * @returns {void}
  */
-listenBrainz.getRecommendedTracks = function getRecommendedTracks(user, params, name, token, bYoutube = true, bRandomize = false, parent = null) {
+ListenBrainz.getRecommendedTracks = function getRecommendedTracks(user, params, name, token, bYoutube = true, bRandomize = false, parent = null) {
 	const mbids = [];
 	const artistMBIDs = [];
 	const tags = { TITLE: [], ARTIST: [] };
@@ -160,13 +160,13 @@ listenBrainz.getRecommendedTracks = function getRecommendedTracks(user, params, 
  * @property
  * @name parsePanoScrobblerJson
  * @kind method
- * @memberof listenBrainz
+ * @memberof ListenBrainz
  * @param {string} file - File path
  * @param {{player:string; client:string; version:string;}} info
  * @param {('scrobble'|'love')} event
  * @returns {{ listened_at: number; track_metadata: { additional_info: { submission_client: string; submission_client_version: string; duration_ms: number; media_player?: string; }; artist_name: string; track_name: string; release_name: string; }; }[]}
  */
-listenBrainz.parsePanoScrobblerJson = function parsePanoScrobblerJson(file, info, event = 'scrobble') {
+ListenBrainz.parsePanoScrobblerJson = function parsePanoScrobblerJson(file, info, event = 'scrobble') {
 	if (_isFile(file)) {
 		const listens = [];
 		const text = _open(file, utf8);
@@ -215,16 +215,16 @@ listenBrainz.parsePanoScrobblerJson = function parsePanoScrobblerJson(file, info
 };
 
 /**
- * Parses aListenBrainz listens payload and adds MBIDs to listens if missing (modifies original array). MBIDs are retrieved from library, using user's tracks.
+ * Parses ListenBrainz listens payload and adds MBIDs to listens if missing (modifies original array). MBIDs are retrieved from library, using user's tracks.
  *
  * @property
  * @name findPayloadMBIDs
  * @kind method
- * @memberof listenBrainz
+ * @memberof ListenBrainz
  * @param {{ listened_at: number; track_metadata: { additional_info: { submission_client: string; submission_client_version: string; duration_ms: number; media_player?: string; }; artist_name: string; track_name: string; release_name: string; }; }[]} payload - Listenbrainz submit listen payload array
  * @returns {{ listened_at: number; track_metadata: { additional_info: { submission_client: string; submission_client_version: string; release_mbid: string; artist_mbids: string[]; recording_mbid:string; duration_ms: number; media_player?: string; }; artist_name: string; track_name: string; release_name: string; }; }[]}
  */
-listenBrainz.findPayloadMBIDs = function findPayloadMBIDs(payload) {
+ListenBrainz.findPayloadMBIDs = function findPayloadMBIDs(payload) {
 	let libItems;
 	const findTrack = memoize((title, artist, album, releaseId, artistId, trackId) => {
 		const query = queryJoin(
@@ -290,13 +290,13 @@ listenBrainz.findPayloadMBIDs = function findPayloadMBIDs(payload) {
  * @async
  * @name findPayloadMBIDs
  * @kind method
- * @memberof listenBrainz
+ * @memberof ListenBrainz
  * @param {{ listened_at: number; track_metadata: { additional_info: { submission_client: string; submission_client_version: string; release_mbid: string; artist_mbids: string[]; recording_mbid:string; duration_ms: number; media_player?: string; }; artist_name: string; track_name: string; release_name: string; }; }[]} payload - Listenbrainz submit listen payload
  * @param {string} token - ListenBrainz user token
  * @param {('listen'|'scrobble'|'love')} event
  * @returns {Promise.<{ listened_at: number; track_metadata: { additional_info: { submission_client: string; submission_client_version: string; release_mbid: string; artist_mbids: string[]; recording_mbid:string; duration_ms: number; media_player?: string; }; artist_name: string; track_name: string; release_name: string; }; }[]>}
  */
-listenBrainz.processPayload = async function processPayload(payload, token, event = 'listen') {
+ListenBrainz.processPayload = async function processPayload(payload, token, event = 'listen') {
 	let processed;
 	switch (event.toLocaleLowerCase()) {
 		case 'scrobble':
@@ -318,7 +318,7 @@ listenBrainz.processPayload = async function processPayload(payload, token, even
 	return Promise.resolve(processed);
 };
 
-listenBrainz.submitListens = async function submitListens(payload, token) {
+ListenBrainz.submitListens = async function submitListens(payload, token) {
 	const chunks = payload.chunk(this.MAX_LISTENS_PER_REQUEST);
 	const rate = 50;
 	return Promise.serial(chunks, (chunk, i) => {
@@ -362,7 +362,7 @@ listenBrainz.submitListens = async function submitListens(payload, token) {
  * @function
  * @name calculateSimilarArtistsFromPls
  * @kind method
- * @memberof listenBrainz
+ * @memberof ListenBrainz
  * @param {Object} [o] - arguments
  * @param {FbMetadbHandleList} o.items - [=plman.GetPlaylistSelectedItems(plman.ActivePlaylist)] Input FbMetadbHandle
  * @param {string} o.file - [=folders.data + 'listenbrainz_artists.json'] Output file for database
@@ -372,7 +372,7 @@ listenBrainz.submitListens = async function submitListens(payload, token) {
  * @param {string} o.token
  * @returns {Promise<{ artist: string; mbid: string; similar: { artist: string; mbid: string; score: number; }[]; }>}
  */
-listenBrainz.calculateSimilarArtistsFromPls = async function calculateSimilarArtistsFromPls({ items = plman.GetPlaylistSelectedItems(plman.ActivePlaylist), file = folders.data + 'listenbrainz_artists.json', iNum = 10, tagName = globTags.lbSimilarArtist, bLookupMBIDs = true, token } = {}) {
+ListenBrainz.calculateSimilarArtistsFromPls = async function calculateSimilarArtistsFromPls({ items = plman.GetPlaylistSelectedItems(plman.ActivePlaylist), file = folders.data + 'listenbrainz_artists.json', iNum = 10, tagName = globTags.lbSimilarArtist, bLookupMBIDs = true, token } = {}) {
 	const handleList = removeDuplicates({ handleList: items, sortOutput: globTags.artist, checkKeys: [globTags.artist] });
 	if (WshShell.Popup('Process [diferent] artists from currently selected items and retrieve their most similar artists?\nResults are output to console and saved to JSON:\n' + file, 0, 'ListenBrainz', popup.question + popup.yes_no) === popup.no) { return; }
 	let profiler = new FbProfiler('Retrieve similar artists');
@@ -421,13 +421,13 @@ listenBrainz.calculateSimilarArtistsFromPls = async function calculateSimilarArt
 	return newData;
 };
 
-listenBrainz.writeSimilarArtistsTags = function ({ file = folders.data + 'listenbrainz_artists.json', iNum = 10, tagName = globTags.lbSimilarArtist } = {}) {
+ListenBrainz.writeSimilarArtistsTags = function ({ file = folders.data + 'listenbrainz_artists.json', iNum = 10, tagName = globTags.lbSimilarArtist } = {}) {
 	return writeSimilarArtistsTags({ file, iNum, tagName, windowName: 'ListenBrainz' });
 };
 
-listenBrainz.updateTrackSimilarTags = function ({ data, iNum = 10, tagName = globTags.lbSimilarArtist} = {}) {
+ListenBrainz.updateTrackSimilarTags = function ({ data, iNum = 10, tagName = globTags.lbSimilarArtist} = {}) {
 	return updateTrackSimilarTags({ data, iNum, tagName, windowName: 'ListenBrainz', bPopup: false });
 };
 
-listenBrainz.updateSimilarDataFile = updateSimilarDataFile.bind(listenBrainz);
+ListenBrainz.updateSimilarDataFile = updateSimilarDataFile.bind(ListenBrainz);
 

@@ -1,5 +1,5 @@
 'use strict';
-//25/11/24
+//04/12/24
 
 /* exported listenBrainzmenu */
 
@@ -22,7 +22,7 @@ include('..\\..\\helpers\\helpers_xxx_tags_extra.js');
 include('..\\..\\helpers\\helpers_xxx_playlists.js');
 /* global sendToPlaylist:readable */
 include('..\\..\\main\\playlist_manager\\playlist_manager_listenbrainz.js');
-/* global listenBrainz:readable, SimpleCrypto:readable */
+/* global ListenBrainz:readable, SimpleCrypto:readable */
 include('..\\..\\main\\playlist_manager\\playlist_manager_listenbrainz_extra.js');
 /* global Table:readable */
 include('..\\..\\main\\playlist_manager\\playlist_manager_youtube.js');
@@ -35,7 +35,7 @@ include('..\\..\\main\\main_menu\\main_menu_custom.js');
 function listenBrainzmenu({ bSimulate = false } = {}) {
 	if (bSimulate) { return listenBrainzmenu.bind({ selItems: { Count: 1 }, buttonsProperties: this.buttonsProperties, prefix: this.prefix })(false); }
 	// Helpers
-	const lb = listenBrainz;
+	const lb = ListenBrainz;
 	const properties = this.buttonsProperties || this.properties;
 	const feedbackTag = properties.feedbackTag[1];
 	const bLookupMBIDs = properties.bLookupMBIDs[1];
@@ -304,20 +304,20 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 							if (obj.score === 1 && entry.key !== 'love' || obj.score === -1 && entry.key !== 'hate' || obj.score === 0 && entry.key !== 'remove') { sendMBIDs.push(obj.recording_mbid); }
 						});
 					} else {
-						const mbids = await listenBrainz.getMBIDs(handleList, null, false);
+						const mbids = await ListenBrainz.getMBIDs(handleList, null, false);
 						mbids.filter(Boolean).forEach((mbid) => sendMBIDs.push(mbid));
 					}
 					this.switchAnimation('ListenBrainz data retrieval', false);
 					// Only update required tracks
 					if (sendMBIDs.length) {
 						this.switchAnimation('ListenBrainz data uploading', true);
-						const response = await lb.sendFeedback(sendMBIDs, entry.key, token, false, true);
+						const response = await lb.sendFeedback(sendMBIDs, entry.key, token);
 						this.switchAnimation('ListenBrainz data uploading', false);
 						if (!response || !response.every(Boolean)) {
 							if (user || properties.userCache[1].length) {
 								console.log('ListenBrainz: Error connecting to server. Data has been cached and will be sent later...');
 								const date = Date.now();
-								const data = listenBrainz.cache.feedback.get(user || properties.userCache[1]) || {};
+								const data = ListenBrainz.cache.feedback.get(user || properties.userCache[1]) || {};
 								if (!response) {
 									sendMBIDs.forEach((mbid) => data[mbid] = { feedback: entry.key, date });
 								} else {
@@ -325,7 +325,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 										if (!bUpdate) { data[sendMBIDs[i]] = { feedback: entry.key, date }; }
 									});
 								}
-								listenBrainz.cache.feedback.set(user || properties.userCache[1], data);
+								ListenBrainz.cache.feedback.set(user || properties.userCache[1], data);
 								setTimeout(this.saveCache, 0, user || properties.userCache[1]);
 							} else {
 								fb.ShowPopupMessage('Error connecting to server. Check console.\nUser has not been retrieved and feedback can not be saved to cache.', 'ListenBrainz');
@@ -991,7 +991,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	{	// User
 		const menuName = menu.newMenu('User recommendations');
 		const cachedUser = (bListenBrainz
-			? listenBrainz.cache.user.get(lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }))
+			? ListenBrainz.cache.user.get(lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }))
 			: ''
 		) || 'User';
 		menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
@@ -1216,14 +1216,14 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					// Only update required tracks
 					if (sendMBIDs.length) {
 						this.switchAnimation('ListenBrainz data uploading', true);
-						const response = await lb.sendFeedback(sendMBIDs, 'love', token, false, true);
+						const response = await lb.sendFeedback(sendMBIDs, 'love', token);
 						this.switchAnimation('ListenBrainz data uploading', false);
 						if (!response || !response.every(Boolean)) {
 							if (user || properties.userCache[1].length) {
 								WshShell.Popup('Feedback imported sucessfully.', 0, 'ListenBrainz Tools', popup.info + popup.ok);
 								console.log('ListenBrainz: Error connecting to server. Data has been cached and will be sent later...');
 								const date = Date.now();
-								const data = listenBrainz.cache.feedback.get(user || properties.userCache[1]) || {};
+								const data = ListenBrainz.cache.feedback.get(user || properties.userCache[1]) || {};
 								if (!response) {
 									sendMBIDs.forEach((mbid) => data[mbid] = { feedback: 'love', date });
 								} else {
@@ -1231,7 +1231,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 										if (!bUpdate) { data[sendMBIDs[i]] = { feedback: 'love', date }; }
 									});
 								}
-								listenBrainz.cache.feedback.set(user || properties.userCache[1], data);
+								ListenBrainz.cache.feedback.set(user || properties.userCache[1], data);
 								setTimeout(this.saveCache, 0, user || properties.userCache[1]);
 							} else {
 								fb.ShowPopupMessage('Error connecting to server. Check console.\nUser has not been retrieved and feedback can not be saved to cache.', 'ListenBrainz');
