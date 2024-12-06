@@ -757,7 +757,7 @@ ListenBrainz.sendFeedback = async function sendFeedback(handleList, feedback = '
 			(reject) => {
 				if (!bRetry) { console.log('sendFeedback: ' + reject.status + ' ' + reject.responseText); }
 				else { console.log('sendFeedback: Retrying request for ' + recording_mbid + ' to server on ' + retryMs + ' ms...'); }
-				return bRetry ? Promise.wait(retryMs).then(() => this.sendFeedback([recording_mbid], feedback, token, bLookupMBIDs, true, false)) : false;
+				return bRetry ? Promise.wait(retryMs).then(() => this.sendFeedback([recording_mbid], feedback, token, bLookupMBIDs, false)) : false;
 			}
 		)
 		, rate)
