@@ -1,5 +1,5 @@
 ﻿'use strict';
-//06/12/24
+//09/12/24
 
 /*
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -40,12 +40,12 @@ prefix = getUniquePrefix(prefix, ''); // Puts new ID before '_'
 
 var newButtonsProperties = { // NOSONAR[global]
 	lBrainzToken: ['ListenBrainz user token', '', { func: isStringWeak }, ''],
-	lBrainzEncrypt: ['Encrypt ListenBrainz user token?', false, { func: isBoolean }, false],
-	bLookupMBIDs: ['Lookup for missing track MBIDs?', true, { func: isBoolean }, true],
-	bAdvTitle: ['Duplicates advanced RegExp title matching?', true, { func: isBoolean }, true],
-	bDynamicMenus: ['Expose menus at  \'File\\Spider Monkey Panel\\Script commands\'', false, { func: isBoolean }, false],
-	bIconMode: ['Icon-only mode?', false, { func: isBoolean }, false],
-	bYouTube: ['Lookup for missing tracks on YouTube?', isYouTube, { func: isBoolean }, isYouTube],
+	lBrainzEncrypt: ['Encrypt ListenBrainz user token', false, { func: isBoolean }, false],
+	bLookupMBIDs: ['Lookup for missing track MBIDs', true, { func: isBoolean }, true],
+	bAdvTitle: ['Duplicates advanced RegExp title matching', true, { func: isBoolean }, true],
+	bDynamicMenus: ['Menus at  \'File\\Spider Monkey Panel\\...\'', false, { func: isBoolean }, false],
+	bIconMode: ['Icon-only mode', false, { func: isBoolean }, false],
+	bYouTube: ['Lookup for missing tracks on YouTube', isYouTube, { func: isBoolean }, isYouTube],
 	firstPopup: ['ListenBrainz Tools: Fired once', false, { func: isBoolean }, false],
 	bTagFeedback: ['Tag files with feedback', false, { func: isBoolean }, false],
 	feedbackTag: ['Feedback tag', globTags.feedback, { func: isString }, globTags.feedback],
@@ -53,7 +53,7 @@ var newButtonsProperties = { // NOSONAR[global]
 	feedbackQuery: ['Query to pre-filter feedback matches', globQuery.filter, { func: (query) => { return checkQuery(query, true); } }, globQuery.filter],
 	bFeedbackLookup: ['Lookup feedback tracks using tags', true, { func: isBoolean }, true],
 	userCache: ['User name cache', '', { func: isStringWeak }, ''],
-	bPlsMatchMBID: ['Match only by MBID?', false, { func: isBoolean }, false],
+	bPlsMatchMBID: ['Match only by MBID', false, { func: isBoolean }, false],
 	forcedQuery: ['Forced query to pre-filter database', globQuery.filter, { func: (query) => { return checkQuery(query, true); } }, globQuery.filter],
 	userPlaylistSort: ['User playlist sorting by', 'name', { func: (s) => isString(s) && ['name', 'cdate', 'mdate'].includes(s) }, 'name'],
 	bSpotify: ['Export to Spotify', true, { func: isBoolean }, true],
@@ -225,27 +225,30 @@ addButton({
 				return Promise.resolve(false);
 			}
 			parent.switchAnimation('ListenBrainz retrieve user playlists', true);
-			return lb.retrieveUser(lb.decryptToken({ lBrainzToken: token, bEncrypted }), false).then((user) => {
-				return Promise.allSettled([
-					lb.retrieveUserRecommendedPlaylistsNames(user, { offset: 0, count: lb.MAX_ITEMS_PER_GET }, lb.decryptToken({ lBrainzToken: token, bEncrypted }))
-						.then((playlists) => {
-							parent.userPlaylists.recommendations.length = 0;
-							if (playlists.length) {
-								playlists.forEach((obj) => parent.userPlaylists.recommendations.push(obj.playlist));
-							}
-						}),
-					lb.retrieveUserPlaylistsNames(user, { offset: 0, count: lb.MAX_ITEMS_PER_GET }, lb.decryptToken({ lBrainzToken: token, bEncrypted }))
-						.then((playlists) => {
-							parent.userPlaylists.user.length = 0;
-							if (playlists.length) {
-								playlists.forEach((obj) => parent.userPlaylists.user.push(obj.playlist));
-							}
-						})
-				]);
-			}).finally(() => {
-				parent.switchAnimation('ListenBrainz retrieve user playlists', false);
-				if (bLoop) { setTimeout(parent.retrievePlaylists, 1800000, true); }
-			});
+			return lb.retrieveUser(lb.decryptToken({ lBrainzToken: token, bEncrypted }), false)
+				.then((user) => {
+					if (user && user.length) {
+						return Promise.allSettled([
+							lb.retrieveUserRecommendedPlaylistsNames(user, { offset: 0, count: lb.MAX_ITEMS_PER_GET }, lb.decryptToken({ lBrainzToken: token, bEncrypted }))
+								.then((playlists) => {
+									parent.userPlaylists.recommendations.length = 0;
+									if (playlists.length) {
+										playlists.forEach((obj) => parent.userPlaylists.recommendations.push(obj.playlist));
+									}
+								}),
+							lb.retrieveUserPlaylistsNames(user, { offset: 0, count: lb.MAX_ITEMS_PER_GET }, lb.decryptToken({ lBrainzToken: token, bEncrypted }))
+								.then((playlists) => {
+									parent.userPlaylists.user.length = 0;
+									if (playlists.length) {
+										playlists.forEach((obj) => parent.userPlaylists.user.push(obj.playlist));
+									}
+								})
+						]);
+					}
+				}).finally(() => {
+					parent.switchAnimation('ListenBrainz retrieve user playlists', false);
+					if (bLoop) { setTimeout(parent.retrievePlaylists, 1800000, true); }
+				});
 		};
 		setTimeout(parent.retrievePlaylists, 20000, true);
 		// Load feedback cache

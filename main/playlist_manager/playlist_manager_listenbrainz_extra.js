@@ -1,5 +1,5 @@
 ﻿'use strict';
-//06/12/24
+//08/12/24
 
 /* global youTube:readable */
 include('..\\..\\helpers\\helpers_xxx.js');
@@ -9,9 +9,9 @@ include('playlist_manager_listenbrainz.js');
 include('..\\..\\helpers\\helpers_xxx_file.js');
 /* global _isFile:readable, _open:readable, utf8:readable */
 include('..\\..\\helpers\\helpers_xxx_prototypes.js');
-/* global _p:readable, _q:readable, _t:readable, module:readable, _b:readable, WshShell:readable, popup:readable, round:readable */
+/* global _p:readable, _q:readable, _t:readable, module:readable, _b:readable, WshShell:readable, popup:readable, round:readable, _bt:readable */
 include('..\\..\\helpers\\helpers_xxx_tags.js');
-/* global queryJoin:readable, sanitizeTagValIds:readable, sanitizeTagIds:readable, sanitizeQueryVal:readable, queryCombinations:readable, sanitizeTagTfo:readable, getHandleListTagsV2:readable */
+/* global queryJoin:readable, sanitizeTagValIds:readable, sanitizeTagIds:readable, sanitizeQueryVal:readable, queryCombinations:readable, sanitizeTagTfo:readable, getHandleListTagsV2:readable, fallbackTagsQuery:readable */
 include('..\\..\\helpers\\helpers_xxx_tags_extra.js');
 /* global writeSimilarArtistsTags:readable, updateTrackSimilarTags:readable, updateSimilarDataFile:readable */
 include('..\\..\\helpers\\helpers_xxx_web.js');
@@ -21,9 +21,11 @@ include('..\\filter_and_query\\remove_duplicates.js');
 include('..\\..\\helpers-external\\easy-table-1.2.0\\table.js'); const Table = module.exports;
 
 /**
+ * @param {import('playlist_manager_listenbrainz.js').ListenBrainz} ListenBrainz
+ */
+
+/**
  * Retrieves recommended tracks for user and creates a playlist with matches or YouTube Links
- *
- * @property
  * @name getRecommendedTracks
  * @kind method
  * @memberof ListenBrainz
@@ -153,11 +155,8 @@ ListenBrainz.getRecommendedTracks = function getRecommendedTracks(user, params, 
 			if (parent && parent.isAnimationActive('ListenBrainz data retrieval')) { parent.switchAnimation('ListenBrainz data retrieval', false); }
 		});
 };
-
 /**
  * Parses the jsonl file from {@link https://github.com/kawaiiDango/pano-scrobbler Pano Scrobbler} and outputs a ListenBrainz compatible listens payload
- *
- * @property
  * @name parsePanoScrobblerJson
  * @kind method
  * @memberof ListenBrainz
@@ -213,11 +212,8 @@ ListenBrainz.parsePanoScrobblerJson = function parsePanoScrobblerJson(file, info
 	}
 	return null;
 };
-
 /**
  * Parses ListenBrainz listens payload and adds MBIDs to listens if missing (modifies original array). MBIDs are retrieved from library, using user's tracks.
- *
- * @property
  * @name findPayloadMBIDs
  * @kind method
  * @memberof ListenBrainz
@@ -226,6 +222,7 @@ ListenBrainz.parsePanoScrobblerJson = function parsePanoScrobblerJson(file, info
  */
 ListenBrainz.findPayloadMBIDs = function findPayloadMBIDs(payload) {
 	let libItems;
+	const multiTagRe = / \/ /gi;
 	const findTrack = memoize((title, artist, album, releaseId, artistId, trackId) => {
 		const query = queryJoin(
 			[
@@ -233,12 +230,18 @@ ListenBrainz.findPayloadMBIDs = function findPayloadMBIDs(payload) {
 					? '"$stricmp(' + sanitizeTagIds('%TITLE%') + ',' + sanitizeTagTfo(sanitizeTagValIds(title)) + ')" IS 1'
 					: '',
 				artist || typeof artist === 'string' && artist.length > 0
-					? globTags.artist + ' IS ' + sanitizeTagTfo(artist) +
-					' OR ' +
-					globTags.artist + ' IS ' + sanitizeTagTfo(artist).replace(/ \/ /gi, ', ')
+					? queryJoin([
+						fallbackTagsQuery(globTags.artist, sanitizeQueryVal(artist), 'IS'),
+						multiTagRe.test(artist)
+							? queryJoin(
+								artist.split(multiTagRe)
+									.map((a) => fallbackTagsQuery(globTags.artist, sanitizeQueryVal(a), 'IS')),
+								'OR')
+							: ''
+					], 'OR')
 					: '',
 				album || typeof album === 'string' && album.length > 0
-					? '%ALBUM% IS ' + sanitizeTagTfo(album)
+					? '%ALBUM% IS ' + sanitizeQueryVal(album)
 					: '',
 				releaseId
 					? '%MUSICBRAINZ_RELEASETRACKID% IS ' + releaseId
@@ -270,31 +273,37 @@ ListenBrainz.findPayloadMBIDs = function findPayloadMBIDs(payload) {
 		const bRelease = Object.hasOwn(metaIds, 'release_mbid');
 		const bArtist = Object.hasOwn(metaIds, 'artist_mbids');
 		const bRecording = Object.hasOwn(metaIds, 'recording_mbid');
-		if (!bRelease || !bArtist || !bRecording) {
-			const handle = findTrack(meta.track_name, meta.artist_name, meta.release_name, metaIds.release_mbid, metaIds.artist_mbids || [], metaIds.recording_mbid);
-			if (handle) {
-				const tags = fb.TitleFormat('[%MUSICBRAINZ_RELEASETRACKID%]|[%MUSICBRAINZ_ARTISTID%]|[%MUSICBRAINZ_TRACKID%]').EvalWithMetadb(handle).split('|');
+		const handle = findTrack(meta.track_name, meta.artist_name, meta.release_name, metaIds.release_mbid, metaIds.artist_mbids || [], metaIds.recording_mbid);
+		if (handle) {
+			const sep = '|‎|';
+			if (!bRelease || !bArtist || !bRecording) {
+				const tags = fb.TitleFormat(
+					_bt('MUSICBRAINZ_RELEASETRACKID') +
+					sep +
+					_bt('MUSICBRAINZ_ARTISTID') +
+					sep +
+					_bt('MUSICBRAINZ_TRACKID')
+				).EvalWithMetadb(handle).split(sep);
 				if (!bRelease && tags[0] && tags[0] !== '.') { metaIds.release_mbid = tags[0]; }
 				if (!bArtist && tags[1] && tags[1] !== '.') { metaIds.artist_mbids = tags[1].split(', '); }
 				if (!bRecording && tags[2] && tags[2] !== '.') { metaIds.recording_mbid = tags[2]; }
 			}
+			const tags = fb.TitleFormat(_bt(globTags.genre) + ', ' + _bt(globTags.style)).EvalWithMetadb(handle);
+			if (tags.length) { metaIds.tags = tags.split(', ').filter(Boolean); }
 		}
 	}
 	return payload;
 };
-
 /**
- * Parses aListenBrainz listens payload and adds MBIDs to listens if missing (modifies original array). MBIDs are retrieved from library, using user's tracks.
- *
- * @property
+ * Parses a ListenBrainz listens payload and adds MBIDs/tags to listens if missing (modifies original array). MBIDs are retrieved from library, using user's tracks.
  * @async
- * @name findPayloadMBIDs
+ * @name processPayload
  * @kind method
  * @memberof ListenBrainz
  * @param {{ listened_at: number; track_metadata: { additional_info: { submission_client: string; submission_client_version: string; release_mbid: string; artist_mbids: string[]; recording_mbid:string; duration_ms: number; media_player?: string; }; artist_name: string; track_name: string; release_name: string; }; }[]} payload - Listenbrainz submit listen payload
  * @param {string} token - ListenBrainz user token
  * @param {('listen'|'scrobble'|'love')} event
- * @returns {Promise.<{ listened_at: number; track_metadata: { additional_info: { submission_client: string; submission_client_version: string; release_mbid: string; artist_mbids: string[]; recording_mbid:string; duration_ms: number; media_player?: string; }; artist_name: string; track_name: string; release_name: string; }; }[]>}
+ * @returns {Promise.<{ listened_at: number; track_metadata: { additional_info: { submission_client: string; submission_client_version: string; release_mbid: string; artist_mbids: string[]; recording_mbid:string; duration_ms: number; media_player?: string; tags?: string[] }; artist_name: string; track_name: string; release_name: string; }; }[]>}
  */
 ListenBrainz.processPayload = async function processPayload(payload, token, event = 'listen') {
 	let processed;
@@ -317,7 +326,16 @@ ListenBrainz.processPayload = async function processPayload(payload, token, even
 	}
 	return Promise.resolve(processed);
 };
-
+/**
+ * Submits a listens payload in chunks according to the max listens per request API limit. Note duplicates are handled automatically by the server.
+ * @async
+ * @name ListenBrainz.submitListens
+ * @kind method
+ * @memberof ListenBrainz
+ * @param {{ listened_at: number; track_metadata: { additional_info: { submission_client: string; submission_client_version: string; release_mbid: string; artist_mbids: string[]; recording_mbid:string; duration_ms: number; media_player?: string; tags?: string[] }; artist_name: string; track_name: string; release_name: string; }; }[]} payload - Playlist object from Playlist manager
+ * @param {string} token
+ * @returns {Promise.<boolean[]>}
+ */
 ListenBrainz.submitListens = async function submitListens(payload, token) {
 	const chunks = payload.chunk(this.MAX_LISTENS_PER_REQUEST);
 	const rate = 50;
@@ -353,13 +371,9 @@ ListenBrainz.submitListens = async function submitListens(payload, token) {
 			return false;
 		});
 };
-
 /**
- * Output similar artists to the one from input FbMetadbHandle
- *
- * @property
+ * Outputs similar artists to the one from input FbMetadbHandle
  * @async
- * @function
  * @name calculateSimilarArtistsFromPls
  * @kind method
  * @memberof ListenBrainz
@@ -370,7 +384,7 @@ ListenBrainz.submitListens = async function submitListens(payload, token) {
  * @param {string} o.tagName - [='SIMILAR ARTISTS LISTENBRAINZ'] Tag name for saving on tracks
  * @param {boolean} o.bLookupMBIDs - [=true] Lookup MBIDs online if missing on tags
  * @param {string} o.token
- * @returns {Promise<{ artist: string; mbid: string; similar: { artist: string; mbid: string; score: number; }[]; }>}
+ * @returns {Promise<{ artist: string; mbid: string; similar: { artist: string; mbid: string; score: number; }[]; }[]>}
  */
 ListenBrainz.calculateSimilarArtistsFromPls = async function calculateSimilarArtistsFromPls({ items = plman.GetPlaylistSelectedItems(plman.ActivePlaylist), file = folders.data + 'listenbrainz_artists.json', iNum = 10, tagName = globTags.lbSimilarArtist, bLookupMBIDs = true, token } = {}) {
 	const handleList = removeDuplicates({ handleList: items, sortOutput: globTags.artist, checkKeys: [globTags.artist] });
@@ -420,14 +434,43 @@ ListenBrainz.calculateSimilarArtistsFromPls = async function calculateSimilarArt
 	}
 	return newData;
 };
-
+/**
+ * Writes similar artists tags to all tracks on library matching the JSON database. Only tracks which need updating are touched.
+ * @name writeSimilarArtistsTags
+ * @kind method
+ * @memberof ListenBrainz
+ * @param {Object} [o] - arguments
+ * @param {string} o.file - [=folders.data + 'listenbrainz_artists.json'] Input file for database
+ * @param {string} o.iNum - [=10] Num of artists to write on tags
+ * @param {string} o.tagName - [='SIMILAR ARTISTS LISTENBRAINZ'] Tag name for saving on tracks
+ * @returns {boolean}
+ */
 ListenBrainz.writeSimilarArtistsTags = function ({ file = folders.data + 'listenbrainz_artists.json', iNum = 10, tagName = globTags.lbSimilarArtist } = {}) {
 	return writeSimilarArtistsTags({ file, iNum, tagName, windowName: 'ListenBrainz' });
 };
-
-ListenBrainz.updateTrackSimilarTags = function ({ data, iNum = 10, tagName = globTags.lbSimilarArtist} = {}) {
+/**
+ * Updates similar artists tags in all tracks on library matching the input data. Only tracks which need updating are touched.
+ * @name updateTrackSimilarTags
+ * @kind method
+ * @memberof ListenBrainz
+ * @param {Object} [o] - arguments
+ * @param {{ artist: string; mbid: string; similar: { artist: string; mbid: string; score: number; }[]; }[]} o.data - Similar artists data array
+ * @param {string} o.iNum - [=10] Num of artists to write on tags
+ * @param {string} o.tagName - [='SIMILAR ARTISTS LISTENBRAINZ'] Tag name for saving on tracks
+ * @returns {boolean}
+ */
+ListenBrainz.updateTrackSimilarTags = function ({ data, iNum = 10, tagName = globTags.lbSimilarArtist } = {}) {
 	return updateTrackSimilarTags({ data, iNum, tagName, windowName: 'ListenBrainz', bPopup: false });
 };
-
+/**
+ * Updates the similar artists JSON database
+ * @name updateSimilarDataFile
+ * @kind method
+ * @memberof ListenBrainz
+ * @param {string} file - [=folders.data + 'listenbrainz_artists.json'] Output file for database
+ * @param {{ artist: string; mbid: string; similar: { artist: string; mbid: string; score: number; }[]; }[]} newData - Similar artists data array
+ * @param {string} iNum - [=Infinity] Num of similar artists to save
+ * @returns {boolean}
+ */
 ListenBrainz.updateSimilarDataFile = updateSimilarDataFile.bind(ListenBrainz);
 

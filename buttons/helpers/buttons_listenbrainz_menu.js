@@ -1,5 +1,5 @@
 'use strict';
-//04/12/24
+//08/12/24
 
 /* exported listenBrainzmenu */
 
@@ -67,7 +67,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	}
 	// Update cache
 	if (bListenBrainz) {
-		lb.retrieveUser(lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted })).then((name) => {
+		lb.retrieveUser(lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }), false).then((name) => {
 			if (name) {
 				properties.userCache[1] = name;
 				overwriteProperties({ userCache: [...properties.userCache] });
