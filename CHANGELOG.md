@@ -43,6 +43,7 @@
 ### Removed
 ### Fixed
 - UI: '&' being displayed as '_' on tooltips.
+- UI: memory leak due to wrong handling of icons in some cases (resulting on more than one file handle), in particular the MusicBrainz button icon.
 
 ## [2.3.0] - 2024-10-09
 ### Added
