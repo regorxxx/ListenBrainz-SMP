@@ -42,6 +42,7 @@
 - Helpers: general code cleanup on menus internal code. Please report any bug on extra separators or menu entries not working as expected.
 ### Removed
 ### Fixed
+- SMP Dynamic menu: fixed multiple errors on dynamic menus (un)registering.
 - UI: '&' being displayed as '_' on tooltips.
 - UI: memory leak due to wrong handling of icons in some cases (resulting on more than one file handle), in particular the MusicBrainz button icon.
 

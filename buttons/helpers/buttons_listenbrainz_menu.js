@@ -1,5 +1,5 @@
 'use strict';
-//08/12/24
+//13/02/25
 
 /* exported listenBrainzmenu */
 
@@ -33,7 +33,10 @@ include('..\\..\\main\\main_menu\\main_menu_custom.js');
 
 // listenBrainzmenu.bind(this)().btn_up(x, y)
 function listenBrainzmenu({ bSimulate = false } = {}) {
-	if (bSimulate) { return listenBrainzmenu.bind({ selItems: { Count: 1 }, buttonsProperties: this.buttonsProperties, prefix: this.prefix })(false); }
+	if (bSimulate) {
+		this.selItems = { Count: 1 };
+		return listenBrainzmenu.bind(this)(false);
+	}
 	// Helpers
 	const lb = ListenBrainz;
 	const properties = this.buttonsProperties || this.properties;
@@ -288,7 +291,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		].forEach((entry) => {
 			if (menu.isSeparator(entry)) { menu.newSeparator(menuName); return; }
 			menu.newEntry({
-				menuName, entryText: () => entry.name + (bListenBrainz ? selectedCountTitle(25) : '\t(token not set)'), func: async () => {
+				menuName, entryText: entry.name + (bListenBrainz ? selectedCountTitle(25) : '\t(token not set)'), func: async () => {
 					if (!await checkLBToken()) { return false; }
 					const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
 					if (!token) { return; }
