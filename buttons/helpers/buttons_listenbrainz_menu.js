@@ -1,5 +1,5 @@
 'use strict';
-//13/02/25
+//07/03/25
 
 /* exported listenBrainzmenu */
 
@@ -10,7 +10,7 @@ include('..\\..\\helpers\\helpers_xxx_input.js');
 include('..\\..\\helpers\\helpers_xxx_file.js');
 /* global WshShell:readable, _isFile:readable, _jsonParseFileCheck:readable, utf8:readable, _jsonParseFileCheck:readable, _jsonParseFileCheck:readable, _runCmd:readable */
 include('..\\..\\helpers\\helpers_xxx_prototypes.js');
-/* global _b:readable, _t:readable, _q:readable, _p:readable, _asciify:readable, isArrayEqual:readable, isUUID:readable */
+/* global _b:readable, _t:readable, _q:readable, _p:readable, _asciify:readable, isArrayEqual:readable, isUUID:readable, range:readable */
 include('..\\..\\helpers\\helpers_xxx_properties.js');
 /* global overwriteProperties:readable */
 include('..\\..\\helpers\\buttons_xxx_menu.js');
@@ -44,6 +44,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	const bLookupMBIDs = properties.bLookupMBIDs[1];
 	const bListenBrainz = properties.lBrainzToken[1].length;
 	const bEncrypted = properties.lBrainzEncrypt[1];
+	const getToken = () => lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted });
 	async function checkLBToken(lBrainzToken = properties.lBrainzToken[1]) {
 		if (!lBrainzToken.length) {
 			const encryptToken = '********-****-****-****-************';
@@ -70,7 +71,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	}
 	// Update cache
 	if (bListenBrainz) {
-		lb.retrieveUser(lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }), false).then((name) => {
+		lb.retrieveUser(getToken(), false).then((name) => {
 			if (name) {
 				properties.userCache[1] = name;
 				overwriteProperties({ userCache: [...properties.userCache] });
@@ -133,10 +134,10 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		});
 		// Similar artists tags
 		[
-			{file: 'listenbrainz_artists.json', dataId: 'artist', tag: globTags.lbSimilarArtist},
-			{file: 'searchByDistance_artists.json', dataId: 'artist', tag: globTags.sbdSimilarArtist}
+			{ file: 'listenbrainz_artists.json', dataId: 'artist', tag: globTags.lbSimilarArtist },
+			{ file: 'searchByDistance_artists.json', dataId: 'artist', tag: globTags.sbdSimilarArtist }
 		].forEach((option) => {
-			const path = (_isFile(fb.FoobarPath + 'portable_mode_enabled') ? '.\\profile\\' + folders.dataName : folders.data) + option.file;
+			const path = '.\\profile\\' + folders.dataName + option.file; // TODO Expose paths at properties
 			if (_isFile(path)) {
 				const dataId = option.dataId;
 				const dataTag = option.tag;
@@ -164,7 +165,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			}
 		});
 		// World map tags
-		const worldMapPath = (_isFile(fb.FoobarPath + 'portable_mode_enabled') ? '.\\profile\\' + folders.dataName : folders.data) + 'worldMap.json';
+		const worldMapPath = '.\\profile\\' + folders.dataName + 'worldMap.json'; // TODO Expose paths at properties
 		if (_isFile(worldMapPath)) {
 			const dataId = 'artist';
 			const tagId = globTags.artist.toLowerCase();
@@ -193,7 +194,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	const importPlaylist = async (playlist, name) => {
 		const bShift = utils.IsKeyPressed(VK_SHIFT);
 		if (!await checkLBToken()) { return false; }
-		const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+		const token = bListenBrainz ? getToken() : null;
 		if (!token) { return; }
 		this.switchAnimation('ListenBrainz data retrieval', true);
 		lb.importPlaylist({ playlist_mbid: playlist.identifier.replace(lb.regEx, '') }, token)
@@ -293,7 +294,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			menu.newEntry({
 				menuName, entryText: entry.name + (bListenBrainz ? selectedCountTitle(25) : '\t(token not set)'), func: async () => {
 					if (!await checkLBToken()) { return false; }
-					const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+					const token = bListenBrainz ? getToken() : null;
 					if (!token) { return; }
 					const handleList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
 					const user = await lb.retrieveUser(token);
@@ -307,7 +308,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 							if (obj.score === 1 && entry.key !== 'love' || obj.score === -1 && entry.key !== 'hate' || obj.score === 0 && entry.key !== 'remove') { sendMBIDs.push(obj.recording_mbid); }
 						});
 					} else {
-						const mbids = await ListenBrainz.getMBIDs(handleList, null, false);
+						const mbids = await lb.getMBIDs(handleList, null, false);
 						mbids.filter(Boolean).forEach((mbid) => sendMBIDs.push(mbid));
 					}
 					this.switchAnimation('ListenBrainz data retrieval', false);
@@ -320,7 +321,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 							if (user || properties.userCache[1].length) {
 								console.log('ListenBrainz: Error connecting to server. Data has been cached and will be sent later...');
 								const date = Date.now();
-								const data = ListenBrainz.cache.feedback.get(user || properties.userCache[1]) || {};
+								const data = lb.cache.feedback.get(user || properties.userCache[1]) || {};
 								if (!response) {
 									sendMBIDs.forEach((mbid) => data[mbid] = { feedback: entry.key, date });
 								} else {
@@ -328,7 +329,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 										if (!bUpdate) { data[sendMBIDs[i]] = { feedback: entry.key, date }; }
 									});
 								}
-								ListenBrainz.cache.feedback.set(user || properties.userCache[1], data);
+								lb.cache.feedback.set(user || properties.userCache[1], data);
 								setTimeout(this.saveCache, 0, user || properties.userCache[1]);
 							} else {
 								fb.ShowPopupMessage('Error connecting to server. Check console.\nUser has not been retrieved and feedback can not be saved to cache.', 'ListenBrainz');
@@ -349,7 +350,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		menu.newEntry({
 			menuName, entryText: 'Report for selected tracks' + (bListenBrainz ? selectedCountTitle(Infinity) : '\t(token not set)'), func: async () => {
 				if (!await checkLBToken()) { return false; }
-				const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+				const token = bListenBrainz ? getToken() : null;
 				if (!token) { return; }
 				const handleList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
 				this.switchAnimation('ListenBrainz data retrieval', true);
@@ -394,7 +395,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				menuName, entryText: 'Find ' + entry.name + ' in library' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 					const bShift = utils.IsKeyPressed(VK_SHIFT);
 					if (!await checkLBToken()) { return false; }
-					const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+					const token = bListenBrainz ? getToken() : null;
 					if (!token) { return; }
 					this.switchAnimation('ListenBrainz data retrieval', true);
 					const user = await (lb.retrieveUser(token));
@@ -481,7 +482,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					menuName: subMenuName, entryText: entry.name + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 						const bShift = utils.IsKeyPressed(VK_SHIFT);
 						if (!await checkLBToken()) { return false; }
-						const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+						const token = bListenBrainz ? getToken() : null;
 						if (!token) { return; }
 						const mbids = []; // Tracks
 						const mbidsAlt = []; // Artists
@@ -610,7 +611,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					const bSingle = tag.valSet.size <= 1;
 					const subMenu = bSingle ? menuName : menu.newMenu(tag.name, menuName);
 					if (tag.type === 'getPopularRecordingsBySimilarArtist' && !bSingle) {
-						menu.newEntry({menuName: subMenu, entryText: 'Top tracks by:', flags: MF_GRAYED});
+						menu.newEntry({ menuName: subMenu, entryText: 'Top tracks by:', flags: MF_GRAYED });
 						menu.newSeparator(subMenu);
 					}
 					if (tag.valSet.size === 0) { tag.valSet.add(''); }
@@ -640,7 +641,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		const runSimilar = async (type, reportTitle, args, val) => {
 			const bShift = utils.IsKeyPressed(VK_SHIFT);
 			if (!await checkLBToken()) { return false; }
-			const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+			const token = bListenBrainz ? getToken() : null;
 			if (!token) { return; }
 			if (!sel) { return; }
 			this.switchAnimation('ListenBrainz data retrieval', true);
@@ -994,7 +995,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	{	// User
 		const menuName = menu.newMenu('User recommendations');
 		const cachedUser = (bListenBrainz
-			? ListenBrainz.cache.user.get(lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }))
+			? lb.cache.user.get(getToken())
 			: ''
 		) || 'User';
 		menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
@@ -1003,7 +1004,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			menuName, entryText: cachedUser + '\'s recommended tracks' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 				const bShift = utils.IsKeyPressed(VK_SHIFT);
 				if (!await checkLBToken()) { return false; }
-				const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+				const token = bListenBrainz ? getToken() : null;
 				if (!token) { return; }
 				this.switchAnimation('ListenBrainz user retrieval', true);
 				const user = await lb.retrieveUser(token);
@@ -1015,7 +1016,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			menuName, entryText: 'Recommended tracks from similar users' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 				const bShift = utils.IsKeyPressed(VK_SHIFT);
 				if (!await checkLBToken()) { return false; }
-				const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+				const token = bListenBrainz ? getToken() : null;
 				if (!token) { return; }
 				this.switchAnimation('ListenBrainz user retrieval', true);
 				const user = await lb.retrieveUser(token);
@@ -1025,28 +1026,73 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				if (!similUsers.length) { return; }
 				const similUser = similUsers.shuffle()[0].user_name;
 				this.switchAnimation('ListenBrainz user retrieval', false);
-				lb.getRecommendedTracks(similUser, {count: lb.MAX_ITEMS_PER_GET}, 'Recommended tracks', token, properties.bYouTube[1] && isYouTube, bShift, this);
+				lb.getRecommendedTracks(similUser, { count: lb.MAX_ITEMS_PER_GET }, 'Recommended tracks', token, properties.bYouTube[1] && isYouTube, bShift, this);
 			}, flags: bListenBrainz ? MF_STRING : MF_GRAYED, data: { bDynamicMenu: true }
 		});
 	}
 	menu.newSeparator();
 	{	// Playlists
+		const createPlaylistEntries = (playlists, sorting, menuName) => {
+			sorting = sorting.toLowerCase();
+			const count = playlists.length;
+			if (count) {
+				const padding = count.toString().length;
+				let sortFunc;
+				switch (sorting) {
+					case 'cdate':
+						sortFunc = (a, b) => a.date - b.date;
+						break;
+					case 'mdate':
+						sortFunc = (a, b) => a.extension[lb.jspfExt].last_modified_at - b.extension[lb.jspfExt].last_modified_at;
+						break;
+					case 'name':
+					default:
+						sortFunc = (a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase());
+				}
+				playlists.sort(sortFunc);
+				const plsMenus = range(0, Math.ceil(count / 10) - 1).map((idx) => {
+					const firstIdx = idx * 10;
+					const lastIdx = (idx + 1) * 10;
+					let first = null, last = null;
+					switch (sorting) {
+						case 'cdate':
+							first = playlists[firstIdx].date.slice(0, 10);
+							last = playlists[Math.min(count - 1, lastIdx - 1)].date.slice(0, 10);
+							break;
+						case 'mdate':
+							first = playlists[firstIdx].extension[lb.jspfExt].last_modified_at.slice(0, 10);
+							last = playlists[Math.min(count - 1, lastIdx - 1)].extension[lb.jspfExt].last_modified_at.slice(0, 10);
+							break;
+						case 'name':
+						default:
+							first = playlists[firstIdx].title[0].toUpperCase();
+							last = playlists[Math.min(count - 1, lastIdx - 1)].title[0].toUpperCase();
+					}
+					const suffix = first !== null || last !== null
+						? '   ' + _b(first + (last !== first ? ' - ' + last : ''))
+						: '';
+					return firstIdx.toString().padStart(padding, '0') + ' - ' + lastIdx.toString().padStart(padding, '0') + suffix;
+				});
+				return playlists.map((playlist, i) => {
+					const idx = Math.floor(i / 10);
+					const subMenu = count <= 10
+						? menuName
+						: plsMenus[idx];
+					const entryText = playlist.title.replace(/ for \S+\b/, '');
+					return { menuName: subMenu, entryText, func: async () => importPlaylist(playlist, entryText) };
+				});
+			}
+			return [];
+		};
 		const menuNameMain = menu.newMenu('Playlists');
 		{	// Playlists Recommendations
 			const menuName = menu.newMenu('Playlists recommendations', menuNameMain);
 			menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
 			menu.newSeparator(menuName);
-			const count = this.userPlaylists.recommendations.length;
-			if (count) {
-				const padding = count.toString().length;
-				this.userPlaylists.recommendations.sort((a, b) => a.date - b.date).forEach((playlist, i) => {
-					const idx = Math.floor(i / 10);
-					const subMenu = count <= 10
-						? menuName
-						: menu.findOrNewMenu((idx * 10).toString().padStart(padding, '0') + ' - ' + ((idx + 1) * 10).toString().padStart(padding, '0'), menuName);
-					const entryText = playlist.title.replace(/ for \S+\b/, '');
-					menu.newEntry({ menuName: subMenu, entryText, func: async () => importPlaylist(playlist, entryText) });
-				});
+			const plsEntries = createPlaylistEntries(this.userPlaylists.recommendations, 'mdate', menuName);
+			if (plsEntries.length) {
+				new Set(plsEntries.map((entry) => entry.menuName)).forEach((subMenu) => menu.findOrNewMenu(subMenu, subMenu === menuName ? menuNameMain : menuName));
+				plsEntries.forEach((entry) => menu.newEntry(entry));
 			} else {
 				menu.newEntry({ menuName, entryText: '- None -', flags: MF_GRAYED });
 			}
@@ -1055,28 +1101,10 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			const menuName = menu.newMenu('User playlists', menuNameMain);
 			menu.newEntry({ menuName, entryText: 'By user: (Shift + Click to randomize)', flags: MF_GRAYED });
 			menu.newSeparator(menuName);
-			const count = this.userPlaylists.user.length;
-			if (count) {
-				const padding = count.toString().length;
-				let sortFunc;
-				switch (properties.userPlaylistSort[1]) {
-					case 'cdate':
-						sortFunc = (a, b) => a.date - b.date;
-						break;
-					case 'mdate':
-						sortFunc = (a, b) => a.extension[lb.jspfExt].last_modified_at - b.extension[lb.jspfExt].last_modified_at;
-						break;
-					default:
-						sortFunc = (a, b) => a.title.localeCompare(b.title);
-				}
-				this.userPlaylists.user.sort(sortFunc).forEach((playlist, i) => {
-					const idx = Math.floor(i / 10);
-					const subMenu = count <= 10
-						? menuName
-						: menu.findOrNewMenu((idx * 10).toString().padStart(padding, '0') + ' - ' + ((idx + 1) * 10).toString().padStart(padding, '0'), menuName);
-					const entryText = playlist.title.replace(/ for \S+\b/, '');
-					menu.newEntry({ menuName: subMenu, entryText, func: async () => importPlaylist(playlist, entryText) });
-				});
+			const plsEntries = createPlaylistEntries(this.userPlaylists.user, properties.userPlaylistSort[1], menuName);
+			if (plsEntries.length) {
+				new Set(plsEntries.map((entry) => entry.menuName)).forEach((subMenu) => menu.findOrNewMenu(subMenu, subMenu === menuName ? menuNameMain : menuName));
+				plsEntries.forEach((entry) => menu.newEntry(entry));
 			} else {
 				menu.newEntry({ menuName, entryText: '- None -', flags: MF_GRAYED });
 			}
@@ -1130,7 +1158,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				menuName,
 				entryText: 'Retrieve MBIDs from selection' + (bListenBrainz ? selectedCountTitle(70) : '\t(token not set)'), func: async () => {
 					if (!await checkLBToken()) { return false; }
-					const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+					const token = bListenBrainz ? getToken() : null;
 					if (!token) { return; }
 					const tfo = fb.TitleFormat('%TITLE%');
 					const handleList = plman.GetPlaylistSelectedItems(plman.ActivePlaylist);
@@ -1158,10 +1186,10 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				menuName,
 				entryText: 'Calculate similar artists tags' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 					if (!await checkLBToken()) { return false; }
-					const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+					const token = bListenBrainz ? getToken() : null;
 					if (!token) { return; }
 					this.switchAnimation('ListenBrainz data retrieval', true);
-					const response = await lb.calculateSimilarArtistsFromPls({token});
+					const response = await lb.calculateSimilarArtistsFromPls({ token });
 					this.switchAnimation('ListenBrainz data retrieval', false);
 					if (!response) { return; }
 				}, flags: bListenBrainz ? selectedFlagsCount(70) : MF_GRAYED, data: { bDynamicMenu: true }
@@ -1179,7 +1207,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					if (!await checkLBToken()) { return false; }
 					const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted: properties.lBrainzEncrypt[1] }) : null;
 					if (!token) { return false; }
-					const file = Input.string('string','', 'Enter .jsonl file path:\n\nImporting of duplicated listens is automatically handled by ListenBrainz servers, adding them only once. You can process the same file multiple times and only new listens will be added.', 'ListenBrainz Tools', folders.xxx + 'examples\\scrobbles_log.jsonl', [(file) => _isFile(file)]);
+					const file = Input.string('string', '', 'Enter .jsonl file path:\n\nImporting of duplicated listens is automatically handled by ListenBrainz servers, adding them only once. You can process the same file multiple times and only new listens will be added.', 'ListenBrainz Tools', folders.xxx + 'examples\\scrobbles_log.jsonl', [(file) => _isFile(file)]);
 					if (file === null) { console.log('ListenBrainz tools:', Input.lastInput, 'not found.'); return false; }
 					const event = 'scrobble';
 					const payload = lb.parsePanoScrobblerJson(file, { client: this.scriptName, version: this.version }, event);
@@ -1226,7 +1254,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 								WshShell.Popup('Feedback imported sucessfully.', 0, 'ListenBrainz Tools', popup.info + popup.ok);
 								console.log('ListenBrainz: Error connecting to server. Data has been cached and will be sent later...');
 								const date = Date.now();
-								const data = ListenBrainz.cache.feedback.get(user || properties.userCache[1]) || {};
+								const data = lb.cache.feedback.get(user || properties.userCache[1]) || {};
 								if (!response) {
 									sendMBIDs.forEach((mbid) => data[mbid] = { feedback: 'love', date });
 								} else {
@@ -1234,7 +1262,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 										if (!bUpdate) { data[sendMBIDs[i]] = { feedback: 'love', date }; }
 									});
 								}
-								ListenBrainz.cache.feedback.set(user || properties.userCache[1], data);
+								lb.cache.feedback.set(user || properties.userCache[1], data);
 								setTimeout(this.saveCache, 0, user || properties.userCache[1]);
 							} else {
 								fb.ShowPopupMessage('Error connecting to server. Check console.\nUser has not been retrieved and feedback can not be saved to cache.', 'ListenBrainz');
@@ -1274,7 +1302,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				menu.newEntry({
 					menuName: subMenuName, entryText: 'Open user profile' + (bListenBrainz ? '' : '\t(token not set)'), func: async () => {
 						if (!await checkLBToken()) { return; }
-						const token = bListenBrainz ? lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted }) : null;
+						const token = bListenBrainz ? getToken() : null;
 						if (!token) { return; }
 						const user = await lb.retrieveUser(token);
 						if (user.length) { _runCmd('CMD /C START https://listenbrainz.org/user/' + user + '/playlists/', false); }
@@ -1283,7 +1311,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			}
 		}
 		{
-			const subMenuName = menu.newMenu('Playlists...', menuName);
+			const subMenuName = menu.newMenu('Playlists', menuName);
 			{
 				menu.newEntry({
 					menuName: subMenuName, entryText: 'Match only by MBID', func: () => {
@@ -1313,6 +1341,20 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				});
 				menu.newCheckMenuLast(() => options.findIndex((opt) => opt.sort === properties.userPlaylistSort[1]), options);
 			}
+			menu.newSeparator(subMenuName);
+			menu.newEntry({
+				menuName: subMenuName, entryText: 'Create Daily jams', func: () => {
+					const token = bListenBrainz ? getToken() : null;
+					if (!token) { return; }
+					if (!lb.isFollowing('troi-bot', token)) {
+						if (properties.bPlsMatchMBID[1]) {
+							fb.ShowPopupMessage('Daily jams are playlist automatically created by the ListenBrainz recommendation backend (troi) every day if you have enough listens data available. The feature is enabled by following a bot user named \'troi-bot\'.');
+						}
+						lb.followUser('troi-bot', getToken());
+					} else { lb.unFollowUser('troi-bot', getToken()); }
+				}, flags: bListenBrainz ? MF_STRING : MF_GRAYED
+			});
+			menu.newCheckMenuLast(() => lb.isFollowing('troi-bot', getToken()));
 		}
 		{
 			const subMenuName = menu.newMenu('Feedback', menuName);
@@ -1364,7 +1406,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						if (utils.IsKeyPressed(VK_CONTROL)) {
 							const defTag = JSON.parse(properties.tags[3])
 								.find((defTag) => tag.name === defTag.name);
-							if (defTag) {input = defTag.tf;}
+							if (defTag) { input = defTag.tf; }
 						} else {
 							input = Input.json('array strings', tag.tf, 'Enter tag(s) or TF expression(s):\n(JSON)\n\nSetting it to [] will disable the menu entry.', 'ListenBrainz Tools', '["ARTIST","ALBUM ARTIST"]', void (0), true);
 							if (input === null) { return; }
