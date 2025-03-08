@@ -1,5 +1,5 @@
 ﻿'use strict';
-//13/02/25
+//07/03/25
 
 /*
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -49,7 +49,7 @@ var newButtonsProperties = { // NOSONAR[global]
 	firstPopup: ['ListenBrainz Tools: Fired once', false, { func: isBoolean }, false],
 	bTagFeedback: ['Tag files with feedback', false, { func: isBoolean }, false],
 	feedbackTag: ['Feedback tag', globTags.feedback, { func: isString }, globTags.feedback],
-	feedbackCache: ['Feedback cache file', folders.data + 'listenbrainz_feedback.json', { func: isString }, folders.data + 'listenbrainz_feedback.json'],
+	feedbackCache: ['Feedback cache file', '.\\profile\\' + folders.dataName + 'listenbrainz_feedback.json', { func: isString }, '.\\profile\\' + folders.dataName + 'listenbrainz_feedback.json'],
 	feedbackQuery: ['Query to pre-filter feedback matches', globQuery.filter, { func: (query) => { return checkQuery(query, true); } }, globQuery.filter],
 	bFeedbackLookup: ['Lookup feedback tracks using tags', true, { func: isBoolean }, true],
 	userCache: ['User name cache', '', { func: isStringWeak }, ''],
@@ -125,6 +125,7 @@ addButton({
 				).btn_up(this.currX, this.currY + this.currH);
 			} else {
 				this.retrievePlaylists(false);
+				if (!ListenBrainz.cache.following.size) { this.retrieveFollowing(); }
 				listenBrainzmenu.bind(this)().btn_up(this.currX, this.currY + this.currH);
 			}
 		},
@@ -188,6 +189,8 @@ addButton({
 							overwriteProperties(parent.buttonsProperties);
 							ListenBrainz.cache.key = null;
 							parent.lBrainzTokenListener = false;
+							this.retrievePlaylists(false);
+							this.retrieveFollowing();
 						}
 						break;
 					}
@@ -259,8 +262,9 @@ addButton({
 			setTimeout(this.retrievePlaylists, 20000, true);
 			// Load feedback cache
 			lb.cache.feedback = new Map();
-			if (_isFile(this.buttonsProperties.feedbackCache[1])) {
-				const data = _jsonParseFile(this.buttonsProperties.feedbackCache[1], utf8);
+			const cacheFile = this.buttonsProperties.feedbackCache[1];
+			if (_isFile(cacheFile)) {
+				const data = _jsonParseFile(cacheFile, utf8);
 				if (data) {
 					data.forEach((userData) => {
 						lb.cache.feedback.set(userData.name, userData.cache);
@@ -274,9 +278,10 @@ addButton({
 					.filter((userData) => userData[0] === user)
 					.map((userData) => { return { name: userData[0], cache: userData[1] }; });
 				if (!data.length) { return; }
-				if (_isFile(this.buttonsProperties.feedbackCache[1])) {
-					const oldData = _jsonParseFile(this.buttonsProperties.feedbackCache[1], utf8);
-					_recycleFile(this.buttonsProperties.feedbackCache[1], true);
+				const cacheFile = this.buttonsProperties.feedbackCache[1];
+				if (_isFile(cacheFile)) {
+					const oldData = _jsonParseFile(cacheFile, utf8);
+					_recycleFile(cacheFile, true);
 					const idx = oldData.findIndex((userData) => userData.name === user);
 					if (idx !== -1) {
 						oldData[idx] = data[0];
@@ -287,7 +292,7 @@ addButton({
 				} else {
 					newData.push(data[0]);
 				}
-				_save(this.buttonsProperties.feedbackCache[1], JSON.stringify(newData));
+				_save(cacheFile, JSON.stringify(newData));
 			};
 			// Send feedback cache every 10 min
 			this.sendFeedbackCache = async () => {
