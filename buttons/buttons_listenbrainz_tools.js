@@ -1,5 +1,5 @@
 ﻿'use strict';
-//07/03/25
+//11/03/25
 
 /*
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -35,7 +35,7 @@ include('helpers\\buttons_listenbrainz_menu.js'); // Button menu
 var prefix = 'lbt'; // NOSONAR[global]
 var version = '2.3.0'; // NOSONAR[global]
 
-try { window.DefineScript('ListenBrainz Tools Button', { author: 'regorxxx', version, features: { drag_n_drop: false } }); } catch (e) { /* May be loaded along other buttons */ }
+try { window.DefineScript('ListenBrainz Tools Button', { author: 'regorxxx', version, features: { drag_n_drop: false } }); } catch (e) { /* May be loaded along other buttons */ } // eslint-disable-line no-unused-vars
 prefix = getUniquePrefix(prefix, ''); // Puts new ID before '_'
 
 var newButtonsProperties = { // NOSONAR[global]
