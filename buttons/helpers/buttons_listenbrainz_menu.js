@@ -1,5 +1,5 @@
 'use strict';
-//07/03/25
+//13/03/25
 
 /* exported listenBrainzmenu */
 
@@ -10,7 +10,7 @@ include('..\\..\\helpers\\helpers_xxx_input.js');
 include('..\\..\\helpers\\helpers_xxx_file.js');
 /* global WshShell:readable, _isFile:readable, _jsonParseFileCheck:readable, utf8:readable, _jsonParseFileCheck:readable, _jsonParseFileCheck:readable, _runCmd:readable */
 include('..\\..\\helpers\\helpers_xxx_prototypes.js');
-/* global _b:readable, _t:readable, _q:readable, _p:readable, _asciify:readable, isArrayEqual:readable, isUUID:readable, range:readable */
+/* global _b:readable, _t:readable, _q:readable, _p:readable, _asciify:readable, isArrayEqual:readable, isUUID:readable, range:readable, isString:readable */
 include('..\\..\\helpers\\helpers_xxx_properties.js');
 /* global overwriteProperties:readable */
 include('..\\..\\helpers\\buttons_xxx_menu.js');
@@ -42,24 +42,24 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	const properties = this.buttonsProperties || this.properties;
 	const feedbackTag = properties.feedbackTag[1];
 	const bLookupMBIDs = properties.bLookupMBIDs[1];
-	const bListenBrainz = properties.lBrainzToken[1].length;
+	const bListenBrainz = isString(properties.lBrainzToken[1]);
 	const bEncrypted = properties.lBrainzEncrypt[1];
 	const getToken = () => lb.decryptToken({ lBrainzToken: properties.lBrainzToken[1], bEncrypted });
 	async function checkLBToken(lBrainzToken = properties.lBrainzToken[1]) {
-		if (!lBrainzToken.length) {
+		if (!isString(lBrainzToken)) {
 			const encryptToken = '********-****-****-****-************';
 			const currToken = properties.lBrainzEncrypt[1] ? encryptToken : properties.lBrainzToken[1];
 			try { lBrainzToken = utils.InputBox(window.ID, 'Enter ListenBrainz user token:', window.Name, currToken, true); }
-			catch (e) { return false; }
+			catch (e) { return false; } // eslint-disable-line no-unused-vars
 			if (lBrainzToken === currToken || lBrainzToken === encryptToken) { return false; }
-			if (lBrainzToken.length) {
+			if (isString(lBrainzToken)) {
 				if (!(await lb.validateToken(lBrainzToken))) { fb.ShowPopupMessage('ListenBrainz Token not valid.', 'ListenBrainz'); return false; }
 				const answer = WshShell.Popup('Do you want to encrypt the token?', 0, window.Name, popup.question + popup.yes_no);
 				if (answer === popup.yes) {
 					let pass = '';
 					try { pass = utils.InputBox(window.ID, 'Enter a passowrd:\n(will be required on every use)', window.Name, pass, true); }
-					catch (e) { return false; }
-					if (!pass.length) { return false; }
+					catch (e) { return false; } // eslint-disable-line no-unused-vars
+					if (!isString(pass)) { return false; }
 					lBrainzToken = new SimpleCrypto(pass).encrypt(lBrainzToken);
 				}
 				properties.lBrainzEncrypt[1] = answer === popup.yes;
@@ -84,7 +84,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	const bioTags = this.bioTags || {};
 	// Set tags for lookup and filter wrong values
 	const tags = (JSON.parse(properties.tags[1]) || []).filter((tag) => {
-		return tag && tag.tf && tag.tf.length && tag.name.length && tag.type;
+		return tag && tag.tf && tag.tf.length && isString(tag.name) && tag.type;
 	});
 	tags.forEach((tag) => {
 		tag.val = [];
@@ -318,7 +318,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						const response = await lb.sendFeedback(sendMBIDs, entry.key, token);
 						this.switchAnimation('ListenBrainz data uploading', false);
 						if (!response || !response.every(Boolean)) {
-							if (user || properties.userCache[1].length) {
+							if (user || isString(properties.userCache[1])) {
 								console.log('ListenBrainz: Error connecting to server. Data has been cached and will be sent later...');
 								const date = Date.now();
 								const data = lb.cache.feedback.get(user || properties.userCache[1]) || {};
@@ -420,19 +420,19 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						if (!mbid.length) { return; }
 						const title = sanitizeQueryVal(sanitizeTagValIds(titles[i]));
 						const artist = sanitizeQueryVal(sanitizeTagValIds(artists[i]));
-						const bMeta = properties.bFeedbackLookup[1] && title.length && artist.length;
+						const bMeta = properties.bFeedbackLookup[1] && isString(title) && isString(artist);
 						return 'MUSICBRAINZ_TRACKID IS ' + mbid + (bMeta ? ' OR (' + _q(sanitizeTagIds(_t(globTags.titleRaw))) + ' IS ' + title + ' AND ' + _q(sanitizeTagIds(globTags.artist)) + ' IS ' + artist + ')' : '');
 					}).filter(Boolean);
 					let query = queryJoin([queryJoin(queryArr, 'OR'), properties.feedbackQuery[1]], 'AND');
 					let handleList;
 					try { handleList = fb.GetQueryItems(fb.GetLibraryItems(), query); } // Sanity check
-					catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; }
+					catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; } // eslint-disable-line no-unused-vars
 					let report = entry.name + ': ' + response.length + '\n\n' + table.toString();
 					// Find tracks with feedback tag, and insert them at the end without duplicates
 					let libHandleList;
 					query = feedbackTag + ' IS ' + entry.score;
 					try { libHandleList = fb.GetQueryItems(fb.GetLibraryItems(), query); } // Sanity check
-					catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; }
+					catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; } // eslint-disable-line no-unused-vars
 					const copyHandleList = handleList.Clone();
 					copyHandleList.Sort();
 					let byTagHandleList = new FbMetadbHandleList();
@@ -514,7 +514,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 									const tagArr = ['TITLE', 'ARTIST', 'ALBUM']
 										.map((key) => { return { key, val: sanitizeQueryVal(sanitizeTagValIds(tags[key][i])) }; });
 									const bMBID = mbid.length > 0;
-									const bMeta = tagArr.every((tag) => { return tag.val.length > 0; });
+									const bMeta = tagArr.every((tag) => isString(tag.val));
 									if (!bMeta && !bMBID) { return; }
 									const query = queryJoin(
 										[
@@ -526,15 +526,15 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 									return query;
 								}).filter(Boolean);
 								let libItems;
-								if (properties.forcedQuery[1].length) {
+								if (isString(properties.forcedQuery[1])) {
 									try { libItems = fb.GetQueryItems(fb.GetLibraryItems(), properties.forcedQuery[1]); } // Sanity check
-									catch (e) { libItems = fb.GetLibraryItems(); }
+									catch (e) { libItems = fb.GetLibraryItems(); } // eslint-disable-line no-unused-vars
 								} else { libItems = fb.GetLibraryItems(); }
 								const notFound = [];
 								const items = queryArr.map((query, i) => {
 									let itemHandleList;
 									try { itemHandleList = fb.GetQueryItems(libItems, query); } // Sanity check
-									catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; }
+									catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; } // eslint-disable-line no-unused-vars
 									// Filter
 									if (itemHandleList.Count) {
 										itemHandleList = removeDuplicates({ handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false });
@@ -786,9 +786,9 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				.then(() => {
 					this.switchAnimation('ListenBrainz data retrieval', false);
 					let libItems;
-					if (properties.forcedQuery[1].length) {
+					if (isString(properties.forcedQuery[1])) {
 						try { libItems = fb.GetQueryItems(fb.GetLibraryItems(), properties.forcedQuery[1]); } // Sanity check
-						catch (e) { libItems = fb.GetLibraryItems(); }
+						catch (e) { libItems = fb.GetLibraryItems(); } // eslint-disable-line no-unused-vars
 					} else { libItems = fb.GetLibraryItems(); }
 					const notFound = [];
 					let items = [];
@@ -798,8 +798,8 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 								const mbidAlt = mbidsAlt[i];
 								const tagArr = ['ARTIST', 'TITLE']
 									.map((key) => { return { key, val: sanitizeQueryVal(sanitizeTagValIds(tags[key][i])) }; });
-								const bMeta = tagArr.every((tag) => { return tag.val.length > 0; });
-								if (!tagArr[0].val.length > 0) { return; }
+								const bMeta = tagArr.every((tag) => isString(tag.val));
+								if (!isString(tagArr[0].val)) { return; }
 								if (mbidAlt) { // Get specific recordings
 									const query = queryJoin(
 										[
@@ -831,14 +831,14 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 							items = queryArr.map((query, i) => {
 								let itemHandleList;
 								try { itemHandleList = fb.GetQueryItems(libItems, query); } // Sanity check
-								catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; }
+								catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; } // eslint-disable-line no-unused-vars
 								// Filter
 								if (itemHandleList.Count) {
 									itemHandleList = removeDuplicates({ handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false });
 									itemHandleList = removeDuplicates({ handleList: itemHandleList, checkKeys: [globTags.title, 'ARTIST'], bAdvTitle: properties.bAdvTitle[1] });
 									return itemHandleList[0];
 								}
-								if (tags.TITLE[i].length) {
+								if (isString(tags.TITLE[i])) {
 									notFound.push({
 										creator: tags.ARTIST[i],
 										title: tags.TITLE[i],
@@ -854,7 +854,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 							// Add titles to report, since is a small amount, it's fine to iterate...
 							const tfo = fb.TitleFormat('[%TITLE%]');
 							items.forEach((handle, i) => {
-								if (handle && tags.TITLE[i].length === 0) { tags.TITLE[i] = tfo.EvalWithMetadb(handle) || '  \u2715  '; }
+								if (handle && !isString(tags.TITLE[i])) { tags.TITLE[i] = tfo.EvalWithMetadb(handle) || '  \u2715  '; }
 							});
 							break;
 						}
@@ -863,7 +863,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 							const queryArr = mbids.map((mbid, i) => {
 								const tagArr = ['TITLE', 'ARTIST']
 									.map((key) => { return { key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g, '')).toLowerCase() }; });
-								const bMeta = tagArr.every((tag) => { return tag.val.length > 0; });
+								const bMeta = tagArr.every((tag) => isString(tag.val));
 								const query = queryJoin(
 									[
 										bMeta ? tagArr.map((tag) => { return tag.key + ' IS ' + tag.val; }).join(' AND ') + ' AND ' + globQuery.noLiveNone : '',
@@ -875,7 +875,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 							items = queryArr.map((query, i) => {
 								let itemHandleList;
 								try { itemHandleList = fb.GetQueryItems(libItems, query); } // Sanity check
-								catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; }
+								catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; } // eslint-disable-line no-unused-vars
 								// Filter
 								if (itemHandleList.Count) {
 									itemHandleList = removeDuplicates({ handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false });
@@ -891,7 +891,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 							const queryArr = mbids.map((mbid, i) => {
 								const tagArr = ['TITLE', 'ARTIST']
 									.map((key) => { return { key, val: sanitizeQueryVal(_asciify(tags[key][i]).replace(/"/g, '')).toLowerCase() }; });
-								const bMeta = tagArr.every((tag) => { return tag.val.length > 0; });
+								const bMeta = tagArr.every((tag) => isString(tag.val));
 								const query = queryJoin(
 									[
 										bMeta ? tagArr.map((tag) => { return tag.key + ' IS ' + tag.val; }).join(' AND ') + ' AND ' + globQuery.noLiveNone : '',
@@ -904,7 +904,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 							items = queryArr.map((query, i) => {
 								let itemHandleList;
 								try { itemHandleList = fb.GetQueryItems(artistItems, query); } // Sanity check
-								catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; }
+								catch (e) { fb.ShowPopupMessage('Query not valid. Check query:\n' + query, 'ListenBrainz'); return; } // eslint-disable-line no-unused-vars
 								// Filter
 								if (itemHandleList.Count) {
 									itemHandleList = removeDuplicates({ handleList: itemHandleList, checkKeys: ['MUSICBRAINZ_TRACKID'], sortBias: globQuery.remDuplBias, bPreserveSort: false });
@@ -917,7 +917,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 							// Add titles to report, since is a small amount, it's fine to iterate...
 							const tfo = fb.TitleFormat('[%TITLE%]');
 							items.forEach((handle, i) => {
-								if (handle && tags.TITLE[i].length === 0) { tags.TITLE[i] = tfo.EvalWithMetadb(handle) || '  \u2715  '; }
+								if (handle && !isString(tags.TITLE[i])) { tags.TITLE[i] = tfo.EvalWithMetadb(handle) || '  \u2715  '; }
 							});
 							break;
 						}
@@ -937,7 +937,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				.then(({ notFound, items }) => {
 					if (notFound.length && properties.bYouTube[1] && isYouTube) {
 						this.switchAnimation('YouTube Scrapping', true);
-						const search = notFound.filter((t) => t.title.length && t.creator.length);
+						const search = notFound.filter((t) => isString(t.title) && isString(t.creator));
 						// Send request in parallel every x ms and process when all are done
 						return Promise.parallel(search, youTube.searchForYoutubeTrack, 5).then((results) => {
 							let j = 0;
@@ -1136,7 +1136,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						console.log('Exporting playlist to ListenBrainz: ' + name);
 						playlist_mbid = await lb.exportPlaylist({ name, nameId: name, extension: '.ui' }, '', token, bLookupMBIDs);
 					}
-					if (!playlist_mbid || typeof playlist_mbid !== 'string' || !playlist_mbid.length) { lb.consoleError('Playlist was not exported.'); return; }
+					if (!playlist_mbid || typeof playlist_mbid !== 'string' || !isString(playlist_mbid)) { lb.consoleError('Playlist was not exported.'); return; }
 					this.retrievePlaylists(false);
 					if (properties.bSpotify[1]) {
 						lb.retrieveUser(token).then((user) => lb.getUserServices(user, token)).then((services) => {
@@ -1168,7 +1168,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					if (!response) { return; }
 					const table = new Table;
 					response.recording_mbid.forEach((id, i) => {
-						const bFound = !!id.length;
+						const bFound = isString(id);
 						const title = bFound ? response.recording_name[i] : tfo.EvalWithMetadb(handleList[i]);
 						const mbid = bFound ? id : '-not found-';
 						table.cell('Title', title);
@@ -1250,7 +1250,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						const response = await lb.sendFeedback(sendMBIDs, 'love', token);
 						this.switchAnimation('ListenBrainz data uploading', false);
 						if (!response || !response.every(Boolean)) {
-							if (user || properties.userCache[1].length) {
+							if (user || isString(properties.userCache[1])) {
 								WshShell.Popup('Feedback imported sucessfully.', 0, 'ListenBrainz Tools', popup.info + popup.ok);
 								console.log('ListenBrainz: Error connecting to server. Data has been cached and will be sent later...');
 								const date = Date.now();
@@ -1287,7 +1287,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						return bDone;
 					}
 				});
-				menu.newCheckMenuLast(() => !!properties.lBrainzToken[1].length);
+				menu.newCheckMenuLast(() => isString(properties.lBrainzToken[1]));
 				menu.newEntry({
 					menuName: subMenuName, entryText: 'Retrieve token from other panels...', func: () => {
 						this.lBrainzTokenListener = true;
@@ -1305,7 +1305,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						const token = bListenBrainz ? getToken() : null;
 						if (!token) { return; }
 						const user = await lb.retrieveUser(token);
-						if (user.length) { _runCmd('CMD /C START https://listenbrainz.org/user/' + user + '/playlists/', false); }
+						if (isString(user)) { _runCmd('CMD /C START https://listenbrainz.org/user/' + user + '/playlists/', false); }
 					}, flags: bListenBrainz ? MF_STRING : MF_GRAYED
 				});
 			}
@@ -1375,9 +1375,9 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					menuName: subMenuName, entryText: 'Query filter for matches...', func: (cache) => {
 						let input = '';
 						try { input = utils.InputBox(window.ID, 'Enter query used to pre-filter library when retrieving tracks:\n\n(note files with a feedback tag will always be shown, even if the filter would discard them)', 'ListenBrainz Tools', cache || properties.feedbackQuery[1], true); }
-						catch (e) { return; }
+						catch (e) { return; } // eslint-disable-line no-unused-vars
 						if ((!cache || cache !== input) && properties.feedbackQuery[1] === input) { return; }
-						try { if (input.length && fb.GetQueryItems(fb.GetLibraryItems(), input).Count === 0) { throw new Error('No items'); } } // Sanity check
+						try { if (isString(input) && fb.GetQueryItems(fb.GetLibraryItems(), input).Count === 0) { throw new Error('No items'); } } // Sanity check
 						catch (e) {
 							if (e.message === 'No items') {
 								fb.ShowPopupMessage('Query returns zero items on current library. Check it and add it again:\n' + input, 'Search by distance');
@@ -1430,9 +1430,9 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			menuName, entryText: 'Global query filter...', func: (cache) => {
 				let input = '';
 				try { input = utils.InputBox(window.ID, 'Enter global query used to pre-filter library:', 'ListenBrainz Tools', cache || properties.forcedQuery[1], true); }
-				catch (e) { return; }
+				catch (e) { return; } // eslint-disable-line no-unused-vars
 				if ((!cache || cache !== input) && properties.forcedQuery[1] === input) { return; }
-				try { if (input.length && fb.GetQueryItems(fb.GetLibraryItems(), input).Count === 0) { throw new Error('No items'); } } // Sanity check
+				try { if (isString(input) && fb.GetQueryItems(fb.GetLibraryItems(), input).Count === 0) { throw new Error('No items'); } } // Sanity check
 				catch (e) {
 					if (e.message === 'No items') {
 						fb.ShowPopupMessage('Query returns zero items on current library. Check it and add it again:\n' + input, 'Search by distance');
