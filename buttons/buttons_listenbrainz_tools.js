@@ -1,5 +1,5 @@
 ﻿'use strict';
-//11/03/25
+//17/03/25
 
 /*
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -83,7 +83,11 @@ addButton({
 					this, true, ['buttons_listenbrainz_tools.js'],
 					{
 						bAdvTitle: { popup: globRegExp.title.desc },
-						bDynamicMenus: { popup: 'Remember to set different panel names to every buttons toolbar, otherwise menus will not be properly associated to a single panel.\n\nShift + Win + R. Click -> Configure panel... (\'edit\' at top)' }
+						bDynamicMenus: { popup: 'Remember to set different panel names to every buttons toolbar, otherwise menus will not be properly associated to a single panel.\n\nShift + Win + R. Click -> Configure panel... (\'edit\' at top)' },
+						tags: {
+							input: 'Enter value:\n(JSON)\n\nUse the \'Tag remap\' submenu to easily set individual tags.',
+							bHide: true
+						},
 					},
 					{
 						bDynamicMenus:
