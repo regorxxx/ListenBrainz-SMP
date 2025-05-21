@@ -265,7 +265,11 @@ fb.GetQueryItemsCheck = (handleList = fb.GetLibraryItems(), query = 'ALL', bCach
 plman.AddPlaylistItemsOrLocations = (plsIdx, items /*[handle, handleList, filePath, ...]*/, bSync = false) => {
 	if (items.length === 0) { return bSync ? Promise.resolve(false) : false; }
 	if (plsIdx === -1) { return bSync ? Promise.resolve(false) : false; }
-	let lastType = typeof items[0].RawPath !== 'undefined' ? 'handle' : typeof items[0].Count !== 'undefined' ? 'handleList' : 'path';
+	let lastType = typeof items[0].RawPath !== 'undefined'
+		? 'handle'
+		: typeof items[0].Count !== 'undefined'
+			? 'handleList'
+			: 'path';
 	let queue = lastType === 'path' ? [] : new FbMetadbHandleList();
 	const timer = (item, type) => {
 		if (!bSync) { return 0; }
@@ -281,8 +285,8 @@ plman.AddPlaylistItemsOrLocations = (plsIdx, items /*[handle, handleList, filePa
 		}
 		return 50;
 	};
-	const sendQueue = (item, type) => {
-		switch (type) {
+	const sendQueue = (item, lastType, type) => {
+		switch (lastType) {
 			case 'path': {
 				plman.AddLocations(plsIdx, queue);
 				queue = new FbMetadbHandleList();
@@ -312,7 +316,7 @@ plman.AddPlaylistItemsOrLocations = (plsIdx, items /*[handle, handleList, filePa
 		// Send queue
 		if (bSync) {
 			if (type !== lastType) { // Avoid crash if first item is a handle
-				return sendQueue(item, lastType).then(() => {
+				return sendQueue(item, lastType, type).then(() => {
 					lastType = type;
 					addToQueue(item, type);
 				});
@@ -321,7 +325,7 @@ plman.AddPlaylistItemsOrLocations = (plsIdx, items /*[handle, handleList, filePa
 			return Promise.resolve();
 		} else {
 			if (type !== lastType) {
-				sendQueue(item, lastType);
+				sendQueue(item, lastType, type);
 				lastType = type;
 			}
 			addToQueue(item, type);
