@@ -1,5 +1,5 @@
 ﻿'use strict';
-//25/03/25
+//21/05/25
 
 /* exported extendGR */
 
@@ -107,7 +107,7 @@ Object.defineProperty(fb, 'tfCache', {
 	gr
 */
 // Augment gr.DrawRoundRect() with error handling
-function extendGR(gr, options = { DrawRoundRect: true, FillRoundRect: true, Repaint: true, ImgBox: true, Debug: false }) {
+function extendGR(/** @type {GdiGraphics} */ gr, options = { DrawRoundRect: true, FillRoundRect: true, Repaint: true, Highlight: false, ImgBox: true, Debug: false }) {
 	if (!gr.Extended) { gr.Extended = options; }
 	else { Object.keys(options).forEach((opt) => { if (options[opt]) { gr.Extended[opt] = true; } }); }
 	if (options.DrawRoundRect) {
@@ -123,7 +123,7 @@ function extendGR(gr, options = { DrawRoundRect: true, FillRoundRect: true, Repa
 				newArgs[5] = newArgs[5] / 2 - Number.EPSILON;
 				try {
 					that = old(...arguments);
-				} catch (e) { bRetry = false; }
+				} catch (e) { bRetry = false; } // eslint-disable-line no-unused-vars
 				if (typeof doOnce !== 'undefined' && options.Debug) {
 					doOnce('Paint bug', fb.ShowPopupMessage.bind(fb))( // eslint-disable-line no-undef
 						'SMP bug drawing: DrawRoundRect\n' +
@@ -154,7 +154,7 @@ function extendGR(gr, options = { DrawRoundRect: true, FillRoundRect: true, Repa
 				newArgs[5] = newArgs[5] / 2 - Number.EPSILON;
 				try {
 					that = old(...arguments);
-				} catch (e) { bRetry = false; }
+				} catch (e) { bRetry = false; } // eslint-disable-line no-unused-vars
 				if (typeof doOnce !== 'undefined' && options.Debug) {
 					doOnce('Paint bug', fb.ShowPopupMessage.bind(fb))( // eslint-disable-line no-undef
 						'SMP bug drawing: FillRoundRect\n' +
@@ -179,6 +179,14 @@ function extendGR(gr, options = { DrawRoundRect: true, FillRoundRect: true, Repa
 			gr.DrawRect(arguments[1], arguments[2], arguments[3], arguments[4], 2, 1694433280); // Red 90%
 			return that;
 		};
+	}
+	if (options.Highlight) {
+		const size = Math.min(window.Height, window.Width) / 10;
+		gr.FillSolidRect(size, 0, window.Width, size, 1694433280);
+		gr.FillSolidRect(0, 0, size, window.Height - size, 1694433280);
+		gr.FillSolidRect(window.Width - size, size, window.Width - size, window.Height, 1694433280);
+		gr.FillSolidRect(0, window.Height - size, window.Width - size, window.Height, 1694433280);
+		setTimeout(() => window.Repaint(true), 250);
 	}
 	if (options.Repaint && !window.debugPainting) {
 		window.debugPainting = true;
@@ -244,7 +252,7 @@ fb.GetQueryItemsCheck = (handleList = fb.GetLibraryItems(), query = 'ALL', bCach
 	if (bCache) {
 		outputHandleList = fb.queryCache.get(id);
 	} else {
-		try { outputHandleList = fb.GetQueryItems(handleList, query); } catch (e) { outputHandleList = null; }
+		try { outputHandleList = fb.GetQueryItems(handleList, query); } catch (e) { outputHandleList = null; } // eslint-disable-line no-unused-vars
 		fb.queryCache.set(id, outputHandleList);
 	}
 	return outputHandleList;
@@ -372,7 +380,7 @@ Object.defineProperty(window, 'drawDebugRectAreas', {
 		try {
 			this.debugPaintingRects.forEach((coords) => gr.DrawRect(...coords, px, color));
 			this.debugPaintingRects.length = 0;
-		} catch (e) { /* Continue */ }
+		} catch (e) { /* Continue */ } // eslint-disable-line no-unused-vars
 	}).bind(window)
 });
 
