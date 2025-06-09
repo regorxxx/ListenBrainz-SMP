@@ -53,6 +53,7 @@
 - SMP Dynamic menu: fixed multiple errors on dynamic menus (un)registering.
 - UI: '&' being displayed as '_' on tooltips.
 - UI: memory leak due to wrong handling of icons in some cases (resulting on more than one file handle), in particular the MusicBrainz button icon.
+- UI: multiple workarounds for rounded rectangles not being painted properly or producing crashes (SMP limitation).
 
 ## [2.3.0] - 2024-10-09
 ### Added
