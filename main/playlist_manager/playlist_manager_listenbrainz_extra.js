@@ -1,5 +1,5 @@
 ﻿'use strict';
-//08/12/24
+//11/06/25
 
 /* global youTube:readable */
 include('..\\..\\helpers\\helpers_xxx.js');
@@ -384,7 +384,7 @@ ListenBrainz.submitListens = async function submitListens(payload, token) {
  * @param {string} o.tagName - [='SIMILAR ARTISTS LISTENBRAINZ'] Tag name for saving on tracks
  * @param {boolean} o.bLookupMBIDs - [=true] Lookup MBIDs online if missing on tags
  * @param {string} o.token
- * @returns {Promise<{ artist: string; mbid: string; similar: { artist: string; mbid: string; score: number; }[]; }[]>}
+ * @returns {Promise.<{ artist: string; mbid: string; similar: { artist: string; mbid: string; score: number; }[]; }[]>}
  */
 ListenBrainz.calculateSimilarArtistsFromPls = async function calculateSimilarArtistsFromPls({ items = plman.GetPlaylistSelectedItems(plman.ActivePlaylist), file = folders.data + 'listenbrainz_artists.json', iNum = 10, tagName = globTags.lbSimilarArtist, bLookupMBIDs = true, token } = {}) {
 	const handleList = removeDuplicates({ handleList: items, sortOutput: globTags.artist, checkKeys: [globTags.artist] });
