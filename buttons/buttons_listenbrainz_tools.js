@@ -1,5 +1,5 @@
 ﻿'use strict';
-//13/05/25
+//12/06/25
 
 /*
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -74,7 +74,7 @@ newButtonsProperties = getPropertiesPairs(newButtonsProperties, prefix, 0);
 buttonsBar.list.push(newButtonsProperties);
 
 addButton({
-	'Listen Brainz Tools': new ThemedButton({
+	'ListenBrainz Tools': new ThemedButton({
 		coordinates: { x: 0, y: 0, w: 100, h: 22 },
 		text: 'Listen Brainz',
 		func: function (mask) {
