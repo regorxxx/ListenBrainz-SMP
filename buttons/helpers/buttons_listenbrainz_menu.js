@@ -1,5 +1,5 @@
 'use strict';
-//13/03/25
+//19/06/25
 
 /* exported listenBrainzmenu */
 
@@ -40,6 +40,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 	// Helpers
 	const lb = ListenBrainz;
 	const properties = this.buttonsProperties || this.properties;
+	const filePaths = JSON.parse(this.buttonsProperties.filePaths[1]);
 	const feedbackTag = properties.feedbackTag[1];
 	const bLookupMBIDs = properties.bLookupMBIDs[1];
 	const bListenBrainz = isString(properties.lBrainzToken[1]);
@@ -134,17 +135,16 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		});
 		// Similar artists tags
 		[
-			{ file: 'listenbrainz_artists.json', dataId: 'artist', tag: globTags.lbSimilarArtist },
-			{ file: 'searchByDistance_artists.json', dataId: 'artist', tag: globTags.sbdSimilarArtist }
+			{ file: filePaths.listenBrainzArtists, dataId: 'artist', tag: globTags.lbSimilarArtist },
+			{ file: filePaths.searchByDistanceArtists, dataId: 'artist', tag: globTags.sbdSimilarArtist }
 		].forEach((option) => {
-			const path = '.\\profile\\' + folders.dataName + option.file; // TODO Expose paths at properties
-			if (_isFile(path)) {
+			if (_isFile(option.file)) {
 				const dataId = option.dataId;
 				const dataTag = option.tag;
 				const tagId = globTags.artistRaw.toLowerCase();
 				const selIds = [...(tags.find((tag) => tag.tf.some((tf) => tf.toLowerCase() === tagId)) || { valSet: [] }).valSet];
 				if (selIds.length) {
-					const data = getSimilarDataFromFile(path);
+					const data = getSimilarDataFromFile(option.file);
 					const lbData = new Set();
 					if (data) {
 						data.forEach((item) => {
@@ -165,13 +165,11 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 			}
 		});
 		// World map tags
-		const worldMapPath = '.\\profile\\' + folders.dataName + 'worldMap.json'; // TODO Expose paths at properties
-		if (_isFile(worldMapPath)) {
+		if (_isFile(filePaths.worldMapArtists)) {
 			const dataId = 'artist';
-			const tagId = globTags.artist.toLowerCase();
-			const selIds = [...(tags.find((tag) => tag.tf.some((tf) => tf.toLowerCase() === tagId)) || { valSet: [] }).valSet];
+			const selIds = [...(tags.find((tag) => tag.tf.some((tf) => tf.toLowerCase() === dataId)) || { valSet: [] }).valSet];
 			if (selIds.length) {
-				const data = _jsonParseFileCheck(worldMapPath, 'Tags json', window.Name, utf8);
+				const data = _jsonParseFileCheck(filePaths.worldMapArtists, 'Tags json', window.Name, utf8);
 				const worldMapData = new Set();
 				if (data) {
 					data.forEach((item) => {
@@ -615,7 +613,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						menu.newSeparator(subMenu);
 					}
 					if (tag.valSet.size === 0) { tag.valSet.add(''); }
-					[...tag.valSet].sort((a, b) => a.localeCompare(b, 'en', { 'sensitivity': 'base' })).forEach((val, i) => {
+					[...tag.valSet].sort((a, b) => a.localeCompare(b, void(0), { sensitivity: 'base' })).forEach((val, i) => {
 						menu.newEntry({
 							menuName: subMenu, entryText: bSingle ? tag.name + '\t[' + (val.cut(20) || (sel ? 'no tag' : 'no sel')) + ']' : val.cut(20), func: () => {
 								switch (tag.type) {
@@ -1047,7 +1045,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						break;
 					case 'name':
 					default:
-						sortFunc = (a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase());
+						sortFunc = (a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase(), void(0), { sensitivity: 'base' });
 				}
 				playlists.sort(sortFunc);
 				const plsMenus = range(0, Math.ceil(count / 10) - 1).map((idx) => {
@@ -1189,7 +1187,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					const token = bListenBrainz ? getToken() : null;
 					if (!token) { return; }
 					this.switchAnimation('ListenBrainz data retrieval', true);
-					const response = await lb.calculateSimilarArtistsFromPls({ token });
+					const response = await lb.calculateSimilarArtistsFromPls({ token, file: filePaths.listenBrainzArtists });
 					this.switchAnimation('ListenBrainz data retrieval', false);
 					if (!response) { return; }
 				}, flags: bListenBrainz ? selectedFlagsCount(70) : MF_GRAYED, data: { bDynamicMenu: true }

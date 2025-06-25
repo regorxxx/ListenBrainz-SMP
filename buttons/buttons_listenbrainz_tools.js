@@ -1,5 +1,5 @@
 ﻿'use strict';
-//12/06/25
+//19/06/25
 
 /*
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -67,8 +67,14 @@ var newButtonsProperties = { // NOSONAR[global]
 		{ name: 'Folksonomy & Date(s)', tf: [...new Set([globTags.folksonomy, 'FOLKSONOMY', 'OCCASION', 'ALBUMOCCASION', globTags.locale, 'LOCALE', 'LOCALE LAST.FM', 'DATE', 'LOCALE WORLD MAP'])], type: 'getRecordingsByTag' },
 		{ name: 'Mood & Theme(s)', tf: [...new Set([globTags.mood, 'MOOD', 'THEME', 'ALBUMMOOD', 'ALBUM THEME ALLMUSIC', 'ALBUM MOOD ALLMUSIC'])], type: 'getRecordingsByTag' }
 	])],
+	filePaths: ['External database paths', JSON.stringify({
+		listenBrainzArtists: '.\\profile\\' + folders.dataName + 'listenbrainz_artists.json',
+		searchByDistanceArtists: '.\\profile\\' + folders.dataName + 'searchByDistance_artists.json',
+		worldMapArtists: '.\\profile\\' + folders.dataName + 'worldMap.json'
+	})]
 };
 newButtonsProperties.tags.push({ func: isJSON }, newButtonsProperties.tags[1]);
+newButtonsProperties.filePaths.push({ func: isJSON }, newButtonsProperties.filePaths[1]);
 setProperties(newButtonsProperties, prefix, 0); //This sets all the panel properties at once
 newButtonsProperties = getPropertiesPairs(newButtonsProperties, prefix, 0);
 buttonsBar.list.push(newButtonsProperties);
