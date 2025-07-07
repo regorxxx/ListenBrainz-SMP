@@ -1,5 +1,5 @@
 ﻿'use strict';
-//11/06/25
+//07/07/25
 
 /* exported savePlaylist, addHandleToPlaylist, precacheLibraryRelPaths, precacheLibraryPathsAsync, loadTracksFromPlaylist, arePathsInMediaLibrary, loadPlaylists, getFileMetaFromPlaylist, loadXspPlaylist, getHandlesFromPlaylistV2 */
 
@@ -34,7 +34,7 @@ const playlistDescriptors = {
 	'.xspf': /* ... */ { isWritable: true, isReadable: true, isLoadable: true, icon: '\uf1e0', iconBg: null },
 	'.xsp': /* ...................... */ { isReadable: true, isLoadable: true, icon: '\uf0d0', iconBg: null },
 	'.strm': /* ..................... */ { isReadable: true, isLoadable: true, icon: '\uf0f6', iconBg: null },
-	'.fpl': /* ...................... */ { isReadable: true, isLoadable: true, icon: '\uf1c6', iconBg: null },
+	'.fpl': /* .... */ { isWritable: !!(new FbMetadbHandleList()).SaveAs, isReadable: true, isLoadable: true, icon: '\uf1c7', iconBg: '\uf15b' },
 	// Abstract items
 	'.ui': /* ........................................................... */ { icon: '\uf26c', iconBg: null },
 	autoPlaylist: /* ................................................ */ { icon: '\uf0e7', iconBg: '\uf15b' },
@@ -852,8 +852,8 @@ function loadTracksFromPlaylist({ playlistPath, playlistIndex, relPath = '', rem
 
 // Loading m3u, m3u8 & pls playlist files is really slow when there are many files
 // Better to find matches on the library (by path) and use those! A query or addLocation approach is easily 100x times slower
-function getHandlesFromPlaylist({ playlistPath, relPath = '', bOmitNotFound = false, remDupl = []/*['$ascii($lower($trim(%TITLE%)))','ARTIST','$year(%DATE%)']*/, bReturnNotFound = false, bAdvTitle = false, bMultiple = false, bLog = true, xspfRules = { bFallbackComponentXSPF: false }, poolItems = fb.GetLibraryItems() } = {}) {
-	const test = bLog ? new FbProfiler('getHandlesFromPlaylist') : null;
+function getHandlesFromPlaylist({ playlistPath, relPath = '', bOmitNotFound = false, remDupl = []/*['$ascii($lower($trim(%TITLE%)))','ARTIST','$year(%DATE%)']*/, bReturnNotFound = false, bAdvTitle = false, bMultiple = false, bLog = true, bProfile = false, xspfRules = { bFallbackComponentXSPF: false }, poolItems = fb.GetLibraryItems() } = {}) {
+	const test = bProfile ? new FbProfiler('getHandlesFromPlaylist') : null;
 	const extension = utils.SplitFilePath(playlistPath)[2].toLowerCase();
 	let handlePlaylist = null, pathsNotFound = null, locationsByOrder = [];
 	if (extension === '.xsp') {
@@ -1095,7 +1095,7 @@ function getHandlesFromPlaylist({ playlistPath, relPath = '', bOmitNotFound = fa
 	return (bReturnNotFound ? { handlePlaylist, pathsNotFound, locationsByOrder } : handlePlaylist);
 }
 
-function getHandlesFromPlaylistV2({ playlistPath, relPath = '', bOmitNotFound = false, remDupl = []/*['$ascii($lower($trim(%TITLE%)))','ARTIST','$year(%DATE%)']*/, bReturnNotFound = false, bAdvTitle = false, bMultiple = false, bLog = true, xspfRules = { bFallbackComponentXSPF: false }, poolItems = fb.GetLibraryItems() } = {}) { // eslint-disable-line no-unused-vars
+function getHandlesFromPlaylistV2({ playlistPath, relPath = '', bOmitNotFound = false, remDupl = []/*['$ascii($lower($trim(%TITLE%)))','ARTIST','$year(%DATE%)']*/, bReturnNotFound = false, bAdvTitle = false, bMultiple = false, bLog = true, bProfile = false, xspfRules = { bFallbackComponentXSPF: false }, poolItems = fb.GetLibraryItems() } = {}) { // eslint-disable-line no-unused-vars
 	const extension = utils.SplitFilePath(playlistPath)[2].toLowerCase();
 	const out = getHandlesFromPlaylist(...arguments);
 	if (extension === '.fpl' && fb.AddLocationsAsyncV2) {
