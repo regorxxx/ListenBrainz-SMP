@@ -1,5 +1,5 @@
 'use strict';
-//19/06/25
+//01/08/25
 
 /* exported listenBrainzmenu */
 
@@ -1275,7 +1275,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 		menu.newSeparator();
 	}
 	{	// Configuration
-		const menuName = menu.newMenu('Configuration');
+		const menuName = menu.newMenu('Settings');
 		{
 			const subMenuName = menu.newMenu('User', menuName);
 			{
