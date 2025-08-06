@@ -1,5 +1,5 @@
 ﻿'use strict';
-//11/06/25
+//06/08/25
 
 /* global youTube:readable */
 include('..\\..\\helpers\\helpers_xxx.js');
@@ -388,7 +388,7 @@ ListenBrainz.submitListens = async function submitListens(payload, token) {
  */
 ListenBrainz.calculateSimilarArtistsFromPls = async function calculateSimilarArtistsFromPls({ items = plman.GetPlaylistSelectedItems(plman.ActivePlaylist), file = folders.data + 'listenbrainz_artists.json', iNum = 10, tagName = globTags.lbSimilarArtist, bLookupMBIDs = true, token } = {}) {
 	const handleList = removeDuplicates({ handleList: items, sortOutput: globTags.artist, checkKeys: [globTags.artist] });
-	if (WshShell.Popup('Process [diferent] artists from currently selected items and retrieve their most similar artists?\nResults are output to console and saved to JSON:\n' + file, 0, 'ListenBrainz', popup.question + popup.yes_no) === popup.no) { return; }
+	if (WshShell.Popup('Process [different] artists from currently selected items and retrieve their most similar artists?\nResults are output to console and saved to JSON:\n' + file, 0, 'ListenBrainz', popup.question + popup.yes_no) === popup.no) { return; }
 	let profiler = new FbProfiler('Retrieve similar artists');
 	const newData = [];
 	const selMbids = await this.getArtistMBIDs(handleList, token, bLookupMBIDs, true);

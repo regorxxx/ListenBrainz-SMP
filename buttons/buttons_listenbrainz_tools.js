@@ -1,5 +1,5 @@
 ﻿'use strict';
-//30/07/25
+//06/08/25
 
 /*
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
@@ -31,7 +31,7 @@ include('..\\main\\playlist_manager\\playlist_manager_listenbrainz.js');
 include('..\\main\\bio\\bio_tags.js');
 /* global lastfmListeners:readable */
 include('helpers\\buttons_listenbrainz_menu.js'); // Button menu
-/* global listenBrainzmenu:readable */
+/* global listenBrainzMenu:readable */
 var prefix = 'lbt'; // NOSONAR[global]
 var version = '2.4.0'; // NOSONAR[global]
 
@@ -100,7 +100,7 @@ addButton({
 							(value) => {
 								if (value) {
 									bindDynamicMenus({
-										menu: listenBrainzmenu.bind(this),
+										menu: listenBrainzMenu.bind(this),
 										parentName: 'ListenBrainz',
 										entryCallback: (entry) => {
 											const prefix = 'ListenBrainz' + (/sitewide.*/i.test(entry.menuName)
@@ -136,7 +136,7 @@ addButton({
 			} else {
 				this.retrievePlaylists(false);
 				if (!ListenBrainz.cache.following.size) { this.retrieveFollowing(); }
-				listenBrainzmenu.bind(this)().btn_up(this.currX, this.currY + this.currH);
+				listenBrainzMenu.bind(this)().btn_up(this.currX, this.currY + this.currH);
 			}
 		},
 		description: function () {
@@ -211,7 +211,7 @@ addButton({
 			// Create dynamic menus
 			if (this.buttonsProperties.bDynamicMenus[1]) {
 				bindDynamicMenus({
-					menu: listenBrainzmenu.bind(this),
+					menu: listenBrainzMenu.bind(this),
 					parentName: 'ListenBrainz',
 					entryCallback: (entry) => {
 						const prefix = 'ListenBrainz' + (/sitewide.*/i.test(entry.menuName)
@@ -233,7 +233,7 @@ addButton({
 				this.buttonsProperties.firstPopup[1] = true;
 				overwriteProperties(this.buttonsProperties);
 			}
-			// Retrieve user playlists at startup and every 30 min, also everytime button is clicked
+			// Retrieve user playlists at startup and every 30 min, also every time button is clicked
 			this.retrievePlaylists = (bLoop) => {
 				const token = this.buttonsProperties.lBrainzToken[1];
 				const bListenBrainz = token.length;

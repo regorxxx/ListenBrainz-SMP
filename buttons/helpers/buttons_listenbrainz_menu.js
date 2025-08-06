@@ -1,7 +1,7 @@
 'use strict';
-//01/08/25
+//06/08/25
 
-/* exported listenBrainzmenu */
+/* exported listenBrainzMenu */
 
 include('..\\..\\helpers\\helpers_xxx.js');
 /* global popup:readable, folders:readable, globTags:readable, MF_STRING:readable, MF_GRAYED:readable, VK_SHIFT:readable, globQuery:readable, isYouTube:readable, MF_MENUBREAK:readable, VK_CONTROL:readable */
@@ -31,11 +31,11 @@ include('..\\..\\main\\filter_and_query\\remove_duplicates.js');
 /* global removeDuplicates:readable */
 include('..\\..\\main\\main_menu\\main_menu_custom.js');
 
-// listenBrainzmenu.bind(this)().btn_up(x, y)
-function listenBrainzmenu({ bSimulate = false } = {}) {
+// listenBrainzMenu.bind(this)().btn_up(x, y)
+function listenBrainzMenu({ bSimulate = false } = {}) {
 	if (bSimulate) {
 		this.selItems = { Count: 1 };
-		return listenBrainzmenu.bind(this)(false);
+		return listenBrainzMenu.bind(this)(false);
 	}
 	// Helpers
 	const lb = ListenBrainz;
@@ -58,7 +58,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				const answer = WshShell.Popup('Do you want to encrypt the token?', 0, window.Name, popup.question + popup.yes_no);
 				if (answer === popup.yes) {
 					let pass = '';
-					try { pass = utils.InputBox(window.ID, 'Enter a passowrd:\n(will be required on every use)', window.Name, pass, true); }
+					try { pass = utils.InputBox(window.ID, 'Enter a password:\n(will be required on every use)', window.Name, pass, true); }
 					catch (e) { return false; } // eslint-disable-line no-unused-vars
 					if (!isString(pass)) { return false; }
 					lBrainzToken = new SimpleCrypto(pass).encrypt(lBrainzToken);
@@ -210,8 +210,8 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						// Add MBIDs to youTube track metadata
 						notFound.forEach((track) => track.tags = {
 							musicbrainz_trackid: track.identifier,
-							musicbrainz_albumartistid: track.artistIndentifier[0],
-							musicbrainz_artistid: track.artistIndentifier,
+							musicbrainz_albumartistid: track.artistIdentifier[0],
+							musicbrainz_artistid: track.artistIdentifier,
 						});
 						// Send request in parallel every x ms and process when all are done
 						return Promise.parallel(notFound, youTube.searchForYoutubeTrack, 5).then((results) => {
@@ -357,7 +357,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 				const titles = fb.TitleFormat('%TITLE%').EvalWithMetadbs(handleList);
 				const feedbacks = fb.TitleFormat(_b(_t(feedbackTag))).EvalWithMetadbs(handleList);
 				const table = new Table;
-				let loved = 0, hated = 0, missmatch = 0;
+				let loved = 0, hated = 0, mismatch = 0;
 				response.forEach((obj, i) => {
 					const title = titles[i];
 					const score = obj.score === 1 ? 'love' : obj.score === -1 ? 'hate' : '-none-';
@@ -365,7 +365,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					const feedback = feedbackNum === 1 ? 'love' : feedbackNum === -1 ? 'hate' : '-none-';
 					const bMismatch = feedback !== score;
 					if (obj.score === 1 || feedbackNum === 1) { loved++; } else if (obj.score === -1 || feedbackNum === -1) { hated++; }
-					if (bMismatch) { missmatch++; }
+					if (bMismatch) { mismatch++; }
 					table.cell('Title', title);
 					table.cell('Online', score);
 					table.cell('Tag', bMismatch
@@ -375,7 +375,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						: '  \u2713  ');
 					table.newRow();
 				});
-				let report = 'Analyzed ' + response.length + ' tracks:\n  - Loved: ' + loved + '\n  - Hated: ' + hated + '\n  - Missmatch: ' + missmatch;
+				let report = 'Analyzed ' + response.length + ' tracks:\n  - Loved: ' + loved + '\n  - Hated: ' + hated + '\n  - Mismatch: ' + mismatch;
 				report += '\n\n' + table.toString();
 				fb.ShowPopupMessage(report, 'ListenBrainz Feedback');
 			}, flags: bListenBrainz ? selectedFlagsCount(Infinity) : MF_GRAYED, data: { bDynamicMenu: true }
@@ -1212,7 +1212,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 					lb.findPayloadMBIDs(payload);
 					const data = await lb.processPayload(payload, token, event);
 					lb.submitListens(data, token).then(
-						() => WshShell.Popup('Listens imported sucessfully.', 0, 'ListenBrainz Tools', popup.info + popup.ok),
+						() => WshShell.Popup('Listens imported successfully.', 0, 'ListenBrainz Tools', popup.info + popup.ok),
 						() => WshShell.Popup('Error importing. Check console.', 0, 'ListenBrainz Tools', popup.info + popup.ok),
 					);
 				}, flags: bListenBrainz ? MF_STRING : MF_GRAYED
@@ -1249,7 +1249,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 						this.switchAnimation('ListenBrainz data uploading', false);
 						if (!response || !response.every(Boolean)) {
 							if (user || isString(properties.userCache[1])) {
-								WshShell.Popup('Feedback imported sucessfully.', 0, 'ListenBrainz Tools', popup.info + popup.ok);
+								WshShell.Popup('Feedback imported successfully.', 0, 'ListenBrainz Tools', popup.info + popup.ok);
 								console.log('ListenBrainz: Error connecting to server. Data has been cached and will be sent later...');
 								const date = Date.now();
 								const data = lb.cache.feedback.get(user || properties.userCache[1]) || {};
@@ -1267,7 +1267,7 @@ function listenBrainzmenu({ bSimulate = false } = {}) {
 							}
 						}
 					} else {
-						WshShell.Popup('Feedback imported sucessfully, but no tracks needed updating.', 0, 'ListenBrainz Tools', popup.info + popup.ok);
+						WshShell.Popup('Feedback imported successfully, but no tracks needed updating.', 0, 'ListenBrainz Tools', popup.info + popup.ok);
 					}
 				}, flags: bListenBrainz ? MF_STRING : MF_GRAYED
 			});
