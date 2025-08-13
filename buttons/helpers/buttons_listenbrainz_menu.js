@@ -1,5 +1,5 @@
 'use strict';
-//06/08/25
+//11/08/25
 
 /* exported listenBrainzMenu */
 
@@ -1378,9 +1378,9 @@ function listenBrainzMenu({ bSimulate = false } = {}) {
 						try { if (isString(input) && fb.GetQueryItems(fb.GetLibraryItems(), input).Count === 0) { throw new Error('No items'); } } // Sanity check
 						catch (e) {
 							if (e.message === 'No items') {
-								fb.ShowPopupMessage('Query returns zero items on current library. Check it and add it again:\n' + input, 'Search by distance');
+								fb.ShowPopupMessage('Query returns zero items on current library. Check it and add it again:\n' + input, 'ListenBrainz Tools');
 							} else {
-								fb.ShowPopupMessage('Query not valid. Check it and add it again:\n' + input, 'Search by distance');
+								fb.ShowPopupMessage('Query not valid. Check it and add it again:\n' + input, 'ListenBrainz Tools');
 							}
 							menu.retry({ pos: -1, args: input || properties.feedbackQuery[1] });
 							return;
@@ -1433,9 +1433,9 @@ function listenBrainzMenu({ bSimulate = false } = {}) {
 				try { if (isString(input) && fb.GetQueryItems(fb.GetLibraryItems(), input).Count === 0) { throw new Error('No items'); } } // Sanity check
 				catch (e) {
 					if (e.message === 'No items') {
-						fb.ShowPopupMessage('Query returns zero items on current library. Check it and add it again:\n' + input, 'Search by distance');
+						fb.ShowPopupMessage('Query returns zero items on current library. Check it and add it again:\n' + input, 'ListenBrainz Tools');
 					} else {
-						fb.ShowPopupMessage('Query not valid. Check it and add it again:\n' + input, 'Search by distance');
+						fb.ShowPopupMessage('Query not valid. Check it and add it again:\n' + input, 'ListenBrainz Tools');
 					}
 					menu.retry({ pos: -1, args: input || properties.forcedQuery[1] });
 					return;
