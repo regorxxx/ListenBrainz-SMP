@@ -47,6 +47,7 @@
 - [JSplitter (SMP)](https://foobar2000.ru/forum/viewtopic.php?t=6378&start=360) support for locked playlists.
 - Playlists: submenus now show the letter or date of the playlist range, and not only the number of playlists. i.e. '00 - 10 [A - C]'.
 - UI: unified script updates settings across all my scripts, look for 'Updates' submenu.
+- UI: workaround for DPI checking under multiple OSes, specially for Wine (Unix).
 - Helpers: updated helpers.
 - Helpers: general code cleanup on menus internal code. Please report any bug on extra separators or menu entries not working as expected.
 ### Removed
