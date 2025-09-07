@@ -28,13 +28,13 @@ Listens syncing is not managed by this script. It's recommended to use [foo_list
 
 ![LB_1](https://user-images.githubusercontent.com/83307074/193407662-92a43011-c3cb-4473-b9cf-7da5780fbec1.gif)
 
-## Requirements
- 1. [Spider Monkey Panel](https://theqwertiest.github.io/foo_spider_monkey_panel): Component required to install this javaScript addon. Only x32.
- 2. [JSplitter](https://foobar2000.ru/forum/viewtopic.php?t=6378): Component required to install this javaScript addon. Both x32 and x64.
+## Requirements (only one host component required)
+ 1. [Spider Monkey Panel](https://theqwertiest.github.io/foo_spider_monkey_panel): JavaScript host component required to install this. Only x32. **(host component)**
+ 2. [JSplitter](https://foobar2000.ru/forum/viewtopic.php?t=6378): JavaScript host component required to install this. Both x32 and x64. **(host component)**
  3. FontAwesome: found at ’.\ resources\fontawesome-webfont.ttf’. See installation notes.
 
 ## Installation
-See [_INSTALLATION (txt)](https://github.com/regorxxx/ListenBrainz-SMP/blob/main/_INSTALLATION.txt) and the [Wiki](https://github.com/regorxxx/ListenBrainz-SMP/wiki/Installation).
+See [Wiki](https://github.com/regorxxx/ListenBrainz-SMP/wiki/Installation) and the [_INSTALLATION (txt)](https://github.com/regorxxx/ListenBrainz-SMP/blob/main/_INSTALLATION.txt).
 Not properly following the installation instructions will result in scripts not working as intended. Please don't report errors before checking this.
 
 ## Support
