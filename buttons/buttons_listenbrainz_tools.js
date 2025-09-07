@@ -1,11 +1,11 @@
 ﻿'use strict';
-//06/08/25
+//07/09/25
 
 /*
 	Integrates ListenBrainz feedback and recommendations statistics within foobar2000 library.
 */
 
-/* global menu_panelProperties:readable */
+/* global barProperties:readable */
 include('..\\helpers\\helpers_xxx.js');
 /* global globTags:readable, MK_SHIFT:readable, VK_SHIFT:readable, folders:readable, isYouTube:readable, globQuery:readable, debounce:readable, MF_GRAYED:readable, globRegExp:readable */
 include('..\\helpers\\buttons_xxx.js');
@@ -146,7 +146,7 @@ addButton({
 			this.retrieveUser(token, bEncrypted);
 			const user = ListenBrainz.cache.user.get(token) || '';
 			const bShift = utils.IsKeyPressed(VK_SHIFT);
-			const bInfo = typeof menu_panelProperties === 'undefined' || menu_panelProperties.bTooltipInfo[1];
+			const bInfo = typeof barProperties === 'undefined' || barProperties.bTooltipInfo[1];
 			const selMul = plman.ActivePlaylist !== -1 ? plman.GetPlaylistSelectedItems(plman.ActivePlaylist) : null;
 			const data = (ListenBrainz.cache.feedback ? [...ListenBrainz.cache.feedback] : [['', {}]]).filter((userData) => userData[0] === user);
 			let infoMul = '';

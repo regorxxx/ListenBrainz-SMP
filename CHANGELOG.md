@@ -48,6 +48,7 @@
 - Playlists: submenus now show the letter or date of the playlist range, and not only the number of playlists. i.e. '00 - 10 [A - C]'.
 - UI: unified script updates settings across all my scripts, look for 'Updates' submenu.
 - UI: workaround for DPI checking under multiple OSes, specially for Wine (Unix).
+- UI: show shortcuts on tooltip setting moved to global setting for the toolbar.
 - Helpers: updated helpers.
 - Helpers: general code cleanup on menus internal code. Please report any bug on extra separators or menu entries not working as expected.
 ### Removed
