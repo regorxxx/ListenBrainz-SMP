@@ -37,6 +37,7 @@
 ### Changed
 ### Removed
 ### Fixed
+- Toolbar: fix missing preset names for Music Map scripts on new installs.
 
 ## [3.0.0] - 2025-09-20
 ### Added
