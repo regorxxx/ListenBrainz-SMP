@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [3.0.0](#300---2025-09-20)
 - [2.3.0](#230---2024-10-09)
 - [2.2.0](#220---2024-08-13)
 - [2.1.0](#210---2024-07-30)
@@ -32,6 +33,12 @@
 - [1.0.0-beta.1](#100-beta1---2023-02-15)
 
 ## [Unreleased][]
+### Added
+### Changed
+### Removed
+### Fixed
+
+## [3.0.0] - 2025-09-20
 ### Added
 - Pano scrobbler: added folksonomy tags uploading, retrieved from genre and style tags.
 - UI: toolbar tooltip now shows 'Shift + Win + R. Click' shortcut to open SMP/JSpliter panel menu (which works globally on any script and panel, at any position).
@@ -391,7 +398,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v2.3.0...v3.0.0
 [2.3.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/regorxxx/ListenBrainz-SMP/compare/v2.0.0...v2.1.0
